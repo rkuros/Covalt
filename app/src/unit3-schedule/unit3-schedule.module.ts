@@ -4,6 +4,7 @@ import { ScheduleController } from './controllers/schedule.controller';
 import { PrismaBusinessHourRepository } from './repositories/prisma-business-hour.repository';
 import { PrismaClosedDayRepository } from './repositories/prisma-closed-day.repository';
 import { PrismaDailySlotListRepository } from './repositories/prisma-daily-slot-list.repository';
+import { PrismaSlotTemplateRepository } from './repositories/prisma-slot-template.repository';
 import { SlotAvailabilityService } from './domain/SlotAvailabilityService';
 import { SlotReservationService } from './domain/SlotReservationService';
 import { SlotGenerationService } from './domain/SlotGenerationService';
@@ -11,6 +12,7 @@ import {
   BUSINESS_HOUR_REPOSITORY,
   CLOSED_DAY_REPOSITORY,
   DAILY_SLOT_LIST_REPOSITORY,
+  SLOT_TEMPLATE_REPOSITORY,
 } from './di-tokens';
 
 @Module({
@@ -28,6 +30,10 @@ import {
     {
       provide: DAILY_SLOT_LIST_REPOSITORY,
       useClass: PrismaDailySlotListRepository,
+    },
+    {
+      provide: SLOT_TEMPLATE_REPOSITORY,
+      useClass: PrismaSlotTemplateRepository,
     },
     // Domain services
     {
@@ -59,6 +65,7 @@ import {
     BUSINESS_HOUR_REPOSITORY,
     CLOSED_DAY_REPOSITORY,
     DAILY_SLOT_LIST_REPOSITORY,
+    SLOT_TEMPLATE_REPOSITORY,
     SlotAvailabilityService,
     SlotReservationService,
     SlotGenerationService,

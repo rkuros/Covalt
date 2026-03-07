@@ -197,6 +197,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 
 /* Loading */
 .loading{text-align:center;padding:40px;color:#999;font-size:13px;}
+.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.loading-overlay .spinner{width:32px;height:32px;border:3px solid #e0e0e0;border-top-color:#0984e3;border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.btn.is-loading{opacity:0.6;pointer-events:none;}
 
 /* API indicator */
 .api-badge{display:inline-block;font-size:9px;padding:2px 6px;border-radius:4px;margin-left:8px;vertical-align:middle;}
@@ -346,6 +350,18 @@ function showToast(msg, isError) {
   t.textContent = msg;
   t.className = 'toast show' + (isError ? ' error' : '');
   setTimeout(() => t.className = 'toast', 3000);
+}
+
+let _loadingEl = null;
+function showLoading() {
+  if (_loadingEl) return;
+  _loadingEl = document.createElement('div');
+  _loadingEl.className = 'loading-overlay';
+  _loadingEl.innerHTML = '<div class="spinner"></div>';
+  document.body.appendChild(_loadingEl);
+}
+function hideLoading() {
+  if (_loadingEl) { _loadingEl.remove(); _loadingEl = null; }
 }
 
 function showModal(html) {
@@ -580,21 +596,27 @@ function confirmCancelReservation(id) {
 
 async function cancelReservation(id) {
   closeModal();
+  showLoading();
   try {
     await api('PUT', '/api/owner/reservations/' + id + '/cancel');
+    hideLoading();
     showToast('予約をキャンセルしました');
     showPage('dashboard');
   } catch (e) {
+    hideLoading();
     showToast('キャンセルエラー: ' + e.message, true);
   }
 }
 
 async function completeReservation(id) {
+  showLoading();
   try {
     await api('PUT', '/api/owner/reservations/' + id + '/complete');
+    hideLoading();
     showToast('予約を完了にしました');
     showReservationDetail(id);
   } catch (e) {
+    hideLoading();
     showToast('完了エラー: ' + e.message, true);
   }
 }
@@ -604,6 +626,7 @@ let schMonth = MONTH, schYear = YEAR;
 let schSelectedDate = null;
 let schReservations = [];
 let schSlotSummary = {};
+let cachedTemplates = [];
 
 async function renderSchedule(mc) {
   mc.innerHTML = '<div class="loading">読み込み中...</div>';
@@ -611,16 +634,18 @@ async function renderSchedule(mc) {
   try {
     const startD = isoDate(schYear, schMonth, 1);
     const endD = isoDate(schYear, schMonth + 1, 0);
-    const [bhRes, cdRes, rsvRes, slotRes] = await Promise.all([
+    const [bhRes, cdRes, rsvRes, slotRes, tplRes] = await Promise.all([
       api('GET', '/api/schedule/business-hours'),
       api('GET', '/api/schedule/closed-days'),
       api('GET', '/api/owner/reservations?startDate=' + startD + '&endDate=' + isoDate(schYear, schMonth + 1, 1)),
       api('GET', '/api/schedule/slots/summary?startDate=' + startD + '&endDate=' + endD),
+      api('GET', '/api/schedule/templates'),
     ]);
     cachedBusinessHours = bhRes.businessHours || [];
     cachedClosedDays = cdRes.closedDays || [];
     schReservations = rsvRes.reservations || [];
     schSlotSummary = slotRes.days || {};
+    cachedTemplates = tplRes.templates || [];
   } catch (e) {
     showToast('スケジュール取得エラー: ' + e.message, true);
   }
@@ -677,6 +702,48 @@ async function renderSchedule(mc) {
   h += '<input class="form-input" type="time" id="singleSlotEnd" value="10:00" style="width:100px;font-size:12px;">';
   h += '<button class="btn btn-primary" style="background:#00b894;width:auto;padding:6px 14px;font-size:12px;margin:0;" onclick="createSingleSlot()">追加</button>';
   h += '</div><div id="singleSlotResult" style="margin-top:4px;"></div></div>';
+
+  // --- Templates ---
+  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">テンプレート</h3>';
+  h += '<p style="font-size:12px;color:#666;margin-bottom:6px;">1日の空き枠構成を保存し、日付や営業日に一括適用できます。</p>';
+
+  // Save template from a date
+  h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">';
+  h += '<input class="form-input" type="date" id="tplFromDate" style="width:160px;font-size:12px;">';
+  h += '<input class="form-input" id="tplName" placeholder="テンプレート名" style="width:160px;font-size:12px;">';
+  h += '<button class="btn btn-outline" style="width:auto;padding:6px 14px;font-size:12px;margin:0;" onclick="saveTemplate()">保存</button>';
+  h += '</div>';
+
+  // Template list
+  if (cachedTemplates.length === 0) {
+    h += '<p style="font-size:11px;color:#999;">テンプレートがありません。日付を選択してスロット構成を保存してください。</p>';
+  } else {
+    h += '<div style="display:flex;flex-direction:column;gap:6px;">';
+    cachedTemplates.forEach(tpl => {
+      h += '<div style="border:1px solid #e0e0e0;border-radius:6px;padding:8px 10px;font-size:12px;">';
+      h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">';
+      h += '<strong style="flex:1;">' + tpl.name + '</strong>';
+      h += '<span style="font-size:10px;color:#999;">' + tpl.entries.length + '枠</span>';
+      h += '<button style="background:none;border:1px solid #e57373;color:#e57373;border-radius:4px;padding:1px 6px;font-size:10px;cursor:pointer;" onclick="deleteTemplate(\'' + tpl.templateId + '\')">&times;</button>';
+      h += '</div>';
+      h += '<div style="font-size:10px;color:#666;margin-bottom:6px;">' + tpl.entries.map(e => e.startTime + '-' + e.endTime).join(', ') + '</div>';
+
+      // Apply controls
+      h += '<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">';
+      h += '<input type="date" id="tplApplyDate-' + tpl.templateId + '" style="padding:3px;border:1px solid #ddd;border-radius:4px;font-size:11px;width:140px;">';
+      h += '<button class="btn btn-primary" style="background:#0984e3;width:auto;padding:4px 10px;font-size:11px;margin:0;" onclick="applyTemplateToDate(\'' + tpl.templateId + '\')">この日に適用</button>';
+      h += '</div>';
+      h += '<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-top:4px;">';
+      h += '<input type="date" id="tplRangeStart-' + tpl.templateId + '" style="padding:3px;border:1px solid #ddd;border-radius:4px;font-size:11px;width:130px;">';
+      h += '<span style="font-size:11px;">〜</span>';
+      h += '<input type="date" id="tplRangeEnd-' + tpl.templateId + '" style="padding:3px;border:1px solid #ddd;border-radius:4px;font-size:11px;width:130px;">';
+      h += '<button class="btn btn-primary" style="background:#00b894;width:auto;padding:4px 10px;font-size:11px;margin:0;" onclick="applyTemplateToRange(\'' + tpl.templateId + '\')">営業日に適用</button>';
+      h += '</div>';
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+  h += '</div>';
 
   mc.innerHTML = h;
 
@@ -861,6 +928,18 @@ async function loadDaySlots(dateStr) {
   h += '<button class="btn btn-outline" style="width:auto;padding:5px 12px;font-size:11px;margin:0;border-color:#00b894;color:#00b894;" onclick="quickAddSlot(\'' + dateStr + '\')">1枠追加</button>';
   h += '</div>';
 
+  // Template apply for this date
+  if (cachedTemplates.length > 0) {
+    h += '<div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">';
+    h += '<select id="quickTpl" style="padding:4px;border:1px solid #ddd;border-radius:4px;font-size:11px;">';
+    cachedTemplates.forEach(tpl => {
+      h += '<option value="' + tpl.templateId + '">' + tpl.name + ' (' + tpl.entries.length + '枠)</option>';
+    });
+    h += '</select>';
+    h += '<button class="btn btn-outline" style="width:auto;padding:5px 12px;font-size:11px;margin:0;border-color:#6c5ce7;color:#6c5ce7;" onclick="quickApplyTemplate(\'' + dateStr + '\')">テンプレ適用</button>';
+    h += '</div>';
+  }
+
   h += '</div>';
   el.innerHTML = h;
 }
@@ -868,12 +947,29 @@ async function loadDaySlots(dateStr) {
 async function quickGenSlots(dateStr) {
   const dur = +document.getElementById('quickGenDur').value;
   const buf = +document.getElementById('quickGenBuf').value;
+  showLoading();
   try {
     const res = await api('POST', '/api/schedule/slots/generate', { date: dateStr, durationMinutes: dur, bufferMinutes: buf });
     showToast(res.generatedCount + '件のスロットを生成しました');
     loadDaySlots(dateStr);
   } catch (e) {
     showToast('生成エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+async function quickApplyTemplate(dateStr) {
+  const templateId = document.getElementById('quickTpl').value;
+  if (!templateId) { showToast('テンプレートを選択してください', true); return; }
+  showLoading();
+  try {
+    const res = await api('POST', '/api/schedule/templates/' + templateId + '/apply', { date: dateStr });
+    hideLoading();
+    showToast(res.totalSlotsAdded + '枠を追加しました');
+    renderSchedule(document.getElementById('mainContent'));
+    setTimeout(() => { schSelectedDate = dateStr; loadDaySlots(dateStr); }, 100);
+  } catch (e) {
+    hideLoading();
+    showToast('適用エラー: ' + e.message, true);
   }
 }
 
@@ -881,16 +977,79 @@ async function quickAddSlot(dateStr) {
   const startTime = document.getElementById('quickSingleStart').value;
   const endTime = document.getElementById('quickSingleEnd').value;
   if (!startTime || !endTime) { showToast('時間を指定してください', true); return; }
+  showLoading();
   try {
     await api('POST', '/api/schedule/slots', { date: dateStr, startTime, endTime });
     showToast('スロットを追加しました');
     loadDaySlots(dateStr);
   } catch (e) {
     showToast('追加エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+async function saveTemplate() {
+  const fromDate = document.getElementById('tplFromDate').value;
+  const name = document.getElementById('tplName').value.trim();
+  if (!name) { showToast('テンプレート名を入力してください', true); return; }
+  if (!fromDate) { showToast('日付を選択してください', true); return; }
+  showLoading();
+  try {
+    await api('POST', '/api/schedule/templates', { name, fromDate });
+    hideLoading();
+    showToast('テンプレートを保存しました');
+    renderSchedule(document.getElementById('mainContent'));
+  } catch (e) {
+    hideLoading();
+    showToast('保存エラー: ' + e.message, true);
+  }
+}
+
+async function deleteTemplate(templateId) {
+  showLoading();
+  try {
+    await api('DELETE', '/api/schedule/templates/' + templateId);
+    hideLoading();
+    showToast('テンプレートを削除しました');
+    renderSchedule(document.getElementById('mainContent'));
+  } catch (e) {
+    hideLoading();
+    showToast('削除エラー: ' + e.message, true);
+  }
+}
+
+async function applyTemplateToDate(templateId) {
+  const date = document.getElementById('tplApplyDate-' + templateId).value;
+  if (!date) { showToast('日付を選択してください', true); return; }
+  showLoading();
+  try {
+    const res = await api('POST', '/api/schedule/templates/' + templateId + '/apply', { date });
+    hideLoading();
+    showToast(res.totalSlotsAdded + '枠を追加しました');
+    renderSchedule(document.getElementById('mainContent'));
+  } catch (e) {
+    hideLoading();
+    showToast('適用エラー: ' + e.message, true);
+  }
+}
+
+async function applyTemplateToRange(templateId) {
+  const startDate = document.getElementById('tplRangeStart-' + templateId).value;
+  const endDate = document.getElementById('tplRangeEnd-' + templateId).value;
+  if (!startDate || !endDate) { showToast('期間を選択してください', true); return; }
+  showLoading();
+  try {
+    const res = await api('POST', '/api/schedule/templates/' + templateId + '/apply', { startDate, endDate });
+    hideLoading();
+    showToast(res.totalDates + '日に' + res.totalSlotsAdded + '枠を追加しました');
+    renderSchedule(document.getElementById('mainContent'));
+  } catch (e) {
+    hideLoading();
+    showToast('適用エラー: ' + e.message, true);
   }
 }
 
 async function saveBusinessHours() {
+  showLoading();
   try {
     for (const dk of DAY_KEYS) {
       const row = document.getElementById('bh-' + dk);
@@ -906,28 +1065,34 @@ async function saveBusinessHours() {
     showToast('営業時間を保存しました');
   } catch (e) {
     showToast('保存エラー: ' + e.message, true);
-  }
+  } finally { hideLoading(); }
 }
 
 async function addClosedDay() {
   const date = document.getElementById('holidayInput').value;
   const reason = document.getElementById('holidayReason').value;
   if (!date) return;
+  showLoading();
   try {
     await api('POST', '/api/schedule/closed-days', { date, reason: reason || undefined });
+    hideLoading();
     showToast(date + ' を休業日に設定しました');
     renderSchedule(document.getElementById('mainContent'));
   } catch (e) {
+    hideLoading();
     showToast('エラー: ' + e.message, true);
   }
 }
 
 async function removeClosedDay(id) {
+  showLoading();
   try {
     await api('DELETE', '/api/schedule/closed-days/' + id);
+    hideLoading();
     showToast('休業日を解除しました');
     renderSchedule(document.getElementById('mainContent'));
   } catch (e) {
+    hideLoading();
     showToast('エラー: ' + e.message, true);
   }
 }
@@ -939,6 +1104,7 @@ async function generateSlots() {
   if (!date) { showToast('日付を選択してください', true); return; }
   const el = document.getElementById('slotGenResult');
   el.innerHTML = '<span style="color:#999;font-size:12px;">生成中...</span>';
+  showLoading();
   try {
     const res = await api('POST', '/api/schedule/slots/generate', { date, durationMinutes: dur, bufferMinutes: buf });
     let h = '<p style="font-size:12px;color:#2e7d32;margin-bottom:6px;">' + res.generatedCount + '件のスロットを生成しました</p>';
@@ -952,17 +1118,18 @@ async function generateSlots() {
     el.innerHTML = h;
   } catch (e) {
     el.innerHTML = '<span style="font-size:12px;color:#d32f2f;">' + e.message + '</span>';
-  }
+  } finally { hideLoading(); }
 }
 
 async function deleteSlot(slotId, dateStr) {
+  showLoading();
   try {
     await api('DELETE', '/api/schedule/slots/' + slotId);
     showToast('スロットを削除しました');
     loadDaySlots(dateStr);
   } catch (e) {
     showToast('削除エラー: ' + e.message, true);
-  }
+  } finally { hideLoading(); }
 }
 
 async function createSingleSlot() {
@@ -973,13 +1140,14 @@ async function createSingleSlot() {
   if (!startTime || !endTime) { showToast('開始・終了時間を指定してください', true); return; }
   const el = document.getElementById('singleSlotResult');
   el.innerHTML = '<span style="color:#999;font-size:12px;">追加中...</span>';
+  showLoading();
   try {
     const res = await api('POST', '/api/schedule/slots', { date, startTime, endTime });
     el.innerHTML = '<p style="font-size:12px;color:#2e7d32;">' + res.startTime + ' - ' + res.endTime + ' (' + res.durationMinutes + '分) を追加しました</p>';
     if (schSelectedDate === date) loadDaySlots(date);
   } catch (e) {
     el.innerHTML = '<span style="font-size:12px;color:#d32f2f;">' + e.message + '</span>';
-  }
+  } finally { hideLoading(); }
 }
 
 /* --- Customers --- */

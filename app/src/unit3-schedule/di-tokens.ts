@@ -5,3 +5,4 @@
 export const BUSINESS_HOUR_REPOSITORY = 'BusinessHourRepository';
 export const CLOSED_DAY_REPOSITORY = 'ClosedDayRepository';
 export const DAILY_SLOT_LIST_REPOSITORY = 'DailySlotListRepository';
+export const SLOT_TEMPLATE_REPOSITORY = 'SlotTemplateRepository';

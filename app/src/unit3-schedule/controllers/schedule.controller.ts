@@ -34,10 +34,14 @@ import { TimeRange } from '../domain/TimeRange';
 import { SlotDate } from '../domain/SlotDate';
 import { Duration } from '../domain/Duration';
 import { SlotOverlapError, SlotNotFoundError, SlotNotAvailableError } from '../domain/DomainErrors';
+import { SlotTemplate } from '../domain/SlotTemplate';
+import { SlotTemplateId } from '../domain/SlotTemplateId';
+import type { SlotTemplateRepository } from '../domain/SlotTemplateRepository';
 import {
   BUSINESS_HOUR_REPOSITORY,
   CLOSED_DAY_REPOSITORY,
   DAILY_SLOT_LIST_REPOSITORY,
+  SLOT_TEMPLATE_REPOSITORY,
 } from '../di-tokens';
 
 interface AuthenticatedRequest {
@@ -54,6 +58,8 @@ export class ScheduleController {
     private readonly closedDayRepo: ClosedDayRepository,
     @Inject(DAILY_SLOT_LIST_REPOSITORY)
     private readonly dailySlotListRepo: DailySlotListRepository,
+    @Inject(SLOT_TEMPLATE_REPOSITORY)
+    private readonly slotTemplateRepo: SlotTemplateRepository,
     private readonly slotGenerationService: SlotGenerationService,
   ) {}
 
@@ -485,5 +491,227 @@ export class ScheduleController {
     await this.dailySlotListRepo.save(found.dailySlotList);
 
     return { message: 'スロットを削除しました' };
+  }
+
+  // ===== Template endpoints =====
+
+  /**
+   * GET /api/schedule/templates
+   * Returns all slot templates for the authenticated owner.
+   */
+  @Get('templates')
+  async getTemplates(@Req() req: AuthenticatedRequest) {
+    const ownerId = OwnerId.create(req.user.ownerId);
+    const templates = await this.slotTemplateRepo.findAllByOwnerId(ownerId);
+    return {
+      templates: templates.map((t) => ({
+        templateId: t.templateId.value,
+        name: t.name,
+        entries: t.entries.map((e) => ({
+          startTime: e.startTime.toString(),
+          endTime: e.endTime.toString(),
+        })),
+      })),
+    };
+  }
+
+  /**
+   * POST /api/schedule/templates
+   * Creates a slot template from a list of time entries, or from a date's current slots.
+   */
+  @Post('templates')
+  @HttpCode(201)
+  async createTemplate(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: {
+      name: string;
+      entries?: { startTime: string; endTime: string }[];
+      fromDate?: string;
+    },
+  ) {
+    const ownerId = OwnerId.create(req.user.ownerId);
+
+    if (!body.name || body.name.trim().length === 0) {
+      throw new BadRequestException({
+        error: 'MISSING_NAME',
+        message: 'テンプレート名を指定してください',
+      });
+    }
+
+    let entries: { startTime: TimeOfDay; endTime: TimeOfDay }[];
+
+    if (body.fromDate) {
+      // Build entries from existing slots on the given date
+      const date = SlotDate.create(body.fromDate);
+      const dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(ownerId, date);
+      if (!dailySlotList || dailySlotList.slots.length === 0) {
+        throw new BadRequestException({
+          error: 'NO_SLOTS',
+          message: '指定日にスロットがありません',
+        });
+      }
+      entries = dailySlotList.slots.map((s) => ({
+        startTime: s.startTime,
+        endTime: s.endTime,
+      }));
+    } else if (body.entries && body.entries.length > 0) {
+      entries = body.entries.map((e) => ({
+        startTime: TimeOfDay.fromString(e.startTime),
+        endTime: TimeOfDay.fromString(e.endTime),
+      }));
+    } else {
+      throw new BadRequestException({
+        error: 'MISSING_ENTRIES',
+        message: 'スロット定義またはfromDateを指定してください',
+      });
+    }
+
+    const template = SlotTemplate.create({
+      templateId: SlotTemplateId.generate(),
+      ownerId,
+      name: body.name.trim(),
+      entries,
+    });
+
+    await this.slotTemplateRepo.save(template);
+
+    return {
+      templateId: template.templateId.value,
+      name: template.name,
+      entries: template.entries.map((e) => ({
+        startTime: e.startTime.toString(),
+        endTime: e.endTime.toString(),
+      })),
+    };
+  }
+
+  /**
+   * DELETE /api/schedule/templates/:templateId
+   */
+  @Delete('templates/:templateId')
+  @HttpCode(200)
+  async deleteTemplate(
+    @Req() req: AuthenticatedRequest,
+    @Param('templateId') templateIdParam: string,
+  ) {
+    const ownerId = OwnerId.create(req.user.ownerId);
+    const templateId = SlotTemplateId.create(templateIdParam);
+    const template = await this.slotTemplateRepo.findById(templateId);
+    if (!template || template.ownerId.value !== ownerId.value) {
+      throw new NotFoundException({
+        error: 'TEMPLATE_NOT_FOUND',
+        message: 'テンプレートが見つかりません',
+      });
+    }
+    await this.slotTemplateRepo.delete(templateId);
+    return { message: 'テンプレートを削除しました' };
+  }
+
+  /**
+   * POST /api/schedule/templates/:templateId/apply
+   * Applies a template to a single date or to all business days in a date range.
+   * Body: { date?: string, startDate?: string, endDate?: string }
+   */
+  @Post('templates/:templateId/apply')
+  @HttpCode(200)
+  async applyTemplate(
+    @Req() req: AuthenticatedRequest,
+    @Param('templateId') templateIdParam: string,
+    @Body() body: { date?: string; startDate?: string; endDate?: string },
+  ) {
+    const ownerId = OwnerId.create(req.user.ownerId);
+    const templateId = SlotTemplateId.create(templateIdParam);
+    const template = await this.slotTemplateRepo.findById(templateId);
+    if (!template || template.ownerId.value !== ownerId.value) {
+      throw new NotFoundException({
+        error: 'TEMPLATE_NOT_FOUND',
+        message: 'テンプレートが見つかりません',
+      });
+    }
+
+    // Collect target dates
+    const targetDates: SlotDate[] = [];
+
+    if (body.date) {
+      targetDates.push(SlotDate.create(body.date));
+    } else if (body.startDate && body.endDate) {
+      // Apply to business days in the range
+      const start = new Date(body.startDate + 'T00:00:00');
+      const end = new Date(body.endDate + 'T00:00:00');
+      const businessHours = await this.businessHourRepo.findAllByOwnerId(ownerId);
+      const closedStartDate = SlotDate.create(body.startDate);
+      const closedEndDate = SlotDate.create(body.endDate);
+      const closedDays = await this.closedDayRepo.findAllByOwnerIdAndDateRange(
+        ownerId,
+        closedStartDate,
+        closedEndDate,
+      );
+      const closedSet = new Set(closedDays.map((cd) => cd.date.value));
+
+      const dayKeyMap = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const iso = d.getFullYear() + '-' +
+          String(d.getMonth() + 1).padStart(2, '0') + '-' +
+          String(d.getDate()).padStart(2, '0');
+
+        if (closedSet.has(iso)) continue;
+
+        const dow = dayKeyMap[d.getDay()];
+        const bh = businessHours.find((b) => b.dayOfWeek.value === dow);
+        if (bh && !bh.isBusinessDay) continue;
+
+        targetDates.push(SlotDate.create(iso));
+      }
+    } else {
+      throw new BadRequestException({
+        error: 'MISSING_DATE',
+        message: 'dateまたはstartDate+endDateを指定してください',
+      });
+    }
+
+    // Apply template to each target date
+    let totalAdded = 0;
+    const results: { date: string; added: number }[] = [];
+
+    for (const date of targetDates) {
+      let dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(ownerId, date);
+      if (!dailySlotList) {
+        dailySlotList = DailySlotList.create({ ownerId, date });
+      }
+
+      let added = 0;
+      for (const entry of template.entries) {
+        const timeRange = TimeRange.create(entry.startTime, entry.endTime);
+        const duration = Duration.create(timeRange.durationInMinutes());
+        const newSlot = Slot.create({
+          slotId: SlotId.generate(),
+          startTime: entry.startTime,
+          endTime: entry.endTime,
+          durationMinutes: duration,
+          status: SlotStatus.available(),
+          reservationId: null,
+        });
+        try {
+          dailySlotList.addSlot(newSlot);
+          added++;
+        } catch (e) {
+          if (e instanceof SlotOverlapError) continue;
+          throw e;
+        }
+      }
+
+      if (added > 0) {
+        await this.dailySlotListRepo.save(dailySlotList);
+        totalAdded += added;
+      }
+      results.push({ date: date.value, added });
+    }
+
+    return {
+      totalDates: targetDates.length,
+      totalSlotsAdded: totalAdded,
+      results,
+    };
   }
 }

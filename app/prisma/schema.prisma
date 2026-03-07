@@ -137,6 +137,28 @@ model DailySlotList {
   @@map("daily_slot_lists")
 }
 
+model SlotTemplate {
+  id      String @id @default(uuid()) @map("slot_template_id")
+  ownerId String @map("owner_id")
+  name    String
+
+  entries SlotTemplateEntry[]
+
+  @@index([ownerId])
+  @@map("slot_templates")
+}
+
+model SlotTemplateEntry {
+  id         String @id @default(uuid()) @map("entry_id")
+  templateId String @map("slot_template_id")
+  startTime  String @map("start_time")
+  endTime    String @map("end_time")
+
+  template SlotTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@map("slot_template_entries")
+}
+
 model Slot {
   id              String  @id @default(uuid()) @map("slot_id")
   dailySlotListId String  @map("daily_slot_list_id")
@@ -148,6 +170,7 @@ model Slot {
 
   dailySlotList DailySlotList @relation(fields: [dailySlotListId], references: [id])
 
+  @@index([dailySlotListId])
   @@map("slots")
 }
 
@@ -174,6 +197,9 @@ model Reservation {
   customer  Customer             @relation(fields: [customerId], references: [id])
   histories ReservationHistory[]
 
+  @@index([ownerId, dateTime])
+  @@index([ownerId, status])
+  @@index([customerId, ownerId, status])
   @@map("reservations")
 }
 
