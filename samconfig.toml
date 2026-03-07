@@ -6,6 +6,7 @@ parallel = true
 
 [default.deploy.parameters]
 stack_name = "covalt"
+region = "ap-southeast-1"
 resolve_s3 = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
