@@ -211,7 +211,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 <body>
 
 <div class="top-tab">
-  <button onclick="switchView('customer')">顧客側（LINE / スマホ）<span class="api-badge mock">MOCK</span></button>
+  <button onclick="switchView('customer')">顧客側（LINE / スマホ）<span class="api-badge live">LIVE API</span></button>
   <button class="active" onclick="switchView('owner')">オーナー側（iPad / タブレット）<span class="api-badge live">LIVE API</span></button>
 </div>
 
@@ -1257,23 +1257,42 @@ async function saveLineConfig() {
 }
 
 /* ========================================= */
-/* ===== CUSTOMER SIDE — MOCK           ===== */
+/* ===== CUSTOMER SIDE — LIVE API       ===== */
 /* ========================================= */
-const HOURS = ['10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
-let MOCK_BOOKINGS = [
-  {id:'RSV-001',date:new Date(YEAR,MONTH,DAY+1),time:'11:00',customer:'田中 太郎',customerId:1,status:'confirmed'},
-  {id:'RSV-002',date:new Date(YEAR,MONTH,DAY+1),time:'14:00',customer:'佐藤 花子',customerId:2,status:'confirmed'},
-  {id:'RSV-003',date:new Date(YEAR,MONTH,DAY+2),time:'10:00',customer:'鈴木 一郎',customerId:3,status:'confirmed'},
-  {id:'RSV-004',date:new Date(YEAR,MONTH,DAY-3),time:'13:00',customer:'田中 太郎',customerId:1,status:'done'},
-  {id:'RSV-005',date:new Date(YEAR,MONTH,DAY-5),time:'15:00',customer:'佐藤 花子',customerId:2,status:'cancelled'},
-];
-let nextMockId = 6;
+let mockCustomerId = localStorage.getItem('covalt_mockCustomerId') || null;
+let mockCustomerName = localStorage.getItem('covalt_mockCustomerName') || 'テスト 花子';
 let chatMessages = [], calMonth = MONTH, calYear = YEAR, selectedDate = null;
+let selectedSlot = null; // holds the slot object selected for booking
 
 function fmt(d) { return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate(); }
 
+/* --- Mock customer init: create or restore a test customer via API --- */
+async function ensureMockCustomer() {
+  if (mockCustomerId) return mockCustomerId;
+  if (!authToken || !currentUser) return null;
+  try {
+    // Search for existing test customer
+    const data = await api('GET', '/api/customers/search?ownerId=' + currentUser.ownerId + '&q=' + encodeURIComponent(mockCustomerName));
+    const list = Array.isArray(data) ? data : (data.customers || []);
+    const found = list.find(c => (c.customerName || c.name) === mockCustomerName);
+    if (found) {
+      mockCustomerId = found.customerId || found.id;
+    } else {
+      // Create new test customer
+      const created = await api('POST', '/api/customers', { ownerId: currentUser.ownerId, customerName: mockCustomerName });
+      mockCustomerId = created.customerId || created.id;
+    }
+    localStorage.setItem('covalt_mockCustomerId', mockCustomerId);
+    localStorage.setItem('covalt_mockCustomerName', mockCustomerName);
+    return mockCustomerId;
+  } catch (e) {
+    console.error('Mock customer init error:', e);
+    return null;
+  }
+}
+
 function initChat() {
-  chatMessages = [{from:'bot', text:'友だち追加ありがとうございます!\n\n予約サロンの予約システムへようこそ。\n\n下のメニューから操作できます:\n・予約する\n・予約確認\n・予約履歴\n\n※ 顧客側はモックデータです。\nオーナー側タブでLIVE APIを使えます。'}];
+  chatMessages = [{from:'bot', text:'友だち追加ありがとうございます!\n\n予約サロンの予約システムへようこそ。\n\n下のメニューから操作できます:\n・予約する\n・予約確認\n・予約履歴'}];
   renderChat();
 }
 
@@ -1286,6 +1305,10 @@ function renderChat() {
 function addBotMsg(t) { chatMessages.push({from:'bot', text:t}); renderChat(); }
 
 function openLiff(mode) {
+  if (!authToken || !currentUser) {
+    addBotMsg('オーナー側タブでログインしてください。ログイン後に予約機能が利用できます。');
+    return;
+  }
   document.getElementById('liffOverlay').style.display = 'flex';
   document.getElementById('richMenu').style.display = 'none';
   document.getElementById('lineBack').style.display = 'inline';
@@ -1300,11 +1323,13 @@ function liffClose() {
   document.getElementById('lineBack').style.display = 'none';
   document.getElementById('lineTitle').textContent = '予約サロン';
   selectedDate = null;
+  selectedSlot = null;
 }
 
 function renderBookingLiff() {
   document.getElementById('lineTitle').textContent = '予約する';
   selectedDate = null;
+  selectedSlot = null;
   document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">日時を選択</span></div><div class="liff-body" id="liffBody"></div>';
   renderCalendar();
 }
@@ -1325,53 +1350,192 @@ function renderCalendar() {
     h += '<div class="' + c + '" onclick="pickDate(' + calYear + ',' + calMonth + ',' + d + ')">' + d + '</div>';
   }
   h += '</div>';
-  if (selectedDate) h += renderMockSlots(selectedDate);
+  if (selectedDate) h += '<div id="slotsContainer"><div class="loading">空き状況を取得中...</div></div>';
   body.innerHTML = h;
+  if (selectedDate) loadAvailableSlots(selectedDate);
 }
 
 function pickDate(y, m, d) { const dt = new Date(y, m, d); if (dt < new Date(YEAR, MONTH, DAY)) return; selectedDate = dt; renderCalendar(); }
 
-function renderMockSlots(dt) {
-  const dk = dateKey(dt), booked = MOCK_BOOKINGS.filter(b => dateKey(b.date) === dk && b.status === 'confirmed').map(b => b.time);
-  let h = '<h4 style="font-size:14px;margin-bottom:8px;">' + fmt(dt) + ' の空き状況</h4><div class="slot-list">';
-  HOURS.forEach(t => {
-    const tk = booked.includes(t);
-    h += '<div class="slot-item' + (tk ? ' booked' : '') + '" ' + (tk ? '' : 'onclick="selectMockSlot(\'' + t + '\')"') + '><span>' + t + '</span><span class="slot-status ' + (tk ? 'taken' : 'open') + '">' + (tk ? '予約済' : '予約可') + '</span></div>';
-  });
-  return h + '</div>';
+/* --- Load available slots from API --- */
+async function loadAvailableSlots(dt) {
+  const container = document.getElementById('slotsContainer');
+  if (!container) return;
+  const dateStr = isoDate(dt.getFullYear(), dt.getMonth(), dt.getDate());
+  try {
+    const data = await api('GET', '/api/slots/available?ownerId=' + currentUser.ownerId + '&date=' + dateStr);
+    const slots = data.slots || [];
+    let h = '<h4 style="font-size:14px;margin-bottom:8px;">' + fmt(dt) + ' の空き状況</h4>';
+    if (slots.length === 0) {
+      h += '<p style="color:#999;font-size:13px;padding:12px 0;">この日の空きスロットはありません</p>';
+    } else {
+      h += '<div class="slot-list">';
+      slots.sort((a, b) => a.startTime.localeCompare(b.startTime)).forEach((s, idx) => {
+        h += '<div class="slot-item" onclick="selectSlot(' + idx + ')">';
+        h += '<span>' + s.startTime + ' - ' + s.endTime + '</span>';
+        h += '<span class="slot-status open">予約可</span>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+    container.innerHTML = h;
+    // Store slots for reference when selecting
+    container._slots = slots;
+  } catch (e) {
+    container.innerHTML = '<p style="color:#d32f2f;font-size:13px;">空き状況の取得に失敗しました: ' + e.message + '</p>';
+  }
 }
 
-function selectMockSlot(time) {
-  document.getElementById('liffBody').innerHTML = '<h4 style="font-size:15px;margin-bottom:8px;">予約内容の確認</h4><div class="confirm-box"><dt>日付</dt><dd>' + fmt(selectedDate) + '</dd><dt>時間</dt><dd>' + time + '</dd><dt>予約ID</dt><dd>RSV-' + String(nextMockId).padStart(3,'0') + '</dd></div><button class="btn btn-primary" onclick="confirmMockBooking(\'' + time + '\')">予約を確定する</button><button class="btn btn-outline" onclick="renderBookingLiff()">戻る</button>';
+function selectSlot(idx) {
+  const container = document.getElementById('slotsContainer');
+  const slots = container?._slots;
+  if (!slots || !slots[idx]) return;
+  selectedSlot = slots[idx];
+  const durationMinutes = selectedSlot.durationMinutes || 60;
+  const body = document.getElementById('liffBody');
+  body.innerHTML = '<h4 style="font-size:15px;margin-bottom:8px;">予約内容の確認</h4>'
+    + '<div class="confirm-box">'
+    + '<dt>日付</dt><dd>' + fmt(selectedDate) + '</dd>'
+    + '<dt>時間</dt><dd>' + selectedSlot.startTime + ' - ' + selectedSlot.endTime + '</dd>'
+    + '<dt>所要時間</dt><dd>' + durationMinutes + '分</dd>'
+    + '<dt>お名前</dt><dd>' + mockCustomerName + '</dd>'
+    + '</div>'
+    + '<button class="btn btn-primary" onclick="confirmBooking()">予約を確定する</button>'
+    + '<button class="btn btn-outline" onclick="renderBookingLiff()">戻る</button>';
 }
 
-function confirmMockBooking(time) {
-  const id = 'RSV-' + String(nextMockId).padStart(3, '0');
-  nextMockId++;
-  MOCK_BOOKINGS.push({id, date: new Date(selectedDate), time, customer: '田中 太郎', customerId: 1, status: 'confirmed'});
-  document.getElementById('liffBody').innerHTML = '<div style="text-align:center;padding:40px 0;"><div style="font-size:48px;margin-bottom:16px;">&#10004;</div><h3 style="font-size:18px;margin-bottom:8px;">予約が確定しました</h3><p style="font-size:13px;color:#666;">' + fmt(selectedDate) + ' ' + time + '</p><p style="font-size:12px;color:#999;margin-top:4px;">' + id + '</p><button class="btn btn-outline" style="margin-top:24px;" onclick="liffClose()">閉じる</button></div>';
-  addBotMsg('予約が確定しました\n\n日時: ' + fmt(selectedDate) + ' ' + time + '\n予約ID: ' + id + '\n\nご来店お待ちしております。');
+async function confirmBooking() {
+  if (!selectedSlot || !selectedDate) return;
+  showLoading();
+  try {
+    const custId = await ensureMockCustomer();
+    if (!custId) throw new Error('テスト顧客の準備に失敗しました');
+    const dateStr = isoDate(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+    const dateTime = dateStr + 'T' + selectedSlot.startTime + ':00';
+    const durationMinutes = selectedSlot.durationMinutes || 60;
+    const res = await api('POST', '/api/owner/reservations', {
+      customerId: custId,
+      slotId: selectedSlot.slotId,
+      dateTime: dateTime,
+      durationMinutes: durationMinutes,
+    });
+    hideLoading();
+    const rsvId = res.reservationId || res.id || '';
+    const shortId = rsvId.substring(0, 8);
+    document.getElementById('liffBody').innerHTML = '<div style="text-align:center;padding:40px 0;">'
+      + '<div style="font-size:48px;margin-bottom:16px;">&#10004;</div>'
+      + '<h3 style="font-size:18px;margin-bottom:8px;">予約が確定しました</h3>'
+      + '<p style="font-size:13px;color:#666;">' + fmt(selectedDate) + ' ' + selectedSlot.startTime + ' - ' + selectedSlot.endTime + '</p>'
+      + '<p style="font-size:12px;color:#999;margin-top:4px;">' + shortId + '...</p>'
+      + '<button class="btn btn-outline" style="margin-top:24px;" onclick="liffClose()">閉じる</button>'
+      + '</div>';
+    addBotMsg('予約が確定しました\n\n日時: ' + fmt(selectedDate) + ' ' + selectedSlot.startTime + ' - ' + selectedSlot.endTime + '\n予約ID: ' + shortId + '...\n\nご来店お待ちしております。');
+  } catch (e) {
+    hideLoading();
+    showToast('予約エラー: ' + e.message, true);
+  }
 }
 
-function renderListLiff() {
+async function renderListLiff() {
   document.getElementById('lineTitle').textContent = '予約確認';
-  const upcoming = MOCK_BOOKINGS.filter(b => b.customerId === 1 && b.status === 'confirmed' && b.date >= new Date(YEAR, MONTH, DAY)).sort((a, b) => a.date - b.date);
-  let h = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約一覧</span></div><div class="liff-body">';
-  if (!upcoming.length) h += '<p style="color:#999;text-align:center;padding:40px 0;">今後の予約はありません</p>';
-  else upcoming.forEach(b => {
-    h += '<div class="booking-card"><span class="bk-date">' + fmt(b.date) + ' ' + b.time + '</span><span class="bk-status confirmed">確定</span><div class="bk-id">' + b.id + '</div></div>';
-  });
-  document.getElementById('liffOverlay').innerHTML = h + '</div>';
+  document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約一覧</span></div><div class="liff-body"><div class="loading">読み込み中...</div></div>';
+  showLoading();
+  try {
+    const custId = await ensureMockCustomer();
+    const todayStr = isoDate(YEAR, MONTH, DAY);
+    const farFuture = isoDate(YEAR + 1, MONTH, DAY);
+    const data = await api('GET', '/api/owner/reservations?startDate=' + todayStr + '&endDate=' + farFuture);
+    const allRsvs = data.reservations || [];
+    // Filter by mock customer
+    const upcoming = allRsvs.filter(r => r.customerId === custId && r.status === 'confirmed')
+      .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+    hideLoading();
+    let h = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約一覧</span></div><div class="liff-body">';
+    if (!upcoming.length) {
+      h += '<p style="color:#999;text-align:center;padding:40px 0;">今後の予約はありません</p>';
+    } else {
+      upcoming.forEach(r => {
+        const shortId = r.reservationId.substring(0, 8);
+        h += '<div class="booking-card">';
+        h += '<span class="bk-date">' + fmtDateTime(r.dateTime) + '</span>';
+        h += '<span class="bk-status confirmed">確定</span>';
+        h += '<div class="bk-id">' + shortId + '...</div>';
+        h += '<button class="btn btn-danger" style="margin-top:8px;padding:8px;font-size:12px;" onclick="cancelCustomerReservation(\'' + r.reservationId + '\')">キャンセル</button>';
+        h += '</div>';
+      });
+    }
+    h += '</div>';
+    document.getElementById('liffOverlay').innerHTML = h;
+  } catch (e) {
+    hideLoading();
+    document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約一覧</span></div><div class="liff-body"><p style="color:#d32f2f;text-align:center;padding:40px 0;">予約取得エラー: ' + e.message + '</p></div>';
+  }
 }
 
-function renderHistoryLiff() {
+async function cancelCustomerReservation(reservationId) {
+  if (!confirm('この予約をキャンセルしますか？')) return;
+  showLoading();
+  try {
+    await api('PUT', '/api/owner/reservations/' + reservationId + '/cancel');
+    hideLoading();
+    showToast('予約をキャンセルしました');
+    addBotMsg('予約をキャンセルしました\n予約ID: ' + reservationId.substring(0, 8) + '...');
+    renderListLiff();
+  } catch (e) {
+    hideLoading();
+    showToast('キャンセルエラー: ' + e.message, true);
+  }
+}
+
+async function renderHistoryLiff() {
   document.getElementById('lineTitle').textContent = '予約履歴';
-  const statusLabelMock = s => s === 'confirmed' ? '確定' : s === 'cancelled' ? 'キャンセル済' : '完了';
-  const past = MOCK_BOOKINGS.filter(b => b.customerId === 1 && (b.status === 'done' || b.status === 'cancelled' || b.date < new Date(YEAR, MONTH, DAY))).sort((a, b) => b.date - a.date);
-  let h = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約履歴</span></div><div class="liff-body">';
-  if (!past.length) h += '<p style="color:#999;text-align:center;padding:40px 0;">履歴はありません</p>';
-  else past.forEach(b => { h += '<div class="booking-card"><span class="bk-date">' + fmt(b.date) + ' ' + b.time + '</span><span class="bk-status ' + b.status + '">' + statusLabelMock(b.status) + '</span><div class="bk-id">' + b.id + '</div></div>'; });
-  document.getElementById('liffOverlay').innerHTML = h + '</div>';
+  document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約履歴</span></div><div class="liff-body"><div class="loading">読み込み中...</div></div>';
+  showLoading();
+  try {
+    const custId = await ensureMockCustomer();
+    // Fetch a broad range to cover past reservations
+    const pastStart = isoDate(YEAR - 1, 0, 1);
+    const todayStr = isoDate(YEAR, MONTH, DAY + 1);
+    const farFuture = isoDate(YEAR + 1, MONTH, DAY);
+    // Get both past and future to find completed/cancelled
+    const [pastData, futureData] = await Promise.all([
+      api('GET', '/api/owner/reservations?startDate=' + pastStart + '&endDate=' + todayStr),
+      api('GET', '/api/owner/reservations?startDate=' + todayStr + '&endDate=' + farFuture),
+    ]);
+    const allRsvs = [...(pastData.reservations || []), ...(futureData.reservations || [])];
+    // Filter: mock customer + completed/cancelled, or past confirmed
+    const todayDate = new Date(YEAR, MONTH, DAY);
+    const history = allRsvs.filter(r => {
+      if (r.customerId !== custId) return false;
+      if (r.status === 'completed' || r.status === 'cancelled') return true;
+      if (r.status === 'confirmed' && new Date(r.dateTime) < todayDate) return true;
+      return false;
+    }).sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
+    // Deduplicate by reservationId
+    const seen = new Set();
+    const unique = history.filter(r => { if (seen.has(r.reservationId)) return false; seen.add(r.reservationId); return true; });
+    hideLoading();
+    const statusLabelCust = s => s === 'confirmed' ? '確定' : s === 'cancelled' ? 'キャンセル済' : s === 'completed' ? '完了' : s;
+    let h = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約履歴</span></div><div class="liff-body">';
+    if (!unique.length) {
+      h += '<p style="color:#999;text-align:center;padding:40px 0;">履歴はありません</p>';
+    } else {
+      unique.forEach(r => {
+        const shortId = r.reservationId.substring(0, 8);
+        const sCls = r.status === 'confirmed' ? 'confirmed' : r.status === 'cancelled' ? 'cancelled' : 'done';
+        h += '<div class="booking-card">';
+        h += '<span class="bk-date">' + fmtDateTime(r.dateTime) + '</span>';
+        h += '<span class="bk-status ' + sCls + '">' + statusLabelCust(r.status) + '</span>';
+        h += '<div class="bk-id">' + shortId + '...</div>';
+        h += '</div>';
+      });
+    }
+    h += '</div>';
+    document.getElementById('liffOverlay').innerHTML = h;
+  } catch (e) {
+    hideLoading();
+    document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約履歴</span></div><div class="liff-body"><p style="color:#d32f2f;text-align:center;padding:40px 0;">履歴取得エラー: ' + e.message + '</p></div>';
+  }
 }
 
 /* INIT */
