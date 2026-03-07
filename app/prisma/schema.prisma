@@ -41,6 +41,13 @@ model AdminAccount {
   @@map("admin_accounts")
 }
 
+model OwnerSettings {
+  ownerId            String @id @map("owner_id")
+  cancellationPolicy String @default("") @map("cancellation_policy")
+
+  @@map("owner_settings")
+}
+
 model Session {
   id        String   @id @default(uuid()) @map("session_id")
   ownerId   String   @map("owner_id")

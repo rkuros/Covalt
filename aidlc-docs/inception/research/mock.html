@@ -1206,12 +1206,24 @@ async function doNewCustomer() {
 }
 
 /* --- Settings --- */
-function renderSettings(mc) {
+async function renderSettings(mc) {
+  mc.innerHTML = '<div class="loading">読み込み中...</div>';
+  let cancellationPolicy = '';
+  try {
+    const settings = await api('GET', '/api/schedule/settings');
+    cancellationPolicy = settings.cancellationPolicy || '';
+  } catch (e) { /* default empty */ }
+
   let h = '<h1 class="page-title">設定</h1>';
   h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:10px;">アカウント情報</h3>';
   h += '<div class="detail-row"><dt style="width:120px;">メール</dt><dd>' + (currentUser?.email || '-') + '</dd></div>';
   h += '<div class="detail-row"><dt style="width:120px;">オーナーID</dt><dd style="font-size:11px;word-break:break-all;">' + (currentUser?.ownerId || '-') + '</dd></div>';
   h += '</div>';
+
+  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">キャンセルポリシー</h3>';
+  h += '<p style="font-size:12px;color:#666;margin-bottom:8px;">顧客がキャンセルする際に表示されるポリシーを設定します。</p>';
+  h += '<textarea class="form-input" id="cfgCancelPolicy" rows="5" style="font-size:12px;resize:vertical;" placeholder="例: 予約日の前日までにキャンセルしてください。当日キャンセルはキャンセル料が発生します。">' + cancellationPolicy.replace(/</g,'&lt;') + '</textarea>';
+  h += '<button class="btn btn-primary" style="background:#0984e3;width:auto;padding:6px 20px;font-size:12px;margin-top:8px;" onclick="saveCancellationPolicy()">保存</button></div>';
 
   h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">LINE接続設定</h3>';
   h += '<p style="font-size:12px;color:#666;margin-bottom:10px;">LINE Developers Console から取得した情報を設定します。</p>';
@@ -1226,6 +1238,17 @@ function renderSettings(mc) {
   h += '<div class="detail-row"><dt style="width:120px;">リージョン</dt><dd>ap-southeast-1 (Singapore)</dd></div>';
   h += '</div>';
   mc.innerHTML = h;
+}
+
+async function saveCancellationPolicy() {
+  const policy = document.getElementById('cfgCancelPolicy').value;
+  showLoading();
+  try {
+    await api('PUT', '/api/schedule/settings', { cancellationPolicy: policy });
+    showToast('キャンセルポリシーを保存しました');
+  } catch (e) {
+    showToast('保存エラー: ' + e.message, true);
+  } finally { hideLoading(); }
 }
 
 async function saveLineConfig() {
@@ -1460,7 +1483,7 @@ async function renderListLiff() {
         h += '<span class="bk-date">' + fmtDateTime(r.dateTime) + '</span>';
         h += '<span class="bk-status confirmed">確定</span>';
         h += '<div class="bk-id">' + shortId + '...</div>';
-        h += '<button class="btn btn-danger" style="margin-top:8px;padding:8px;font-size:12px;" onclick="cancelCustomerReservation(\'' + r.reservationId + '\')">キャンセル</button>';
+        h += '<button class="btn btn-danger" style="margin-top:8px;padding:8px;font-size:12px;" onclick="showCancelConfirm(\'' + r.reservationId + '\')">キャンセル</button>';
         h += '</div>';
       });
     }
@@ -1472,8 +1495,32 @@ async function renderListLiff() {
   }
 }
 
+async function showCancelConfirm(reservationId) {
+  // Fetch cancellation policy and show confirmation screen
+  let policy = '';
+  try {
+    const settings = await api('GET', '/api/schedule/settings');
+    policy = settings.cancellationPolicy || '';
+  } catch (e) { /* no policy */ }
+
+  let h = '<div class="liff-header"><button class="close-btn" onclick="renderListLiff()">&times;</button><span class="liff-title">キャンセル確認</span></div><div class="liff-body">';
+  h += '<div style="text-align:center;padding:16px 0;">';
+  h += '<div style="font-size:36px;margin-bottom:12px;">&#9888;</div>';
+  h += '<h3 style="font-size:16px;margin-bottom:12px;">この予約をキャンセルしますか？</h3>';
+  if (policy) {
+    h += '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:12px;margin:12px 0;text-align:left;">';
+    h += '<div style="font-size:12px;font-weight:700;color:#f57f17;margin-bottom:6px;">キャンセルポリシー</div>';
+    h += '<div style="font-size:12px;color:#333;white-space:pre-wrap;">' + policy.replace(/</g,'&lt;') + '</div>';
+    h += '</div>';
+  }
+  h += '<div style="display:flex;gap:8px;margin-top:16px;">';
+  h += '<button class="btn btn-danger" style="flex:1;padding:12px;font-size:14px;" onclick="cancelCustomerReservation(\'' + reservationId + '\')">キャンセルする</button>';
+  h += '<button class="btn btn-outline" style="flex:1;padding:12px;font-size:14px;" onclick="renderListLiff()">戻る</button>';
+  h += '</div></div></div>';
+  document.getElementById('liffOverlay').innerHTML = h;
+}
+
 async function cancelCustomerReservation(reservationId) {
-  if (!confirm('この予約をキャンセルしますか？')) return;
   showLoading();
   try {
     await api('PUT', '/api/owner/reservations/' + reservationId + '/cancel');

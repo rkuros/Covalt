@@ -15,6 +15,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { PrismaService } from '../../common/prisma/prisma.service';
 import type { BusinessHourRepository } from '../domain/BusinessHourRepository';
 import type { ClosedDayRepository } from '../domain/ClosedDayRepository';
 import type { DailySlotListRepository } from '../domain/DailySlotListRepository';
@@ -61,6 +62,7 @@ export class ScheduleController {
     @Inject(SLOT_TEMPLATE_REPOSITORY)
     private readonly slotTemplateRepo: SlotTemplateRepository,
     private readonly slotGenerationService: SlotGenerationService,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -712,6 +714,44 @@ export class ScheduleController {
       totalDates: targetDates.length,
       totalSlotsAdded: totalAdded,
       results,
+    };
+  }
+
+  // ===== Settings endpoints =====
+
+  /**
+   * GET /api/schedule/settings
+   * Returns owner settings (cancellation policy, etc.)
+   */
+  @Get('settings')
+  async getSettings(@Req() req: AuthenticatedRequest) {
+    const ownerId = req.user.ownerId;
+    const settings = await this.prisma.ownerSettings.findUnique({
+      where: { ownerId },
+    });
+    return {
+      cancellationPolicy: settings?.cancellationPolicy ?? '',
+    };
+  }
+
+  /**
+   * PUT /api/schedule/settings
+   * Updates owner settings.
+   */
+  @Put('settings')
+  @HttpCode(200)
+  async updateSettings(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { cancellationPolicy?: string },
+  ) {
+    const ownerId = req.user.ownerId;
+    await this.prisma.ownerSettings.upsert({
+      where: { ownerId },
+      update: { cancellationPolicy: body.cancellationPolicy ?? '' },
+      create: { ownerId, cancellationPolicy: body.cancellationPolicy ?? '' },
+    });
+    return {
+      cancellationPolicy: body.cancellationPolicy ?? '',
     };
   }
 }
