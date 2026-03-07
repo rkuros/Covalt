@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Covalt - LINE reservation management system
+
+Globals:
+  Function:
+    Runtime: nodejs22.x
+    Timeout: 30
+    MemorySize: 512
+    Environment:
+      Variables:
+        NODE_ENV: production
+        DATABASE_URL: !Ref DatabaseUrl
+        ENCRYPTION_KEY: !Ref EncryptionKey
+        LINE_API_BASE_URL: https://api.line.me
+
+Parameters:
+  DatabaseUrl:
+    Type: String
+    Description: Neon PostgreSQL connection string
+    NoEcho: true
+  EncryptionKey:
+    Type: String
+    Description: AES-256 encryption key (64-char hex)
+    NoEcho: true
+
+Resources:
+  # --- API Lambda ---
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: app/
+      Handler: dist/src/lambda.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+    Metadata:
+      BuildMethod: makefile
+
+  # --- Reminder Cron Lambda ---
+  ReminderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: app/
+      Handler: dist/src/reminder-handler.handler
+      Timeout: 60
+      Events:
+        HourlySchedule:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: rate(1 hour)
+    Metadata:
+      BuildMethod: makefile
+
+  # --- HTTP API Gateway ---
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: $default
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+  ApiFunctionArn:
+    Description: API Lambda Function ARN
+    Value: !GetAtt ApiFunction.Arn
+  ReminderFunctionArn:
+    Description: Reminder Lambda Function ARN
+    Value: !GetAtt ReminderFunction.Arn

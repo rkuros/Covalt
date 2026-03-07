@@ -1,0 +1,22 @@
+{
+  "name": "covalt-domain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit1": "vitest run --dir unit1_auth_account/tests",
+    "test:unit2": "vitest run --dir unit2_line_integration/tests",
+    "test:unit3": "vitest run --dir unit3_schedule_slot/tests",
+    "test:unit4": "vitest run --dir unit4_reservation/tests",
+    "test:unit5": "vitest run --dir unit5_notification/tests",
+    "test:unit6": "vitest run --dir unit6_customer_management/tests",
+    "test:unit7": "vitest run --dir unit7_google_calendar/tests",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}

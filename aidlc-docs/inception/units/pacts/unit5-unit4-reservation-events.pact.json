@@ -1,0 +1,104 @@
+{
+  "consumer": { "name": "Unit5_Notification" },
+  "provider": { "name": "Unit4_Reservation" },
+  "messages": [
+    {
+      "description": "予約作成イベント - 顧客・オーナーへの確定通知送信に使用",
+      "providerStates": [
+        { "name": "予約が新規作成された" }
+      ],
+      "contents": {
+        "eventType": "reservation.created",
+        "reservationId": "rsv-001",
+        "ownerId": "owner-001",
+        "customerId": "cust-001",
+        "customerName": "田中太郎",
+        "lineUserId": "U1234567890abcdef",
+        "ownerLineUserId": "Uowner_line_id_dummy_value_0000",
+        "slotId": "slot-001",
+        "dateTime": "2024-01-15T10:00:00+09:00",
+        "timestamp": "2024-01-10T15:30:00Z"
+      },
+      "metadata": {
+        "contentType": "application/json"
+      },
+      "matchingRules": {
+        "body": {
+          "$.eventType": { "matchers": [{ "match": "regex", "regex": "^reservation\\.created$" }] },
+          "$.reservationId": { "matchers": [{ "match": "type" }] },
+          "$.ownerId": { "matchers": [{ "match": "type" }] },
+          "$.customerId": { "matchers": [{ "match": "type" }] },
+          "$.customerName": { "matchers": [{ "match": "type" }] },
+          "$.lineUserId": { "matchers": [{ "match": "type" }] },
+          "$.ownerLineUserId": { "matchers": [{ "match": "type" }] },
+          "$.slotId": { "matchers": [{ "match": "type" }] },
+          "$.dateTime": { "matchers": [{ "match": "regex", "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}" }] },
+          "$.timestamp": { "matchers": [{ "match": "regex", "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$" }] }
+        }
+      }
+    },
+    {
+      "description": "予約変更イベント - 顧客・オーナーへの変更通知送信に使用",
+      "providerStates": [
+        { "name": "予約の日時が変更された" }
+      ],
+      "contents": {
+        "eventType": "reservation.modified",
+        "reservationId": "rsv-001",
+        "ownerId": "owner-001",
+        "customerId": "cust-001",
+        "customerName": "田中太郎",
+        "lineUserId": "U1234567890abcdef",
+        "ownerLineUserId": "Uowner_line_id_dummy_value_0000",
+        "slotId": "slot-002",
+        "dateTime": "2024-01-16T14:00:00+09:00",
+        "previousDateTime": "2024-01-15T10:00:00+09:00",
+        "modifiedBy": "customer",
+        "timestamp": "2024-01-12T09:00:00Z"
+      },
+      "metadata": {
+        "contentType": "application/json"
+      },
+      "matchingRules": {
+        "body": {
+          "$.eventType": { "matchers": [{ "match": "regex", "regex": "^reservation\\.modified$" }] },
+          "$.reservationId": { "matchers": [{ "match": "type" }] },
+          "$.dateTime": { "matchers": [{ "match": "regex", "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}" }] },
+          "$.previousDateTime": { "matchers": [{ "match": "regex", "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}" }] },
+          "$.modifiedBy": { "matchers": [{ "match": "regex", "regex": "^(customer|owner)$" }] }
+        }
+      }
+    },
+    {
+      "description": "予約キャンセルイベント - 顧客・オーナーへのキャンセル通知送信に使用",
+      "providerStates": [
+        { "name": "予約がキャンセルされた" }
+      ],
+      "contents": {
+        "eventType": "reservation.cancelled",
+        "reservationId": "rsv-001",
+        "ownerId": "owner-001",
+        "customerId": "cust-001",
+        "customerName": "田中太郎",
+        "lineUserId": "U1234567890abcdef",
+        "ownerLineUserId": "Uowner_line_id_dummy_value_0000",
+        "slotId": "slot-001",
+        "dateTime": "2024-01-15T10:00:00+09:00",
+        "cancelledBy": "customer",
+        "timestamp": "2024-01-13T11:00:00Z"
+      },
+      "metadata": {
+        "contentType": "application/json"
+      },
+      "matchingRules": {
+        "body": {
+          "$.eventType": { "matchers": [{ "match": "regex", "regex": "^reservation\\.cancelled$" }] },
+          "$.cancelledBy": { "matchers": [{ "match": "regex", "regex": "^(customer|owner)$" }] }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": { "version": "3.0.0" }
+  }
+}

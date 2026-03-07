@@ -1,0 +1,86 @@
+{
+  "consumer": { "name": "Unit5_Notification" },
+  "provider": { "name": "Unit2_LineIntegration" },
+  "interactions": [
+    {
+      "description": "顧客にプッシュメッセージを送信する",
+      "providerStates": [
+        { "name": "LINE連携が設定済みである" }
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/line/messages/push",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "ownerId": "owner-001",
+          "lineUserId": "U1234567890abcdef",
+          "messages": [
+            {
+              "type": "text",
+              "text": "予約が確定しました。\n日時: 2024-01-15 10:00\n予約ID: rsv-001"
+            }
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.ownerId": { "matchers": [{ "match": "type" }] },
+            "$.lineUserId": { "matchers": [{ "match": "regex", "regex": "^U[0-9a-f]{32}$" }] },
+            "$.messages": { "matchers": [{ "match": "type", "min": 1 }] },
+            "$.messages[*].type": { "matchers": [{ "match": "regex", "regex": "^(text|flex)$" }] }
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "success": true,
+          "messageId": "msg-001"
+        },
+        "matchingRules": {
+          "body": {
+            "$.success": { "matchers": [{ "match": "type" }] },
+            "$.messageId": { "matchers": [{ "match": "type" }] }
+          }
+        }
+      }
+    },
+    {
+      "description": "ブロック済みユーザーへの送信でエラーが返る",
+      "providerStates": [
+        { "name": "LINE ユーザーがブロック済みである" }
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/line/messages/push",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "ownerId": "owner-001",
+          "lineUserId": "Ublocked_user_id_dummy_value_00",
+          "messages": [
+            {
+              "type": "text",
+              "text": "予約が確定しました。"
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 422,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "success": false,
+          "error": "USER_BLOCKED",
+          "message": "ユーザーがアカウントをブロックしているため送信できません"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": { "version": "3.0.0" }
+  }
+}

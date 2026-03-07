@@ -1,0 +1,146 @@
+{
+  "consumer": { "name": "Unit4_Reservation" },
+  "provider": { "name": "Unit3_ScheduleSlot" },
+  "interactions": [
+    {
+      "description": "指定日の空きスロット一覧を取得する",
+      "providerStates": [
+        { "name": "2024-01-15 に空きスロットが存在する" }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/slots/available",
+        "query": {
+          "ownerId": "owner-001",
+          "date": "2024-01-15"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "date": "2024-01-15",
+          "slots": [
+            {
+              "slotId": "slot-001",
+              "startTime": "10:00",
+              "endTime": "11:00",
+              "durationMinutes": 60,
+              "status": "available"
+            }
+          ]
+        },
+        "matchingRules": {
+          "body": {
+            "$.date": { "matchers": [{ "match": "regex", "regex": "^\\d{4}-\\d{2}-\\d{2}$" }] },
+            "$.slots": { "matchers": [{ "match": "type", "min": 0 }] },
+            "$.slots[*].slotId": { "matchers": [{ "match": "type" }] },
+            "$.slots[*].startTime": { "matchers": [{ "match": "regex", "regex": "^\\d{2}:\\d{2}$" }] },
+            "$.slots[*].endTime": { "matchers": [{ "match": "regex", "regex": "^\\d{2}:\\d{2}$" }] },
+            "$.slots[*].durationMinutes": { "matchers": [{ "match": "integer" }] },
+            "$.slots[*].status": { "matchers": [{ "match": "regex", "regex": "^(available|booked)$" }] }
+          }
+        }
+      }
+    },
+    {
+      "description": "休業日の空きスロット照会で空配列が返る",
+      "providerStates": [
+        { "name": "2024-01-16 は休業日である" }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/slots/available",
+        "query": {
+          "ownerId": "owner-001",
+          "date": "2024-01-16"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "date": "2024-01-16",
+          "isHoliday": true,
+          "slots": []
+        }
+      }
+    },
+    {
+      "description": "スロットを予約確保する",
+      "providerStates": [
+        { "name": "slot-001 が available 状態である" }
+      ],
+      "request": {
+        "method": "PUT",
+        "path": "/api/slots/slot-001/reserve",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "reservationId": "rsv-001"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "slotId": "slot-001",
+          "status": "booked",
+          "reservationId": "rsv-001"
+        }
+      }
+    },
+    {
+      "description": "既に予約済みのスロットを確保しようとすると競合エラーが返る",
+      "providerStates": [
+        { "name": "slot-001 が booked 状態である" }
+      ],
+      "request": {
+        "method": "PUT",
+        "path": "/api/slots/slot-001/reserve",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "reservationId": "rsv-002"
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "error": "SLOT_ALREADY_BOOKED",
+          "message": "指定されたスロットは既に予約済みです"
+        }
+      }
+    },
+    {
+      "description": "スロットを解放する（キャンセル時）",
+      "providerStates": [
+        { "name": "slot-001 が booked 状態で rsv-001 に紐づいている" }
+      ],
+      "request": {
+        "method": "PUT",
+        "path": "/api/slots/slot-001/release",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "reservationId": "rsv-001"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "slotId": "slot-001",
+          "status": "available"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": { "version": "3.0.0" }
+  }
+}

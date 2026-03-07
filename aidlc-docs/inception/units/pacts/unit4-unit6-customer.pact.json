@@ -1,0 +1,158 @@
+{
+  "consumer": { "name": "Unit4_Reservation" },
+  "provider": { "name": "Unit6_CustomerManagement" },
+  "interactions": [
+    {
+      "description": "顧客IDで顧客情報を取得する",
+      "providerStates": [
+        { "name": "顧客 cust-001 が存在する" }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/customers/cust-001"
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "customerId": "cust-001",
+          "ownerId": "owner-001",
+          "customerName": "田中太郎",
+          "displayName": "タナカ",
+          "lineUserId": "U1234567890abcdef",
+          "isLineLinked": true,
+          "registeredAt": "2024-01-10T09:00:00Z"
+        },
+        "matchingRules": {
+          "body": {
+            "$.customerId": { "matchers": [{ "match": "type" }] },
+            "$.ownerId": { "matchers": [{ "match": "type" }] },
+            "$.customerName": { "matchers": [{ "match": "type" }] },
+            "$.displayName": { "matchers": [{ "match": "type" }] },
+            "$.lineUserId": { "matchers": [{ "match": "type" }] },
+            "$.isLineLinked": { "matchers": [{ "match": "type" }] },
+            "$.registeredAt": { "matchers": [{ "match": "regex", "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$" }] }
+          }
+        }
+      }
+    },
+    {
+      "description": "存在しない顧客IDで 404 が返る",
+      "providerStates": [
+        { "name": "顧客 cust-999 は存在しない" }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/customers/cust-999"
+      },
+      "response": {
+        "status": 404,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "error": "CUSTOMER_NOT_FOUND",
+          "message": "指定された顧客が見つかりません"
+        }
+      }
+    },
+    {
+      "description": "LINE ユーザーIDで顧客を検索する",
+      "providerStates": [
+        { "name": "LINE ユーザー U1234567890abcdef が顧客登録済みである" }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/customers/by-line-user",
+        "query": {
+          "ownerId": "owner-001",
+          "lineUserId": "U1234567890abcdef"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "customerId": "cust-001",
+          "ownerId": "owner-001",
+          "customerName": "田中太郎",
+          "displayName": "タナカ",
+          "lineUserId": "U1234567890abcdef",
+          "isLineLinked": true,
+          "registeredAt": "2024-01-10T09:00:00Z"
+        }
+      }
+    },
+    {
+      "description": "手動予約時に新規顧客を作成する",
+      "providerStates": [
+        { "name": "オーナー owner-001 が存在する" }
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/customers",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "ownerId": "owner-001",
+          "customerName": "佐藤花子"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "customerId": "cust-002",
+          "ownerId": "owner-001",
+          "customerName": "佐藤花子",
+          "displayName": null,
+          "lineUserId": null,
+          "isLineLinked": false,
+          "registeredAt": "2024-01-15T10:00:00Z"
+        },
+        "matchingRules": {
+          "body": {
+            "$.customerId": { "matchers": [{ "match": "type" }] },
+            "$.registeredAt": { "matchers": [{ "match": "regex", "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$" }] }
+          }
+        }
+      }
+    },
+    {
+      "description": "顧客名で検索する（手動予約時の顧客選択）",
+      "providerStates": [
+        { "name": "オーナー owner-001 に複数の顧客が存在する" }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/customers/search",
+        "query": {
+          "ownerId": "owner-001",
+          "q": "田中"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "customers": [
+            {
+              "customerId": "cust-001",
+              "customerName": "田中太郎",
+              "isLineLinked": true
+            }
+          ],
+          "total": 1
+        },
+        "matchingRules": {
+          "body": {
+            "$.customers": { "matchers": [{ "match": "type", "min": 0 }] },
+            "$.total": { "matchers": [{ "match": "integer" }] }
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": { "version": "3.0.0" }
+  }
+}

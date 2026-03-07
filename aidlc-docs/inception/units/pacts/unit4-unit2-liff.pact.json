@@ -1,0 +1,63 @@
+{
+  "consumer": { "name": "Unit4_Reservation" },
+  "provider": { "name": "Unit2_LineIntegration" },
+  "interactions": [
+    {
+      "description": "有効な LIFF アクセストークンで顧客情報を取得する",
+      "providerStates": [
+        { "name": "LINE連携が設定済みである" }
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/line/liff/verify",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "accessToken": "liff-access-token-12345"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "lineUserId": "U1234567890abcdef",
+          "displayName": "田中太郎"
+        },
+        "matchingRules": {
+          "body": {
+            "$.lineUserId": { "matchers": [{ "match": "regex", "regex": "^U[0-9a-f]{32}$" }] },
+            "$.displayName": { "matchers": [{ "match": "type" }] }
+          }
+        }
+      }
+    },
+    {
+      "description": "無効な LIFF アクセストークンでエラーが返る",
+      "providerStates": [
+        { "name": "LINE連携が設定済みである" }
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/line/liff/verify",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "accessToken": "invalid-token"
+        }
+      },
+      "response": {
+        "status": 401,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "error": "INVALID_LIFF_TOKEN",
+          "message": "LIFFアクセストークンが無効です"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": { "version": "3.0.0" }
+  }
+}

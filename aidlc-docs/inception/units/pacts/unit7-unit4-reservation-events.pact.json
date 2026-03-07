@@ -1,0 +1,88 @@
+{
+  "consumer": { "name": "Unit7_GoogleCalendar" },
+  "provider": { "name": "Unit4_Reservation" },
+  "messages": [
+    {
+      "description": "予約作成イベント - Google カレンダーへ予定追加に使用",
+      "providerStates": [
+        { "name": "予約が新規作成された" }
+      ],
+      "contents": {
+        "eventType": "reservation.created",
+        "reservationId": "rsv-001",
+        "ownerId": "owner-001",
+        "customerName": "田中太郎",
+        "slotId": "slot-001",
+        "dateTime": "2024-01-15T10:00:00+09:00",
+        "durationMinutes": 60,
+        "timestamp": "2024-01-10T15:30:00Z"
+      },
+      "metadata": {
+        "contentType": "application/json"
+      },
+      "matchingRules": {
+        "body": {
+          "$.eventType": { "matchers": [{ "match": "regex", "regex": "^reservation\\.created$" }] },
+          "$.reservationId": { "matchers": [{ "match": "type" }] },
+          "$.ownerId": { "matchers": [{ "match": "type" }] },
+          "$.customerName": { "matchers": [{ "match": "type" }] },
+          "$.dateTime": { "matchers": [{ "match": "regex", "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}" }] },
+          "$.durationMinutes": { "matchers": [{ "match": "integer" }] }
+        }
+      }
+    },
+    {
+      "description": "予約変更イベント - Google カレンダー予定の更新に使用",
+      "providerStates": [
+        { "name": "予約の日時が変更された" }
+      ],
+      "contents": {
+        "eventType": "reservation.modified",
+        "reservationId": "rsv-001",
+        "ownerId": "owner-001",
+        "customerName": "田中太郎",
+        "slotId": "slot-002",
+        "dateTime": "2024-01-16T14:00:00+09:00",
+        "previousDateTime": "2024-01-15T10:00:00+09:00",
+        "durationMinutes": 60,
+        "timestamp": "2024-01-12T09:00:00Z"
+      },
+      "metadata": {
+        "contentType": "application/json"
+      },
+      "matchingRules": {
+        "body": {
+          "$.eventType": { "matchers": [{ "match": "regex", "regex": "^reservation\\.modified$" }] },
+          "$.dateTime": { "matchers": [{ "match": "regex", "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}" }] },
+          "$.previousDateTime": { "matchers": [{ "match": "regex", "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}" }] }
+        }
+      }
+    },
+    {
+      "description": "予約キャンセルイベント - Google カレンダー予定の削除に使用",
+      "providerStates": [
+        { "name": "予約がキャンセルされた" }
+      ],
+      "contents": {
+        "eventType": "reservation.cancelled",
+        "reservationId": "rsv-001",
+        "ownerId": "owner-001",
+        "customerName": "田中太郎",
+        "slotId": "slot-001",
+        "dateTime": "2024-01-15T10:00:00+09:00",
+        "timestamp": "2024-01-13T11:00:00Z"
+      },
+      "metadata": {
+        "contentType": "application/json"
+      },
+      "matchingRules": {
+        "body": {
+          "$.eventType": { "matchers": [{ "match": "regex", "regex": "^reservation\\.cancelled$" }] }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": { "version": "3.0.0" }
+  }
+}

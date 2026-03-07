@@ -1,0 +1,34 @@
+{
+  "consumer": { "name": "Unit6_CustomerManagement" },
+  "provider": { "name": "Unit2_LineIntegration" },
+  "messages": [
+    {
+      "description": "LINE 友だち追加イベント - 顧客自動登録に使用",
+      "providerStates": [
+        { "name": "LINE Webhook で友だち追加イベントを受信した" }
+      ],
+      "contents": {
+        "eventType": "line.friend_added",
+        "ownerId": "owner-001",
+        "lineUserId": "U1234567890abcdef",
+        "displayName": "田中太郎",
+        "timestamp": "2024-01-10T09:00:00Z"
+      },
+      "metadata": {
+        "contentType": "application/json"
+      },
+      "matchingRules": {
+        "body": {
+          "$.eventType": { "matchers": [{ "match": "regex", "regex": "^line\\.friend_added$" }] },
+          "$.ownerId": { "matchers": [{ "match": "type" }] },
+          "$.lineUserId": { "matchers": [{ "match": "regex", "regex": "^U[0-9a-f]{32}$" }] },
+          "$.displayName": { "matchers": [{ "match": "type" }] },
+          "$.timestamp": { "matchers": [{ "match": "regex", "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$" }] }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": { "version": "3.0.0" }
+  }
+}

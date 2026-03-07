@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "lib": ["ES2022"]
+  },
+  "include": [
+    "unit1_auth_account/src/**/*.ts",
+    "unit1_auth_account/tests/**/*.ts",
+    "unit2_line_integration/src/**/*.ts",
+    "unit2_line_integration/tests/**/*.ts",
+    "unit3_schedule_slot/src/**/*.ts",
+    "unit3_schedule_slot/tests/**/*.ts",
+    "unit4_reservation/src/**/*.ts",
+    "unit4_reservation/tests/**/*.ts",
+    "unit5_notification/src/**/*.ts",
+    "unit5_notification/tests/**/*.ts",
+    "unit6_customer_management/src/**/*.ts",
+    "unit6_customer_management/tests/**/*.ts",
+    "unit7_google_calendar/src/**/*.ts",
+    "unit7_google_calendar/tests/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

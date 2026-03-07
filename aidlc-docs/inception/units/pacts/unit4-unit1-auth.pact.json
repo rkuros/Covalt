@@ -1,0 +1,84 @@
+{
+  "consumer": { "name": "Unit4_Reservation" },
+  "provider": { "name": "Unit1_Auth" },
+  "interactions": [
+    {
+      "description": "有効なトークンで認証検証が成功する",
+      "providerStates": [
+        { "name": "有効なオーナーアカウントが存在する" }
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/auth/verify",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer valid-token-12345"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "ownerId": "owner-001",
+          "email": "owner@example.com",
+          "role": "owner"
+        },
+        "matchingRules": {
+          "body": {
+            "$.ownerId": { "matchers": [{ "match": "type" }] },
+            "$.email": { "matchers": [{ "match": "type" }] },
+            "$.role": { "matchers": [{ "match": "regex", "regex": "^(owner|admin)$" }] }
+          }
+        }
+      }
+    },
+    {
+      "description": "無効なトークンで認証検証が失敗する",
+      "providerStates": [
+        { "name": "トークンが無効である" }
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/auth/verify",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer invalid-token"
+        }
+      },
+      "response": {
+        "status": 401,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "error": "UNAUTHORIZED",
+          "message": "認証トークンが無効です"
+        }
+      }
+    },
+    {
+      "description": "無効化されたアカウントで認証検証が拒否される",
+      "providerStates": [
+        { "name": "アカウントが無効化されている" }
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/auth/verify",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer valid-token-disabled"
+        }
+      },
+      "response": {
+        "status": 403,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "error": "ACCOUNT_DISABLED",
+          "message": "アカウントが無効化されています"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": { "version": "3.0.0" },
+    "notes": "Unit 3, 6, 7 も同一の認証検証契約に準拠する"
+  }
+}

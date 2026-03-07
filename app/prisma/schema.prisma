@@ -1,0 +1,269 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================
+// Unit 1: 認証・アカウント管理
+// ============================
+
+model OwnerAccount {
+  id           String   @id @default(uuid()) @map("owner_id")
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         String   @default("owner")
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  sessions            Session[]
+  passwordResetTokens PasswordResetToken[]
+  businessHours       BusinessHour[]
+  closedDays          ClosedDay[]
+  dailySlotLists      DailySlotList[]
+  reservations        Reservation[]
+  customers           Customer[]
+  calendarIntegration GoogleCalendarIntegration?
+
+  @@map("owner_accounts")
+}
+
+model AdminAccount {
+  id           String   @id @default(uuid()) @map("admin_id")
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         String   @default("admin")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("admin_accounts")
+}
+
+model Session {
+  id        String   @id @default(uuid()) @map("session_id")
+  ownerId   String   @map("owner_id")
+  token     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
+
+  owner OwnerAccount @relation(fields: [ownerId], references: [id])
+
+  @@map("sessions")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @map("token_id")
+  ownerId   String    @map("owner_id")
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  owner OwnerAccount @relation(fields: [ownerId], references: [id])
+
+  @@map("password_reset_tokens")
+}
+
+// ============================
+// Unit 2: LINE連携基盤
+// ============================
+
+model LineChannelConfig {
+  ownerId            String  @id @map("owner_id")
+  channelAccessToken String  @map("channel_access_token")
+  channelSecret      String  @map("channel_secret")
+  liffId             String  @map("liff_id")
+  webhookUrl         String? @map("webhook_url")
+  isActive           Boolean @default(false) @map("is_active")
+
+  @@map("line_channel_configs")
+}
+
+model LineFriendship {
+  id           String    @id @default(uuid())
+  ownerId      String    @map("owner_id")
+  lineUserId   String    @map("line_user_id")
+  displayName  String?   @map("display_name")
+  status       String    @default("active")
+  followedAt   DateTime  @map("followed_at")
+  unfollowedAt DateTime? @map("unfollowed_at")
+
+  @@unique([ownerId, lineUserId])
+  @@map("line_friendships")
+}
+
+// ============================
+// Unit 3: スケジュール・空き枠管理
+// ============================
+
+model BusinessHour {
+  id            String  @id @default(uuid()) @map("business_hour_id")
+  ownerId       String  @map("owner_id")
+  dayOfWeek     String  @map("day_of_week")
+  startTime     String? @map("start_time")
+  endTime       String? @map("end_time")
+  isBusinessDay Boolean @default(true) @map("is_business_day")
+
+  owner OwnerAccount @relation(fields: [ownerId], references: [id])
+
+  @@unique([ownerId, dayOfWeek])
+  @@map("business_hours")
+}
+
+model ClosedDay {
+  id      String  @id @default(uuid()) @map("closed_day_id")
+  ownerId String  @map("owner_id")
+  date    String
+  reason  String?
+
+  owner OwnerAccount @relation(fields: [ownerId], references: [id])
+
+  @@unique([ownerId, date])
+  @@map("closed_days")
+}
+
+model DailySlotList {
+  id      String @id @default(uuid()) @map("daily_slot_list_id")
+  ownerId String @map("owner_id")
+  date    String
+  version Int    @default(0)
+
+  owner OwnerAccount @relation(fields: [ownerId], references: [id])
+  slots Slot[]
+
+  @@unique([ownerId, date])
+  @@map("daily_slot_lists")
+}
+
+model Slot {
+  id              String  @id @default(uuid()) @map("slot_id")
+  dailySlotListId String  @map("daily_slot_list_id")
+  startTime       String  @map("start_time")
+  endTime         String  @map("end_time")
+  durationMinutes Int     @map("duration_minutes")
+  status          String  @default("available")
+  reservationId   String? @map("reservation_id")
+
+  dailySlotList DailySlotList @relation(fields: [dailySlotListId], references: [id])
+
+  @@map("slots")
+}
+
+// ============================
+// Unit 4: 予約管理
+// ============================
+
+model Reservation {
+  id               String   @id @default(uuid()) @map("reservation_id")
+  ownerId          String   @map("owner_id")
+  customerId       String   @map("customer_id")
+  slotId           String   @map("slot_id")
+  dateTime         String   @map("date_time")
+  durationMinutes  Int      @map("duration_minutes")
+  status           String   @default("confirmed")
+  customerName     String   @map("customer_name")
+  lineUserId       String?  @map("line_user_id")
+  ownerLineUserId  String?  @map("owner_line_user_id")
+  createdBy        String   @map("created_by")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  owner     OwnerAccount        @relation(fields: [ownerId], references: [id])
+  customer  Customer             @relation(fields: [customerId], references: [id])
+  histories ReservationHistory[]
+
+  @@map("reservations")
+}
+
+model ReservationHistory {
+  id               String   @id @default(uuid()) @map("history_id")
+  reservationId    String   @map("reservation_id")
+  changeType       String   @map("change_type")
+  previousDateTime String?  @map("previous_date_time")
+  newDateTime      String?  @map("new_date_time")
+  previousSlotId   String?  @map("previous_slot_id")
+  newSlotId        String?  @map("new_slot_id")
+  changedBy        String   @map("changed_by")
+  changedAt        DateTime @map("changed_at")
+
+  reservation Reservation @relation(fields: [reservationId], references: [id])
+
+  @@map("reservation_histories")
+}
+
+// ============================
+// Unit 5: 通知
+// ============================
+
+model NotificationRecord {
+  id              String   @id @default(uuid()) @map("notification_id")
+  reservationId   String   @map("reservation_id")
+  notificationType String  @map("notification_type")
+  recipientType   String   @map("recipient_type")
+  lineUserId      String   @map("line_user_id")
+  success         Boolean
+  messageId       String?  @map("message_id")
+  error           String?
+  sentAt          DateTime @map("sent_at")
+
+  @@map("notification_records")
+}
+
+model ReminderSchedule {
+  id            String   @id @default(uuid()) @map("reminder_id")
+  reservationId String   @unique @map("reservation_id")
+  scheduledAt   DateTime @map("scheduled_at")
+  isActive      Boolean  @default(true) @map("is_active")
+
+  @@map("reminder_schedules")
+}
+
+// ============================
+// Unit 6: 顧客情報管理
+// ============================
+
+model Customer {
+  id           String   @id @default(uuid()) @map("customer_id")
+  ownerId      String   @map("owner_id")
+  customerName String   @map("customer_name")
+  displayName  String?  @map("display_name")
+  lineUserId   String?  @map("line_user_id")
+  isLineLinked Boolean  @default(false) @map("is_line_linked")
+  registeredAt DateTime @default(now()) @map("registered_at")
+
+  owner        OwnerAccount  @relation(fields: [ownerId], references: [id])
+  reservations Reservation[]
+
+  @@unique([ownerId, lineUserId])
+  @@map("customers")
+}
+
+// ============================
+// Unit 7: Googleカレンダー連携
+// ============================
+
+model GoogleCalendarIntegration {
+  ownerId          String  @id @map("owner_id")
+  accessToken      String? @map("access_token")
+  refreshToken     String? @map("refresh_token")
+  tokenExpiresAt   DateTime? @map("token_expires_at")
+  calendarId       String? @map("calendar_id")
+  status           String  @default("disabled")
+
+  owner OwnerAccount @relation(fields: [ownerId], references: [id])
+
+  @@map("google_calendar_integrations")
+}
+
+model CalendarEventMapping {
+  id            String  @id @default(uuid())
+  ownerId       String  @map("owner_id")
+  reservationId String  @map("reservation_id")
+  googleEventId String  @map("google_event_id")
+  isActive      Boolean @default(true) @map("is_active")
+
+  @@unique([ownerId, reservationId])
+  @@map("calendar_event_mappings")
+}
