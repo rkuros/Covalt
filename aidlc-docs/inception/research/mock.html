@@ -163,9 +163,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 .oc-cell.oc-today .oc-num{color:#0984e3;}
 .oc-cell.oc-holiday .oc-num{color:#d32f2f;text-decoration:line-through;}
 .oc-evt{padding:2px 4px;border-radius:3px;margin-top:1px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
-.oc-evt.oc-confirmed{background:#e8f5e9;color:#2e7d32;}
+.oc-evt.oc-available{background:#e8f5e9;color:#2e7d32;}
+.oc-evt.oc-confirmed{background:#e3f2fd;color:#1565c0;}
 .oc-evt.oc-cancelled{background:#fce4ec;color:#c62828;}
-.oc-evt.oc-completed{background:#e3f2fd;color:#1565c0;}
+.oc-evt.oc-completed{background:#f5f5f5;color:#757575;}
 
 /* Detail */
 .detail-panel{background:#fff;border-radius:8px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
@@ -658,26 +659,24 @@ async function renderSchedule(mc) {
   });
   h += '</div></div>';
 
-  // --- Slot generation ---
-  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">一括スロット生成</h3>';
-  h += '<p style="font-size:12px;color:#666;margin-bottom:8px;">指定日の営業時間に基づいてスロットを自動生成します。</p>';
+  // --- Slot generation (bulk + single in one card) ---
+  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">スロット生成</h3>';
+  h += '<p style="font-size:12px;color:#666;margin-bottom:6px;">一括生成</p>';
   h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">';
   h += '<input class="form-input" type="date" id="slotGenDate" style="width:160px;font-size:12px;">';
   h += '<select class="form-input" id="slotGenDuration" style="width:90px;font-size:12px;"><option value="30">30分</option><option value="60" selected>60分</option><option value="90">90分</option><option value="120">120分</option></select>';
   h += '<select class="form-input" id="slotGenBuffer" style="width:120px;font-size:12px;"><option value="0">バッファなし</option><option value="5">5分</option><option value="10">10分</option><option value="15">15分</option><option value="30">30分</option><option value="60">60分</option></select>';
   h += '<button class="btn btn-primary" style="background:#0984e3;width:auto;padding:6px 14px;font-size:12px;margin:0;" onclick="generateSlots()">一括生成</button>';
-  h += '</div><div id="slotGenResult" style="margin-top:8px;"></div></div>';
-
-  // --- Single slot creation ---
-  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">個別スロット追加</h3>';
-  h += '<p style="font-size:12px;color:#666;margin-bottom:8px;">任意の時間帯でスロットを1つ追加します。</p>';
+  h += '</div><div id="slotGenResult" style="margin-top:4px;"></div>';
+  h += '<hr style="border:none;border-top:1px solid #eee;margin:10px 0;">';
+  h += '<p style="font-size:12px;color:#666;margin-bottom:6px;">個別追加</p>';
   h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">';
   h += '<input class="form-input" type="date" id="singleSlotDate" style="width:160px;font-size:12px;">';
   h += '<input class="form-input" type="time" id="singleSlotStart" value="09:00" style="width:100px;font-size:12px;">';
   h += '<span style="font-size:12px;">〜</span>';
   h += '<input class="form-input" type="time" id="singleSlotEnd" value="10:00" style="width:100px;font-size:12px;">';
   h += '<button class="btn btn-primary" style="background:#00b894;width:auto;padding:6px 14px;font-size:12px;margin:0;" onclick="createSingleSlot()">追加</button>';
-  h += '</div><div id="singleSlotResult" style="margin-top:8px;"></div></div>';
+  h += '</div><div id="singleSlotResult" style="margin-top:4px;"></div></div>';
 
   mc.innerHTML = h;
 
@@ -726,26 +725,34 @@ function renderScheduleCalendar() {
     h += '<div class="' + cls + '" onclick="selectSchDay(\'' + iso + '\')">';
     h += '<div class="oc-num">' + d + '</div>';
 
-    // Merge slot summary + reservations into one coherent display
+    // Show individual slots (available + booked) on calendar, same style as dashboard
     const slotInfo = schSlotSummary[iso];
+    const availSlots = slotInfo ? (slotInfo.availableSlots || []) : [];
+
+    // Build reservation lookup for this day (exclude cancelled)
     const dayRsvs = schReservations.filter(r => {
+      if (r.status === 'cancelled') return false;
       const rd = new Date(r.dateTime);
       return rd.getFullYear() === schYear && rd.getMonth() === schMonth && rd.getDate() === d;
-    });
-    const confirmed = dayRsvs.filter(r => r.status === 'confirmed').length;
-    const completed = dayRsvs.filter(r => r.status === 'completed').length;
-    const avail = slotInfo ? slotInfo.available : 0;
-    const booked = slotInfo ? slotInfo.booked : 0;
-    const total = slotInfo ? slotInfo.total : 0;
+    }).sort((a,b) => new Date(a.dateTime) - new Date(b.dateTime));
 
-    if (total > 0 || dayRsvs.length > 0) {
-      h += '<div style="font-size:9px;padding:1px 3px;margin-top:1px;line-height:1.4;">';
-      if (avail > 0) h += '<div style="color:#2e7d32;">&#9679; ' + avail + '枠空き</div>';
-      if (confirmed > 0) h += '<div style="color:#1565c0;">&#9679; ' + confirmed + '件予約</div>';
-      if (completed > 0) h += '<div style="color:#888;">&#9679; ' + completed + '件完了</div>';
-      if (booked > 0 && booked !== confirmed && booked !== confirmed + completed) h += '<div style="color:#e67e22;">&#9679; ' + booked + '枠予約済</div>';
-      h += '</div>';
-    }
+    // Merge available slots and reservations into a single timeline sorted by time
+    const events = [];
+    availSlots.forEach(s => {
+      events.push({ time: s.startTime, type: 'available', label: s.startTime + ' 空き' });
+    });
+    dayRsvs.forEach(r => {
+      events.push({ time: fmtTime(r.dateTime), type: r.status, label: fmtTime(r.dateTime) + ' ' + (r.customerName || '').substring(0, 4), rsvId: r.reservationId });
+    });
+    events.sort((a, b) => a.time.localeCompare(b.time));
+
+    events.forEach(ev => {
+      if (ev.type === 'available') {
+        h += '<div class="oc-evt oc-available" title="' + ev.label + '">' + ev.label + '</div>';
+      } else {
+        h += '<div class="oc-evt oc-' + ev.type + '" onclick="event.stopPropagation();showReservationDetail(\'' + ev.rsvId + '\')" title="' + ev.label + '">' + ev.label + '</div>';
+      }
+    });
     h += '</div>';
   }
 

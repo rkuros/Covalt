@@ -97,13 +97,21 @@ export class ScheduleController {
       endDate,
     );
 
-    const days: Record<string, { total: number; available: number; booked: number }> = {};
+    const days: Record<string, {
+      total: number;
+      available: number;
+      booked: number;
+      availableSlots: { startTime: string; endTime: string }[];
+    }> = {};
     for (const dsl of dailySlotLists) {
       const slots = dsl.slots;
       days[dsl.date.value] = {
         total: slots.length,
         available: slots.filter((s) => s.isAvailable()).length,
         booked: slots.filter((s) => s.isBooked()).length,
+        availableSlots: slots
+          .filter((s) => s.isAvailable())
+          .map((s) => ({ startTime: s.startTime.toString(), endTime: s.endTime.toString() })),
       };
     }
 
