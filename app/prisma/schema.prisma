@@ -50,6 +50,7 @@ model Session {
 
   owner OwnerAccount @relation(fields: [ownerId], references: [id])
 
+  @@index([ownerId])
   @@map("sessions")
 }
 
@@ -63,6 +64,7 @@ model PasswordResetToken {
 
   owner OwnerAccount @relation(fields: [ownerId], references: [id])
 
+  @@index([ownerId])
   @@map("password_reset_tokens")
 }
 
@@ -171,6 +173,7 @@ model Slot {
   dailySlotList DailySlotList @relation(fields: [dailySlotListId], references: [id])
 
   @@index([dailySlotListId])
+  @@index([reservationId])
   @@map("slots")
 }
 
@@ -199,7 +202,8 @@ model Reservation {
 
   @@index([ownerId, dateTime])
   @@index([ownerId, status])
-  @@index([customerId, ownerId, status])
+  @@index([ownerId, status, dateTime])
+  @@index([customerId, ownerId, status, dateTime])
   @@map("reservations")
 }
 
@@ -216,6 +220,7 @@ model ReservationHistory {
 
   reservation Reservation @relation(fields: [reservationId], references: [id])
 
+  @@index([reservationId])
   @@map("reservation_histories")
 }
 
@@ -234,6 +239,7 @@ model NotificationRecord {
   error           String?
   sentAt          DateTime @map("sent_at")
 
+  @@index([reservationId])
   @@map("notification_records")
 }
 
@@ -243,6 +249,7 @@ model ReminderSchedule {
   scheduledAt   DateTime @map("scheduled_at")
   isActive      Boolean  @default(true) @map("is_active")
 
+  @@index([isActive, scheduledAt])
   @@map("reminder_schedules")
 }
 
@@ -262,6 +269,7 @@ model Customer {
   owner        OwnerAccount  @relation(fields: [ownerId], references: [id])
   reservations Reservation[]
 
+  @@index([ownerId])
   @@unique([ownerId, lineUserId])
   @@map("customers")
 }
@@ -290,6 +298,7 @@ model CalendarEventMapping {
   googleEventId String  @map("google_event_id")
   isActive      Boolean @default(true) @map("is_active")
 
+  @@index([reservationId])
   @@unique([ownerId, reservationId])
   @@map("calendar_event_mappings")
 }
