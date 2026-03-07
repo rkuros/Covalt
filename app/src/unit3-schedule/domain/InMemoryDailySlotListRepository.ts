@@ -48,6 +48,19 @@ export class InMemoryDailySlotListRepository implements DailySlotListRepository 
     return null;
   }
 
+  async findAllByOwnerIdAndDateRange(
+    ownerId: OwnerId,
+    startDate: SlotDate,
+    endDate: SlotDate,
+  ): Promise<DailySlotList[]> {
+    return this.store.filter(
+      (dsl) =>
+        dsl.ownerId.equals(ownerId) &&
+        dsl.date.value >= startDate.value &&
+        dsl.date.value <= endDate.value,
+    );
+  }
+
   async save(dailySlotList: DailySlotList): Promise<void> {
     const key = this.toKey(dailySlotList.ownerId, dailySlotList.date);
     const existingIndex = this.store.findIndex(

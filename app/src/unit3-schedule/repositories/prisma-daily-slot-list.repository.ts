@@ -72,6 +72,21 @@ export class PrismaDailySlotListRepository implements DailySlotListRepository {
     return { dailySlotList, slot };
   }
 
+  async findAllByOwnerIdAndDateRange(
+    ownerId: OwnerId,
+    startDate: SlotDate,
+    endDate: SlotDate,
+  ): Promise<DailySlotList[]> {
+    const rows = await this.prisma.dailySlotList.findMany({
+      where: {
+        ownerId: ownerId.value,
+        date: { gte: startDate.value, lte: endDate.value },
+      },
+      include: { slots: true },
+    });
+    return rows.map((row) => this.toDomain(row));
+  }
+
   async save(dailySlotList: DailySlotList): Promise<void> {
     const ownerId = dailySlotList.ownerId.value;
     const date = dailySlotList.date.value;

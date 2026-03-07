@@ -17,6 +17,13 @@ export interface DailySlotListRepository {
   /** Helper: find which DailySlotList contains the given slotId, and return the slot. */
   findSlotById(slotId: SlotId): Promise<{ dailySlotList: DailySlotList; slot: Slot } | null>;
 
+  /** Find all DailySlotLists for an owner within a date range (inclusive). */
+  findAllByOwnerIdAndDateRange(
+    ownerId: OwnerId,
+    startDate: SlotDate,
+    endDate: SlotDate,
+  ): Promise<DailySlotList[]>;
+
   /** Save with optimistic lock verification. Throws OptimisticLockError on version mismatch. */
   save(dailySlotList: DailySlotList): Promise<void>;
 }

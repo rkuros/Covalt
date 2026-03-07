@@ -5,6 +5,7 @@ import {
   Post,
   Delete,
   Param,
+  Query,
   Body,
   Req,
   Inject,
@@ -16,19 +17,27 @@ import {
 import { AuthGuard } from '../../common/guards/auth.guard';
 import type { BusinessHourRepository } from '../domain/BusinessHourRepository';
 import type { ClosedDayRepository } from '../domain/ClosedDayRepository';
+import type { DailySlotListRepository } from '../domain/DailySlotListRepository';
 import { SlotGenerationService } from '../domain/SlotGenerationService';
 import { BusinessHour } from '../domain/BusinessHour';
 import { BusinessHourId } from '../domain/BusinessHourId';
 import { ClosedDay } from '../domain/ClosedDay';
 import { ClosedDayId } from '../domain/ClosedDayId';
+import { DailySlotList } from '../domain/DailySlotList';
+import { Slot } from '../domain/Slot';
+import { SlotId } from '../domain/SlotId';
+import { SlotStatus } from '../domain/SlotStatus';
 import { OwnerId } from '../domain/OwnerId';
 import { DayOfWeek, DayOfWeekEnum } from '../domain/DayOfWeek';
 import { TimeOfDay } from '../domain/TimeOfDay';
+import { TimeRange } from '../domain/TimeRange';
 import { SlotDate } from '../domain/SlotDate';
 import { Duration } from '../domain/Duration';
+import { SlotOverlapError, SlotNotFoundError, SlotNotAvailableError } from '../domain/DomainErrors';
 import {
   BUSINESS_HOUR_REPOSITORY,
   CLOSED_DAY_REPOSITORY,
+  DAILY_SLOT_LIST_REPOSITORY,
 } from '../di-tokens';
 
 interface AuthenticatedRequest {
@@ -43,6 +52,8 @@ export class ScheduleController {
     private readonly businessHourRepo: BusinessHourRepository,
     @Inject(CLOSED_DAY_REPOSITORY)
     private readonly closedDayRepo: ClosedDayRepository,
+    @Inject(DAILY_SLOT_LIST_REPOSITORY)
+    private readonly dailySlotListRepo: DailySlotListRepository,
     private readonly slotGenerationService: SlotGenerationService,
   ) {}
 
@@ -62,6 +73,69 @@ export class ScheduleController {
         startTime: bh.startTime?.toString() ?? null,
         endTime: bh.endTime?.toString() ?? null,
         isBusinessDay: bh.isBusinessDay,
+      })),
+    };
+  }
+
+  /**
+   * GET /api/schedule/slots/summary?startDate=yyyy-mm-dd&endDate=yyyy-mm-dd
+   * Returns slot counts per day for the date range.
+   */
+  @Get('slots/summary')
+  async getSlotSummary(
+    @Req() req: AuthenticatedRequest,
+    @Query('startDate') startDateParam: string,
+    @Query('endDate') endDateParam: string,
+  ) {
+    const ownerId = OwnerId.create(req.user.ownerId);
+    const startDate = SlotDate.create(startDateParam);
+    const endDate = SlotDate.create(endDateParam);
+
+    const dailySlotLists = await this.dailySlotListRepo.findAllByOwnerIdAndDateRange(
+      ownerId,
+      startDate,
+      endDate,
+    );
+
+    const days: Record<string, { total: number; available: number; booked: number }> = {};
+    for (const dsl of dailySlotLists) {
+      const slots = dsl.slots;
+      days[dsl.date.value] = {
+        total: slots.length,
+        available: slots.filter((s) => s.isAvailable()).length,
+        booked: slots.filter((s) => s.isBooked()).length,
+      };
+    }
+
+    return { days };
+  }
+
+  /**
+   * GET /api/schedule/slots/date/:date
+   * Returns ALL slots (available + booked) for the owner on a specific date.
+   */
+  @Get('slots/date/:date')
+  async getAllSlotsForDate(
+    @Req() req: AuthenticatedRequest,
+    @Param('date') dateParam: string,
+  ) {
+    const ownerId = OwnerId.create(req.user.ownerId);
+    const date = SlotDate.create(dateParam);
+
+    const dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(ownerId, date);
+    if (!dailySlotList) {
+      return { date: date.value, slots: [] };
+    }
+
+    return {
+      date: date.value,
+      slots: dailySlotList.slots.map((slot) => ({
+        slotId: slot.slotId.value,
+        startTime: slot.startTime.toString(),
+        endTime: slot.endTime.toString(),
+        durationMinutes: slot.durationMinutes,
+        status: slot.status.toPact(),
+        reservationId: slot.reservationId?.value ?? null,
       })),
     };
   }
@@ -259,16 +333,25 @@ export class ScheduleController {
   @HttpCode(200)
   async generateSlots(
     @Req() req: AuthenticatedRequest,
-    @Body() body: { date: string; durationMinutes: number },
+    @Body() body: { date: string; durationMinutes: number; bufferMinutes?: number },
   ) {
     const ownerId = OwnerId.create(req.user.ownerId);
     const date = SlotDate.create(body.date);
     const duration = Duration.create(body.durationMinutes);
+    const bufferMinutes = body.bufferMinutes ?? 0;
+
+    if (bufferMinutes < 0 || bufferMinutes > 120) {
+      throw new BadRequestException({
+        error: 'INVALID_BUFFER',
+        message: 'バッファ時間は0〜120分の範囲で指定してください',
+      });
+    }
 
     const addedSlots = await this.slotGenerationService.generate(
       ownerId,
       date,
       duration,
+      bufferMinutes,
     );
 
     return {
@@ -282,5 +365,117 @@ export class ScheduleController {
         status: slot.status.toPact(),
       })),
     };
+  }
+
+  /**
+   * POST /api/schedule/slots
+   * Creates a single slot with custom start/end time.
+   */
+  @Post('slots')
+  @HttpCode(201)
+  async createSingleSlot(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { date: string; startTime: string; endTime: string },
+  ) {
+    const ownerId = OwnerId.create(req.user.ownerId);
+    const date = SlotDate.create(body.date);
+
+    if (!body.startTime || !body.endTime) {
+      throw new BadRequestException({
+        error: 'MISSING_TIME',
+        message: '開始時間と終了時間を指定してください',
+      });
+    }
+
+    const startTime = TimeOfDay.fromString(body.startTime);
+    const endTime = TimeOfDay.fromString(body.endTime);
+    const timeRange = TimeRange.create(startTime, endTime);
+    const duration = Duration.create(timeRange.durationInMinutes());
+
+    let dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(ownerId, date);
+    if (!dailySlotList) {
+      dailySlotList = DailySlotList.create({ ownerId, date });
+    }
+
+    const newSlot = Slot.create({
+      slotId: SlotId.generate(),
+      startTime,
+      endTime,
+      durationMinutes: duration,
+      status: SlotStatus.available(),
+      reservationId: null,
+    });
+
+    try {
+      dailySlotList.addSlot(newSlot);
+    } catch (e) {
+      if (e instanceof SlotOverlapError) {
+        throw new BadRequestException({
+          error: 'SLOT_OVERLAP',
+          message: '指定した時間帯は既存のスロットと重複しています',
+        });
+      }
+      throw e;
+    }
+    await this.dailySlotListRepo.save(dailySlotList);
+
+    return {
+      slotId: newSlot.slotId.value,
+      startTime: newSlot.startTime.toString(),
+      endTime: newSlot.endTime.toString(),
+      durationMinutes: newSlot.durationMinutes,
+      status: newSlot.status.toPact(),
+    };
+  }
+
+  /**
+   * DELETE /api/schedule/slots/:slotId
+   * Deletes an available slot. Booked slots cannot be deleted.
+   */
+  @Delete('slots/:slotId')
+  @HttpCode(200)
+  async deleteSlot(
+    @Req() req: AuthenticatedRequest,
+    @Param('slotId') slotIdParam: string,
+  ) {
+    const slotId = SlotId.create(slotIdParam);
+
+    const found = await this.dailySlotListRepo.findSlotById(slotId);
+    if (!found) {
+      throw new NotFoundException({
+        error: 'SLOT_NOT_FOUND',
+        message: '指定されたスロットが見つかりません',
+      });
+    }
+
+    // Verify ownership
+    if (found.dailySlotList.ownerId.value !== req.user.ownerId) {
+      throw new NotFoundException({
+        error: 'SLOT_NOT_FOUND',
+        message: '指定されたスロットが見つかりません',
+      });
+    }
+
+    try {
+      found.dailySlotList.removeSlot(slotId);
+    } catch (e) {
+      if (e instanceof SlotNotAvailableError) {
+        throw new BadRequestException({
+          error: 'SLOT_NOT_AVAILABLE',
+          message: '予約済みのスロットは削除できません',
+        });
+      }
+      if (e instanceof SlotNotFoundError) {
+        throw new NotFoundException({
+          error: 'SLOT_NOT_FOUND',
+          message: '指定されたスロットが見つかりません',
+        });
+      }
+      throw e;
+    }
+
+    await this.dailySlotListRepo.save(found.dailySlotList);
+
+    return { message: 'スロットを削除しました' };
   }
 }

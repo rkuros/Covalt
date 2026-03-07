@@ -9,9 +9,9 @@ import { OwnerReservationController } from './controllers/owner-reservation.cont
 // Repository
 import { PrismaReservationRepository } from './repositories/prisma-reservation.repository';
 
-// Gateways
-import { HttpSlotGateway } from './gateways/http-slot.gateway';
-import { HttpCustomerGateway } from './gateways/http-customer.gateway';
+// Gateways (direct in-process calls instead of HTTP)
+import { DirectSlotGateway } from './gateways/direct-slot.gateway';
+import { DirectCustomerGateway } from './gateways/direct-customer.gateway';
 import { HttpAuthGateway } from './gateways/http-auth.gateway';
 import { HttpLiffGateway } from './gateways/http-liff.gateway';
 import { NestjsEventPublisher } from './gateways/nestjs-event.publisher';
@@ -22,8 +22,12 @@ import { ReservationCommandService } from './domain/ReservationCommandService';
 // Common
 import { AuthGuard } from '../common/guards/auth.guard';
 
+// Cross-module imports
+import { Unit3ScheduleModule } from '../unit3-schedule/unit3-schedule.module';
+import { Unit6CustomerModule } from '../unit6-customer/customer.module';
+
 @Module({
-  imports: [ConfigModule, EventEmitterModule],
+  imports: [ConfigModule, EventEmitterModule, Unit3ScheduleModule, Unit6CustomerModule],
   controllers: [
     CustomerReservationController,
     OwnerReservationController,
@@ -41,11 +45,11 @@ import { AuthGuard } from '../common/guards/auth.guard';
     // Gateways
     {
       provide: 'SlotGateway',
-      useClass: HttpSlotGateway,
+      useClass: DirectSlotGateway,
     },
     {
       provide: 'CustomerGateway',
-      useClass: HttpCustomerGateway,
+      useClass: DirectCustomerGateway,
     },
     {
       provide: 'AuthGateway',
@@ -65,8 +69,8 @@ import { AuthGuard } from '../common/guards/auth.guard';
       provide: ReservationCommandService,
       useFactory: (
         reservationRepository: PrismaReservationRepository,
-        slotGateway: HttpSlotGateway,
-        customerGateway: HttpCustomerGateway,
+        slotGateway: DirectSlotGateway,
+        customerGateway: DirectCustomerGateway,
         eventPublisher: NestjsEventPublisher,
       ) =>
         new ReservationCommandService(

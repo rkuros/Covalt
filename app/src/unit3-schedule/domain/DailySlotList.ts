@@ -142,8 +142,7 @@ export class DailySlotList {
    * Existing slots (including booked ones) are preserved.
    * Only non-overlapping new slots are added.
    */
-  generateSlots(businessStartTime: TimeOfDay, businessEndTime: TimeOfDay, duration: Duration): Slot[] {
-    const businessRange = TimeRange.create(businessStartTime, businessEndTime);
+  generateSlots(businessStartTime: TimeOfDay, businessEndTime: TimeOfDay, duration: Duration, bufferMinutes: number = 0): Slot[] {
     const addedSlots: Slot[] = [];
     let currentMinutes = businessStartTime.toMinutes();
     const endMinutes = businessEndTime.toMinutes();
@@ -177,7 +176,7 @@ export class DailySlotList {
         addedSlots.push(newSlot);
       }
 
-      currentMinutes += duration.minutes;
+      currentMinutes += duration.minutes + bufferMinutes;
     }
 
     if (addedSlots.length > 0) {

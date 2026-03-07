@@ -38,6 +38,7 @@ export class SlotGenerationService {
     ownerId: OwnerId,
     date: SlotDate,
     durationMinutes: Duration,
+    bufferMinutes: number = 0,
   ): Promise<Slot[]> {
     // 1. Get business hour for the day of week
     const dayOfWeek = date.getDayOfWeek();
@@ -65,10 +66,12 @@ export class SlotGenerationService {
     // 4. Generate slots within the business hours, skipping overlaps
     const startTime = businessHour.startTime!;
     const endTime = businessHour.endTime!;
-    const addedSlots = dailySlotList.generateSlots(startTime, endTime, durationMinutes);
+    const addedSlots = dailySlotList.generateSlots(startTime, endTime, durationMinutes, bufferMinutes);
 
-    // 5. Save the updated DailySlotList
-    await this.dailySlotListRepo.save(dailySlotList);
+    // 5. Save only if new slots were actually added
+    if (addedSlots.length > 0) {
+      await this.dailySlotListRepo.save(dailySlotList);
+    }
 
     return addedSlots;
   }

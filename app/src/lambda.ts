@@ -11,7 +11,7 @@ async function bootstrap() {
 
   const expressApp = express();
   const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
-  app.enableCors();
+  app.enableCors({ origin: true });
   await app.init();
 
   cachedServer = serverlessExpress({ app: expressApp });
