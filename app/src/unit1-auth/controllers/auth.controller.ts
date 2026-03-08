@@ -64,6 +64,13 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   async login(@Body() body: { email: string; password: string }) {
+    if (!body.email || !body.password) {
+      throw new HttpException(
+        { error: 'VALIDATION_ERROR', message: 'email and password are required' },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     try {
       const session = await this.authenticationService.login(
         body.email,

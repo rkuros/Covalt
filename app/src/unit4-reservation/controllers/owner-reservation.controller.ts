@@ -9,6 +9,7 @@ import {
   Req,
   UseGuards,
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   NotFoundException,
   InternalServerErrorException,
@@ -283,20 +284,22 @@ export class OwnerReservationController {
   private handleDomainError(error: unknown): never {
     const message =
       error instanceof Error ? error.message : 'Unknown error';
+    const code = (error as any)?.code as string | undefined;
     this.logger.error(`Domain error: ${message}`);
 
-    if (message.includes('not found')) {
+    if (message.includes('not found') || code === 'SLOT_NOT_FOUND') {
       throw new NotFoundException({
         error: 'NOT_FOUND',
         message,
       });
     }
     if (
-      message.includes('SLOT_ALREADY_BOOKED') ||
+      code === 'SLOT_ALREADY_BOOKED' ||
+      message.includes('already booked') ||
       message.includes('Cannot')
     ) {
-      throw new BadRequestException({
-        error: 'BUSINESS_RULE_VIOLATION',
+      throw new ConflictException({
+        error: 'CONFLICT',
         message,
       });
     }

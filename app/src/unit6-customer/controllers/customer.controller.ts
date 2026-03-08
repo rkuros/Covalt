@@ -7,6 +7,7 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  BadRequestException,
   NotFoundException,
   UseGuards,
 } from '@nestjs/common';
@@ -83,6 +84,12 @@ export class CustomerController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() body: { ownerId: string; customerName: string }) {
+    if (!body.ownerId || !body.customerName) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: 'ownerId and customerName are required',
+      });
+    }
     return this.commandService.createManual({
       ownerId: body.ownerId,
       customerName: body.customerName,

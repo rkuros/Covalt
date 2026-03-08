@@ -95,9 +95,24 @@ export class ScheduleController {
     @Query('startDate') startDateParam: string,
     @Query('endDate') endDateParam: string,
   ) {
+    if (!startDateParam || !endDateParam) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: 'startDate and endDate query parameters are required',
+      });
+    }
+    let startDate: SlotDate;
+    let endDate: SlotDate;
+    try {
+      startDate = SlotDate.create(startDateParam);
+      endDate = SlotDate.create(endDateParam);
+    } catch (e) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: e instanceof Error ? e.message : 'Invalid date format',
+      });
+    }
     const ownerId = OwnerId.create(req.user.ownerId);
-    const startDate = SlotDate.create(startDateParam);
-    const endDate = SlotDate.create(endDateParam);
 
     const dailySlotLists = await this.dailySlotListRepo.findAllByOwnerIdAndDateRange(
       ownerId,

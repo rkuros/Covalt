@@ -8,6 +8,7 @@ import {
   HttpCode,
   Inject,
   UseGuards,
+  BadRequestException,
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
@@ -41,8 +42,23 @@ export class SlotController {
     @Query('ownerId') ownerIdParam: string,
     @Query('date') dateParam: string,
   ) {
-    const ownerId = OwnerId.create(ownerIdParam);
-    const date = SlotDate.create(dateParam);
+    if (!ownerIdParam || !dateParam) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: 'ownerId and date query parameters are required',
+      });
+    }
+    let ownerId: OwnerId;
+    let date: SlotDate;
+    try {
+      ownerId = OwnerId.create(ownerIdParam);
+      date = SlotDate.create(dateParam);
+    } catch (e) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: e instanceof Error ? e.message : 'Invalid parameters',
+      });
+    }
 
     const result = await this.slotAvailabilityService.getAvailability(
       ownerId,
@@ -72,9 +88,25 @@ export class SlotController {
     @Query('startDate') startDateParam: string,
     @Query('endDate') endDateParam: string,
   ) {
-    const ownerId = OwnerId.create(ownerIdParam);
-    const startDate = SlotDate.create(startDateParam);
-    const endDate = SlotDate.create(endDateParam);
+    if (!ownerIdParam || !startDateParam || !endDateParam) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: 'ownerId, startDate, and endDate query parameters are required',
+      });
+    }
+    let ownerId: OwnerId;
+    let startDate: SlotDate;
+    let endDate: SlotDate;
+    try {
+      ownerId = OwnerId.create(ownerIdParam);
+      startDate = SlotDate.create(startDateParam);
+      endDate = SlotDate.create(endDateParam);
+    } catch (e) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: e instanceof Error ? e.message : 'Invalid parameters',
+      });
+    }
 
     const dailySlotLists = await this.dailySlotListRepo.findAllByOwnerIdAndDateRange(
       ownerId,
