@@ -6,8 +6,8 @@ export interface ReminderEntry {
   readonly ownerId: string;
   readonly customerId: string;
   readonly customerName: string;
-  readonly lineUserId: string;
-  readonly ownerLineUserId: string;
+  readonly lineUserId: string | null;
+  readonly ownerLineUserId: string | null;
   readonly slotId: string;
   readonly dateTime: string;
   /** 発火予定日時（予約日の前日）*/
@@ -32,8 +32,8 @@ export class ReminderScheduler {
     ownerId: string;
     customerId: string;
     customerName: string;
-    lineUserId: string;
-    ownerLineUserId: string;
+    lineUserId: string | null;
+    ownerLineUserId: string | null;
     slotId: string;
     dateTime: string;
   }): void {
@@ -71,8 +71,8 @@ export class ReminderScheduler {
     ownerId: string;
     customerId: string;
     customerName: string;
-    lineUserId: string;
-    ownerLineUserId: string;
+    lineUserId: string | null;
+    ownerLineUserId: string | null;
     slotId: string;
     dateTime: string;
   }): void {

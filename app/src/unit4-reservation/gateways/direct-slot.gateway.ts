@@ -55,6 +55,10 @@ export class DirectSlotGateway implements SlotGateway {
       slotId: result.slotId,
       status: 'booked',
       reservationId: result.reservationId,
+      date: result.date,
+      startTime: result.startTime,
+      endTime: result.endTime,
+      durationMinutes: result.durationMinutes,
     };
   }
 

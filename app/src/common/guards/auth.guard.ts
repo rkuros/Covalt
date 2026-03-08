@@ -16,7 +16,8 @@ export class AuthGuard implements CanActivate {
 
     // Internal service-to-service calls bypass token auth
     const internalKey = request.headers['x-internal-key'];
-    if (internalKey && internalKey === (process.env['INTERNAL_SERVICE_KEY'] || 'covalt-internal')) {
+    const expectedKey = process.env['INTERNAL_SERVICE_KEY'];
+    if (expectedKey && internalKey && internalKey === expectedKey) {
       const internalOwnerId = request.headers['x-owner-id'] || request.query?.ownerId;
       request.user = { ownerId: internalOwnerId, email: 'internal', role: 'service' };
       return true;

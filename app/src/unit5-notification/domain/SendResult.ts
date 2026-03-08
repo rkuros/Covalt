@@ -5,6 +5,7 @@ export const SendErrorType = {
   UserBlocked: "USER_BLOCKED",
   NetworkError: "NETWORK_ERROR",
   Unknown: "UNKNOWN",
+  Skipped: "SKIPPED",
 } as const;
 
 export type SendErrorType = (typeof SendErrorType)[keyof typeof SendErrorType];

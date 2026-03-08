@@ -9,8 +9,8 @@ interface ReservationEventBase {
   readonly ownerId: string;
   readonly customerId: string;
   readonly customerName: string;
-  readonly lineUserId: string;
-  readonly ownerLineUserId: string;
+  readonly lineUserId: string | null;
+  readonly ownerLineUserId: string | null;
   readonly slotId: string;
   readonly dateTime: string;
   readonly timestamp: string;
@@ -60,8 +60,6 @@ export function parseReservationEvent(payload: unknown): ReservationEvent {
     "ownerId",
     "customerId",
     "customerName",
-    "lineUserId",
-    "ownerLineUserId",
     "slotId",
     "dateTime",
     "timestamp",
@@ -73,13 +71,21 @@ export function parseReservationEvent(payload: unknown): ReservationEvent {
     }
   }
 
+  // lineUserId / ownerLineUserId は null 許容
+  const nullableFields = ["lineUserId", "ownerLineUserId"] as const;
+  for (const field of nullableFields) {
+    if (obj[field] !== null && typeof obj[field] !== "string") {
+      throw new Error(`フィールド '${field}' は文字列またはnullである必要があります`);
+    }
+  }
+
   const base = {
     reservationId: obj["reservationId"] as string,
     ownerId: obj["ownerId"] as string,
     customerId: obj["customerId"] as string,
     customerName: obj["customerName"] as string,
-    lineUserId: obj["lineUserId"] as string,
-    ownerLineUserId: obj["ownerLineUserId"] as string,
+    lineUserId: (obj["lineUserId"] as string | null),
+    ownerLineUserId: (obj["ownerLineUserId"] as string | null),
     slotId: obj["slotId"] as string,
     dateTime: obj["dateTime"] as string,
     timestamp: obj["timestamp"] as string,

@@ -61,6 +61,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 .cal-day.disabled{color:#ccc;cursor:default;}
 .cal-day.disabled:hover{background:none;}
 .cal-day.holiday{color:#d32f2f;text-decoration:line-through;}
+.cal-day.has-slots{position:relative;}
+.cal-day.has-slots::after{content:'';display:block;width:6px;height:6px;background:#06c755;border-radius:50%;margin:2px auto 0;}
+.cal-day.no-slots{color:#ccc;}
+.cal-day.no-slots:hover{background:none;cursor:default;}
+.cal-day.selected.has-slots::after{background:#fff;}
 
 /* Slots */
 .slot-list{display:flex;flex-direction:column;gap:6px;}
@@ -247,11 +252,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
             <div class="login-error" id="loginError"></div>
             <div class="form-group">
               <label>メールアドレス</label>
-              <input class="form-input" id="loginEmail" type="email" value="admin@covalt.app">
+              <input class="form-input" id="loginEmail" type="email" placeholder="メールアドレス">
             </div>
             <div class="form-group">
               <label>パスワード</label>
-              <input class="form-input" id="loginPass" type="password" value="CovaltAdmin2026">
+              <input class="form-input" id="loginPass" type="password" placeholder="パスワード">
             </div>
             <button class="btn btn-primary" style="background:#0984e3;" onclick="doLogin()" id="loginBtn">ログイン</button>
             <p style="text-align:center;margin-top:12px;font-size:11px;color:#999;">API: ap-southeast-1</p>
@@ -787,9 +792,9 @@ function renderScheduleCalendar() {
     let cls = 'oc-cell';
     if (isToday) cls += ' oc-today';
     if (isClosed || isRegularClosed) cls += ' oc-holiday';
-    if (isSel) cls += '" style="outline:2px solid #0984e3;outline-offset:-2px;';
+    const selStyle = isSel ? ' style="outline:2px solid #0984e3;outline-offset:-2px;"' : '';
 
-    h += '<div class="' + cls + '" onclick="selectSchDay(\'' + iso + '\')">';
+    h += '<div class="' + cls + '"' + selStyle + ' onclick="selectSchDay(\'' + iso + '\')">';
     h += '<div class="oc-num">' + d + '</div>';
 
     // Show individual slots (available + booked) on calendar, same style as dashboard
@@ -1284,8 +1289,11 @@ async function saveLineConfig() {
 /* ========================================= */
 let mockCustomerId = localStorage.getItem('covalt_mockCustomerId') || null;
 let mockCustomerName = localStorage.getItem('covalt_mockCustomerName') || 'テスト 花子';
+const mockOwnerId = '4282a4fd-695f-4db4-b0eb-b7915e539537';
 let chatMessages = [], calMonth = MONTH, calYear = YEAR, selectedDate = null;
 let selectedSlot = null; // holds the slot object selected for booking
+let custSlotSummary = {}; // cached slot summary for the visible month on customer calendar
+let custSummaryLoading = false; // flag to avoid duplicate summary fetches
 
 function fmt(d) { return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate(); }
 
@@ -1347,46 +1355,189 @@ function liffClose() {
   document.getElementById('lineTitle').textContent = '予約サロン';
   selectedDate = null;
   selectedSlot = null;
+  custSlotSummary = {};
+  custSummaryLoading = false;
+}
+
+function getCustOwnerId() {
+  return (currentUser && currentUser.ownerId) ? currentUser.ownerId : mockOwnerId;
 }
 
 function renderBookingLiff() {
   document.getElementById('lineTitle').textContent = '予約する';
   selectedDate = null;
   selectedSlot = null;
+  custSlotSummary = {};
   document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">日時を選択</span></div><div class="liff-body" id="liffBody"></div>';
   renderCalendar();
 }
 
+async function fetchMonthSummary(year, month) {
+  const startDate = isoDate(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const endDate = isoDate(year, month, lastDay);
+  try {
+    const data = await api('GET', '/api/slots/summary?ownerId=' + getCustOwnerId() + '&startDate=' + startDate + '&endDate=' + endDate);
+    return data.summary || {};
+  } catch (e) {
+    console.error('Slot summary fetch error:', e);
+    return {};
+  }
+}
+
 function renderCalendar() {
   const body = document.getElementById('liffBody');
+  if (!body) return;
   const first = new Date(calYear, calMonth, 1), lastDay = new Date(calYear, calMonth+1, 0).getDate(), startDow = first.getDay();
   const dows = ['日','月','火','水','木','金','土'];
-  let h = '<div class="cal-month"><button onclick="calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar()">&#10094;</button><span>' + calYear + '年' + (calMonth+1) + '月</span><button onclick="calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar()">&#10095;</button></div><div class="cal-grid">';
+  const todayDate = new Date(YEAR, MONTH, DAY);
+
+  let h = '<div class="cal-month">';
+  h += '<button onclick="calMonth--;if(calMonth<0){calMonth=11;calYear--;}custSlotSummary={};renderCalendar()">&#10094;</button>';
+  h += '<span>' + calYear + '年' + (calMonth+1) + '月</span>';
+  h += '<button onclick="calMonth++;if(calMonth>11){calMonth=0;calYear++;}custSlotSummary={};renderCalendar()">&#10095;</button>';
+  h += '</div><div class="cal-grid">';
   dows.forEach(d => h += '<div class="cal-dow">' + d + '</div>');
   for (let i = 0; i < startDow; i++) h += '<div class="cal-day"></div>';
+
+  const hasSummary = Object.keys(custSlotSummary).length > 0;
+
   for (let d = 1; d <= lastDay; d++) {
-    const dt = new Date(calYear, calMonth, d), past = dt < new Date(YEAR, MONTH, DAY);
+    const dt = new Date(calYear, calMonth, d);
+    const past = dt < todayDate;
     const sel = selectedDate && dateKey(dt) === dateKey(selectedDate);
     const isTd = d === DAY && calMonth === MONTH && calYear === YEAR;
+    const iso = isoDate(calYear, calMonth, d);
+    const dayInfo = custSlotSummary[iso];
+    const availCount = dayInfo ? (dayInfo.availableCount || 0) : 0;
+
     let c = 'cal-day';
-    if (past) c += ' disabled'; else if (sel) c += ' selected'; else if (isTd) c += ' today';
-    h += '<div class="' + c + '" onclick="pickDate(' + calYear + ',' + calMonth + ',' + d + ')">' + d + '</div>';
+    if (past) {
+      c += ' disabled';
+    } else if (hasSummary && availCount > 0) {
+      c += ' has-slots';
+      if (sel) c += ' selected';
+      else if (isTd) c += ' today';
+    } else if (hasSummary && availCount === 0) {
+      c += ' no-slots';
+    } else {
+      // No summary loaded yet - default styling
+      if (sel) c += ' selected';
+      else if (isTd) c += ' today';
+    }
+
+    if (past || (hasSummary && availCount === 0 && !past)) {
+      h += '<div class="' + c + '">' + d + '</div>';
+    } else {
+      h += '<div class="' + c + '" onclick="pickDate(' + calYear + ',' + calMonth + ',' + d + ')">' + d + '</div>';
+    }
   }
   h += '</div>';
   if (selectedDate) h += '<div id="slotsContainer"><div class="loading">空き状況を取得中...</div></div>';
   body.innerHTML = h;
   if (selectedDate) loadAvailableSlots(selectedDate);
+
+  // Fetch slot summary for the visible month if not yet loaded
+  if (!hasSummary && !custSummaryLoading) {
+    custSummaryLoading = true;
+    fetchMonthSummary(calYear, calMonth).then(summary => {
+      custSlotSummary = summary;
+      custSummaryLoading = false;
+      // Re-render only the calendar grid (preserve selected date and slots)
+      renderCalendarGrid();
+    }).catch(() => { custSummaryLoading = false; });
+  }
 }
 
-function pickDate(y, m, d) { const dt = new Date(y, m, d); if (dt < new Date(YEAR, MONTH, DAY)) return; selectedDate = dt; renderCalendar(); }
+function renderCalendarGrid() {
+  // Re-render just the calendar grid with summary data, preserving slots below
+  const body = document.getElementById('liffBody');
+  if (!body) return;
+  const first = new Date(calYear, calMonth, 1), lastDay = new Date(calYear, calMonth+1, 0).getDate(), startDow = first.getDay();
+  const dows = ['日','月','火','水','木','金','土'];
+  const todayDate = new Date(YEAR, MONTH, DAY);
+  const hasSummary = Object.keys(custSlotSummary).length > 0;
+
+  let h = '<div class="cal-month">';
+  h += '<button onclick="calMonth--;if(calMonth<0){calMonth=11;calYear--;}custSlotSummary={};renderCalendar()">&#10094;</button>';
+  h += '<span>' + calYear + '年' + (calMonth+1) + '月</span>';
+  h += '<button onclick="calMonth++;if(calMonth>11){calMonth=0;calYear++;}custSlotSummary={};renderCalendar()">&#10095;</button>';
+  h += '</div><div class="cal-grid">';
+  dows.forEach(d => h += '<div class="cal-dow">' + d + '</div>');
+  for (let i = 0; i < startDow; i++) h += '<div class="cal-day"></div>';
+
+  for (let d = 1; d <= lastDay; d++) {
+    const dt = new Date(calYear, calMonth, d);
+    const past = dt < todayDate;
+    const sel = selectedDate && dateKey(dt) === dateKey(selectedDate);
+    const isTd = d === DAY && calMonth === MONTH && calYear === YEAR;
+    const iso = isoDate(calYear, calMonth, d);
+    const dayInfo = custSlotSummary[iso];
+    const availCount = dayInfo ? (dayInfo.availableCount || 0) : 0;
+
+    let c = 'cal-day';
+    if (past) {
+      c += ' disabled';
+    } else if (hasSummary && availCount > 0) {
+      c += ' has-slots';
+      if (sel) c += ' selected';
+      else if (isTd) c += ' today';
+    } else if (hasSummary && availCount === 0) {
+      c += ' no-slots';
+    } else {
+      if (sel) c += ' selected';
+      else if (isTd) c += ' today';
+    }
+
+    if (past || (hasSummary && availCount === 0 && !past)) {
+      h += '<div class="' + c + '">' + d + '</div>';
+    } else {
+      h += '<div class="' + c + '" onclick="pickDate(' + calYear + ',' + calMonth + ',' + d + ')">' + d + '</div>';
+    }
+  }
+  h += '</div>';
+
+  // Preserve slotsContainer if a date is selected
+  const existingSlots = body.querySelector('#slotsContainer');
+  if (selectedDate) {
+    if (existingSlots) {
+      h += existingSlots.outerHTML;
+    } else {
+      h += '<div id="slotsContainer"><div class="loading">空き状況を取得中...</div></div>';
+    }
+  }
+  body.innerHTML = h;
+  // Re-attach stored slots data if it existed
+  if (selectedDate && existingSlots && existingSlots._slots) {
+    const newContainer = document.getElementById('slotsContainer');
+    if (newContainer) newContainer._slots = existingSlots._slots;
+  }
+}
+
+function pickDate(y, m, d) {
+  const dt = new Date(y, m, d);
+  const todayDate = new Date(YEAR, MONTH, DAY);
+  if (dt < todayDate) return;
+  // Check if the date has no available slots (when summary is loaded)
+  const iso = isoDate(y, m, d);
+  const hasSummary = Object.keys(custSlotSummary).length > 0;
+  if (hasSummary) {
+    const dayInfo = custSlotSummary[iso];
+    const availCount = dayInfo ? (dayInfo.availableCount || 0) : 0;
+    if (availCount === 0) return;
+  }
+  selectedDate = dt;
+  renderCalendar();
+}
 
 /* --- Load available slots from API --- */
 async function loadAvailableSlots(dt) {
   const container = document.getElementById('slotsContainer');
   if (!container) return;
   const dateStr = isoDate(dt.getFullYear(), dt.getMonth(), dt.getDate());
+  const ownerId = getCustOwnerId();
   try {
-    const data = await api('GET', '/api/slots/available?ownerId=' + currentUser.ownerId + '&date=' + dateStr);
+    const data = await api('GET', '/api/slots/available?ownerId=' + ownerId + '&date=' + dateStr);
     const slots = data.slots || [];
     let h = '<h4 style="font-size:14px;margin-bottom:8px;">' + fmt(dt) + ' の空き状況</h4>';
     if (slots.length === 0) {
@@ -1434,7 +1585,7 @@ async function confirmBooking() {
     const custId = await ensureMockCustomer();
     if (!custId) throw new Error('テスト顧客の準備に失敗しました');
     const dateStr = isoDate(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-    const dateTime = dateStr + 'T' + selectedSlot.startTime + ':00';
+    const dateTime = dateStr + 'T' + selectedSlot.startTime + ':00+09:00';
     const durationMinutes = selectedSlot.durationMinutes || 60;
     const res = await api('POST', '/api/owner/reservations', {
       customerId: custId,

@@ -80,17 +80,18 @@ export class ReservationCommandService {
     const ownerId = OwnerId.create(command.ownerId);
     const reservationId = ReservationId.generate();
 
-    // 3. スロットを予約確保
-    await this.slotGateway.reserveSlot(slotId, reservationId);
+    // 3. スロットを予約確保（スロットの実際の日時情報を取得）
+    const slotResult = await this.slotGateway.reserveSlot(slotId, reservationId);
 
-    // 4. Reservation 集約を生成
+    // 4. Reservation 集約を生成（dateTimeはスロットのstartTimeから導出）
+    const slotDateTime = `${slotResult.date}T${slotResult.startTime}:00+09:00`;
     const reservation = Reservation.create({
       reservationId,
       ownerId,
       customerId: CustomerId.create(customerInfo.customerId),
       slotId,
-      dateTime: ReservationDateTime.create(customerInfo.dateTime),
-      durationMinutes: DurationMinutes.create(customerInfo.durationMinutes),
+      dateTime: ReservationDateTime.create(slotDateTime),
+      durationMinutes: DurationMinutes.create(slotResult.durationMinutes),
       customerName: CustomerName.create(customerInfo.customerName),
       lineUserId: LineUserId.create(customerInfo.lineUserId),
       ownerLineUserId: LineUserId.create(customerInfo.ownerLineUserId),
@@ -126,17 +127,17 @@ export class ReservationCommandService {
     const newSlotId = SlotId.create(command.newSlotId);
     const oldSlotId = reservation.slotId;
 
-    // 旧スロットを解放
-    await this.slotGateway.releaseSlot(oldSlotId, reservationId);
+    // 新スロットを先に予約確保（失敗しても旧スロットは安全）
+    const newSlotResult = await this.slotGateway.reserveSlot(newSlotId, reservationId);
 
-    // 新スロットを予約確保
-    await this.slotGateway.reserveSlot(newSlotId, reservationId);
+    // 新スロット確保成功後に旧スロットを解放
+    await this.slotGateway.releaseSlot(oldSlotId, reservationId);
 
     // 集約を更新（不変条件の検証 + 履歴追加）
     reservation.modify({
       newSlotId,
-      newDateTime: ReservationDateTime.create(command.newDateTime),
-      newDurationMinutes: DurationMinutes.create(command.newDurationMinutes),
+      newDateTime: ReservationDateTime.create(`${newSlotResult.date}T${newSlotResult.startTime}:00+09:00`),
+      newDurationMinutes: DurationMinutes.create(newSlotResult.durationMinutes),
       modifiedBy: command.modifiedBy,
     });
 

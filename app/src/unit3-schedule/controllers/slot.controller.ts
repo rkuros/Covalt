@@ -6,6 +6,7 @@ import {
   Query,
   Body,
   HttpCode,
+  Inject,
   UseGuards,
   ConflictException,
   NotFoundException,
@@ -13,11 +14,13 @@ import {
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { SlotAvailabilityService } from '../domain/SlotAvailabilityService';
 import { SlotReservationService } from '../domain/SlotReservationService';
+import type { DailySlotListRepository } from '../domain/DailySlotListRepository';
 import { OwnerId } from '../domain/OwnerId';
 import { SlotDate } from '../domain/SlotDate';
 import { SlotId } from '../domain/SlotId';
 import { ReservationId } from '../domain/ReservationId';
 import { SlotAlreadyBookedError, SlotNotFoundError } from '../domain/DomainErrors';
+import { DAILY_SLOT_LIST_REPOSITORY } from '../di-tokens';
 
 @Controller('api/slots')
 @UseGuards(AuthGuard)
@@ -25,6 +28,8 @@ export class SlotController {
   constructor(
     private readonly slotAvailabilityService: SlotAvailabilityService,
     private readonly slotReservationService: SlotReservationService,
+    @Inject(DAILY_SLOT_LIST_REPOSITORY)
+    private readonly dailySlotListRepo: DailySlotListRepository,
   ) {}
 
   /**
@@ -58,6 +63,47 @@ export class SlotController {
   }
 
   /**
+   * GET /api/slots/summary?ownerId=xxx&startDate=yyyy-mm-dd&endDate=yyyy-mm-dd
+   * Returns slot summary (available/booked counts) per day for the date range.
+   */
+  @Get('summary')
+  async getSlotSummary(
+    @Query('ownerId') ownerIdParam: string,
+    @Query('startDate') startDateParam: string,
+    @Query('endDate') endDateParam: string,
+  ) {
+    const ownerId = OwnerId.create(ownerIdParam);
+    const startDate = SlotDate.create(startDateParam);
+    const endDate = SlotDate.create(endDateParam);
+
+    const dailySlotLists = await this.dailySlotListRepo.findAllByOwnerIdAndDateRange(
+      ownerId,
+      startDate,
+      endDate,
+    );
+
+    const summary: Record<string, {
+      totalSlots: number;
+      availableCount: number;
+      bookedCount: number;
+      availableSlots: { startTime: string; endTime: string }[];
+    }> = {};
+    for (const dsl of dailySlotLists) {
+      const slots = dsl.slots;
+      summary[dsl.date.value] = {
+        totalSlots: slots.length,
+        availableCount: slots.filter((s) => s.isAvailable()).length,
+        bookedCount: slots.filter((s) => s.isBooked()).length,
+        availableSlots: slots
+          .filter((s) => s.isAvailable())
+          .map((s) => ({ startTime: s.startTime.toString(), endTime: s.endTime.toString() })),
+      };
+    }
+
+    return { summary };
+  }
+
+  /**
    * PUT /api/slots/:slotId/reserve
    * Reserves a slot for a reservation.
    */
@@ -80,6 +126,10 @@ export class SlotController {
         slotId: result.slotId,
         status: result.status,
         reservationId: result.reservationId,
+        date: result.date,
+        startTime: result.startTime,
+        endTime: result.endTime,
+        durationMinutes: result.durationMinutes,
       };
     } catch (error) {
       if (error instanceof SlotAlreadyBookedError) {

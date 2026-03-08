@@ -9,6 +9,7 @@ import {
   Req,
   UseGuards,
   BadRequestException,
+  ForbiddenException,
   NotFoundException,
   InternalServerErrorException,
   Logger,
@@ -201,9 +202,11 @@ export class OwnerReservationController {
    */
   @Put(':id/modify')
   async modify(
+    @Req() req: any,
     @Param('id') id: string,
     @Body() body: ModifyReservationBody,
   ) {
+    await this.verifyOwnership(req.user.ownerId, id);
     if (!body.newSlotId || !body.newDateTime || !body.newDurationMinutes) {
       throw new BadRequestException({
         error: 'VALIDATION_ERROR',
@@ -231,7 +234,8 @@ export class OwnerReservationController {
    * 予約キャンセル
    */
   @Put(':id/cancel')
-  async cancel(@Param('id') id: string) {
+  async cancel(@Req() req: any, @Param('id') id: string) {
+    await this.verifyOwnership(req.user.ownerId, id);
     try {
       const reservation = await this.commandService.cancelReservation({
         reservationId: id,
@@ -249,7 +253,8 @@ export class OwnerReservationController {
    * 予約完了
    */
   @Put(':id/complete')
-  async complete(@Param('id') id: string) {
+  async complete(@Req() req: any, @Param('id') id: string) {
+    await this.verifyOwnership(req.user.ownerId, id);
     try {
       const reservation = await this.commandService.completeReservation({
         reservationId: id,
@@ -262,6 +267,18 @@ export class OwnerReservationController {
   }
 
   // --- Private helpers ---
+
+  private async verifyOwnership(ownerId: string, reservationId: string): Promise<void> {
+    const reservation = await this.reservationRepository.findById(
+      ReservationId.create(reservationId),
+    );
+    if (!reservation) {
+      throw new NotFoundException({ error: 'NOT_FOUND', message: '予約が見つかりません' });
+    }
+    if (reservation.ownerId.value !== ownerId) {
+      throw new ForbiddenException({ error: 'FORBIDDEN', message: 'この予約へのアクセス権がありません' });
+    }
+  }
 
   private handleDomainError(error: unknown): never {
     const message =

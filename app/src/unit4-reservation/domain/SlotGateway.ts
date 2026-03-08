@@ -23,6 +23,10 @@ export interface SlotReserveResult {
   readonly slotId: string;
   readonly status: 'booked';
   readonly reservationId: string;
+  readonly date: string;
+  readonly startTime: string;
+  readonly endTime: string;
+  readonly durationMinutes: number;
 }
 
 export interface SlotReleaseResult {

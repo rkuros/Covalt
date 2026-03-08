@@ -6,7 +6,7 @@ import { NotificationTemplateResolver } from "./NotificationTemplateResolver";
 import { NotificationType } from "./NotificationType";
 import { RecipientType } from "./RecipientType";
 import { ReservationEvent } from "./ReservationEvent";
-import { SendResult } from "./SendResult";
+import { SendResult, SendErrorType } from "./SendResult";
 
 /**
  * 受信者種別に応じて顧客向け・オーナー向けの通知をそれぞれ生成・送信するサービス。
@@ -32,18 +32,12 @@ export class NotificationDispatcher {
   ): Promise<{ customer: SendResult; owner: SendResult }> {
     // 顧客向けとオーナー向けを独立して処理（互いに影響しない）
     const [customer, owner] = await Promise.allSettled([
-      this.dispatchTo(
-        notificationType,
-        RecipientType.Customer,
-        event,
-        event.lineUserId
-      ),
-      this.dispatchTo(
-        notificationType,
-        RecipientType.Owner,
-        event,
-        event.ownerLineUserId
-      ),
+      event.lineUserId
+        ? this.dispatchTo(notificationType, RecipientType.Customer, event, event.lineUserId)
+        : Promise.resolve(SendResult.fail(SendErrorType.Skipped, "lineUserId is null")),
+      event.ownerLineUserId
+        ? this.dispatchTo(notificationType, RecipientType.Owner, event, event.ownerLineUserId)
+        : Promise.resolve(SendResult.fail(SendErrorType.Skipped, "ownerLineUserId is null")),
     ]);
 
     return {

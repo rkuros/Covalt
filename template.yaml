@@ -25,6 +25,90 @@ Parameters:
     NoEcho: true
 
 Resources:
+  # --- Static Site (S3 + CloudFront) ---
+  StaticSiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  StaticSiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref StaticSiteBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontOAC
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub '${StaticSiteBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub '${AWS::StackName}-static-oac'
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  BasicAuthFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: !Sub '${AWS::StackName}-basic-auth'
+      AutoPublish: true
+      FunctionConfig:
+        Comment: Basic authentication for static site
+        Runtime: cloudfront-js-2.0
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request;
+          var headers = request.headers;
+          var expected = "Basic Y292YWx0LWRldjpOdGhvSUlKQ3Z3bjJPK21D";
+          if (!headers.authorization || headers.authorization.value !== expected) {
+            return {
+              statusCode: 401,
+              statusDescription: "Unauthorized",
+              headers: {
+                "www-authenticate": { value: 'Basic realm="Covalt"' }
+              }
+            };
+          }
+          return request;
+        }
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: mock.html
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt StaticSiteBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt CloudFrontOAC.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          Compress: true
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt BasicAuthFunction.FunctionARN
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
   # --- API Lambda ---
   ApiFunction:
     Type: AWS::Serverless::Function
@@ -83,3 +167,9 @@ Outputs:
   ReminderFunctionArn:
     Description: Reminder Lambda Function ARN
     Value: !GetAtt ReminderFunction.Arn
+  StaticSiteUrl:
+    Description: CloudFront URL for static site
+    Value: !Sub 'https://${CloudFrontDistribution.DomainName}'
+  StaticSiteBucketName:
+    Description: S3 bucket name for static site
+    Value: !Ref StaticSiteBucket

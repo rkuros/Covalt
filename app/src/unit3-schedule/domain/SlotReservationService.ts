@@ -11,6 +11,10 @@ export interface ReserveResult {
   readonly slotId: string;
   readonly status: string;
   readonly reservationId: string;
+  readonly date: string;
+  readonly startTime: string;
+  readonly endTime: string;
+  readonly durationMinutes: number;
 }
 
 /**
@@ -50,7 +54,7 @@ export class SlotReservationService {
       throw new SlotNotFoundError(slotId.value);
     }
 
-    const { dailySlotList } = found;
+    const { dailySlotList, slot } = found;
     dailySlotList.reserveSlot(slotId, reservationId);
     await this.dailySlotListRepo.save(dailySlotList);
 
@@ -58,6 +62,10 @@ export class SlotReservationService {
       slotId: slotId.value,
       status: 'booked',
       reservationId: reservationId.value,
+      date: dailySlotList.date.value,
+      startTime: slot.startTime.toString(),
+      endTime: slot.endTime.toString(),
+      durationMinutes: slot.durationMinutes,
     };
   }
 
