@@ -82,6 +82,8 @@ export class PrismaCustomerRepository implements CustomerRepository {
     lineUserId: string | null;
     isLineLinked: boolean;
     registeredAt: Date;
+    birthDate: string | null;
+    gender: string | null;
   }): Customer {
     return Customer.reconstruct({
       customerId: CustomerId.create(record.id),
@@ -95,6 +97,8 @@ export class PrismaCustomerRepository implements CustomerRepository {
         : null,
       isLineLinked: record.isLineLinked,
       registeredAt: record.registeredAt,
+      birthDate: record.birthDate,
+      gender: record.gender,
     });
   }
 }

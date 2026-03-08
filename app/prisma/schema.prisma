@@ -271,14 +271,52 @@ model Customer {
   displayName  String?  @map("display_name")
   lineUserId   String?  @map("line_user_id")
   isLineLinked Boolean  @default(false) @map("is_line_linked")
+  birthDate    String?  @map("birth_date")
+  gender       String?
   registeredAt DateTime @default(now()) @map("registered_at")
 
-  owner        OwnerAccount  @relation(fields: [ownerId], references: [id])
+  owner        OwnerAccount         @relation(fields: [ownerId], references: [id])
   reservations Reservation[]
+  notes        CustomerNote[]
+  attachments  CustomerAttachment[]
 
   @@index([ownerId])
   @@unique([ownerId, lineUserId])
   @@map("customers")
+}
+
+model CustomerNote {
+  id         String   @id @default(uuid()) @map("note_id")
+  customerId String   @map("customer_id")
+  ownerId    String   @map("owner_id")
+  category   String
+  title      String   @default("")
+  s3Key      String   @map("s3_key")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@index([ownerId, customerId])
+  @@map("customer_notes")
+}
+
+model CustomerAttachment {
+  id         String   @id @default(uuid()) @map("attachment_id")
+  customerId String   @map("customer_id")
+  ownerId    String   @map("owner_id")
+  fileName   String   @map("file_name")
+  fileType   String   @map("file_type")
+  s3Key      String   @map("s3_key")
+  category   String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@index([ownerId, customerId])
+  @@map("customer_attachments")
 }
 
 // ============================

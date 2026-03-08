@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { CustomerController } from './controllers/customer.controller';
+import { CustomerDataController } from './controllers/customer-data.controller';
 import { PrismaCustomerRepository } from './repositories/prisma-customer.repository';
 import { CustomerQueryService } from './domain/CustomerQueryService';
 import { CustomerCommandService } from './domain/CustomerCommandService';
@@ -13,7 +14,7 @@ import { LineFriendAddedNestHandler } from './handlers/line-friend-added.handler
 export const CUSTOMER_REPOSITORY = Symbol('CUSTOMER_REPOSITORY');
 
 @Module({
-  controllers: [CustomerController],
+  controllers: [CustomerController, CustomerDataController],
   providers: [
     // Repository
     {

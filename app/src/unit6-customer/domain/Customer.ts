@@ -17,6 +17,8 @@ export class Customer {
   private _lineUserId: LineUserId | null;
   private _isLineLinked: boolean;
   readonly registeredAt: Date;
+  private _birthDate: string | null;
+  private _gender: string | null;
 
   private constructor(params: {
     customerId: CustomerId;
@@ -26,6 +28,8 @@ export class Customer {
     lineUserId: LineUserId | null;
     isLineLinked: boolean;
     registeredAt: Date;
+    birthDate?: string | null;
+    gender?: string | null;
   }) {
     this.customerId = params.customerId;
     this.ownerId = params.ownerId;
@@ -34,6 +38,8 @@ export class Customer {
     this._lineUserId = params.lineUserId;
     this._isLineLinked = params.isLineLinked;
     this.registeredAt = params.registeredAt;
+    this._birthDate = params.birthDate ?? null;
+    this._gender = params.gender ?? null;
   }
 
   /**
@@ -85,6 +91,8 @@ export class Customer {
     lineUserId: LineUserId | null;
     isLineLinked: boolean;
     registeredAt: Date;
+    birthDate?: string | null;
+    gender?: string | null;
   }): Customer {
     return new Customer(params);
   }
@@ -124,6 +132,8 @@ export class Customer {
       lineUserId: this._lineUserId?.value ?? null,
       isLineLinked: this._isLineLinked,
       registeredAt: this.registeredAt.toISOString().replace(/\.\d{3}Z$/, "Z"),
+      birthDate: this._birthDate,
+      gender: this._gender,
     };
   }
 
@@ -148,6 +158,8 @@ export interface CustomerResponse {
   lineUserId: string | null;
   isLineLinked: boolean;
   registeredAt: string;
+  birthDate: string | null;
+  gender: string | null;
 }
 
 /** GET /api/customers/search の各要素 */

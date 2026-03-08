@@ -1179,11 +1179,323 @@ async function renderCustomers(mc) {
     cachedCustomers.forEach(c => {
       const id = c.customerId || c.id;
       const name = c.customerName || c.name || '-';
-      h += '<tr><td>' + name + '</td><td style="font-size:11px;color:#999;">' + (id || '').substring(0, 8) + '...</td></tr>';
+      const lineBadge = c.isLineLinked ? '<span style="display:inline-block;background:#06c755;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:6px;">LINE</span>' : '';
+      h += '<tr style="cursor:pointer;" onclick="showCustomerDetail(\'' + id + '\')">'
+        + '<td>' + esc(name) + lineBadge + '</td>'
+        + '<td style="font-size:11px;color:#999;">' + (id || '').substring(0, 8) + '...</td></tr>';
     });
   }
   h += '</tbody></table></div>';
   mc.innerHTML = h;
+}
+
+function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+let _custDetailTab = 'notes';
+
+async function showCustomerDetail(customerId) {
+  const mc = document.getElementById('mainContent');
+  mc.innerHTML = '<div class="loading">読み込み中...</div>';
+  showLoading();
+  try {
+    const [cust, rsvData, notesData, attachData] = await Promise.all([
+      api('GET', '/api/customers/' + customerId),
+      api('GET', '/api/owner/reservations?startDate=2020-01-01&endDate=2099-12-31&customerId=' + customerId).catch(() => ({ reservations: [] })),
+      api('GET', '/api/customers/' + customerId + '/notes').catch(() => ({ notes: [] })),
+      api('GET', '/api/customers/' + customerId + '/attachments').catch(() => ({ attachments: [] })),
+    ]);
+    hideLoading();
+    const reservations = (rsvData.reservations || []).filter(r => r.customerId === customerId);
+    reservations.sort((a, b) => b.dateTime.localeCompare(a.dateTime));
+    const notes = notesData.notes || [];
+    const attachments = (attachData.attachments || []).filter(a => a.category === 'photo');
+
+    let h = '<div style="margin-bottom:12px;"><button class="btn btn-outline" style="width:auto;padding:6px 14px;font-size:12px;margin:0;" onclick="renderCustomers(document.getElementById(\'mainContent\'))">&#8592; 顧客一覧に戻る</button></div>';
+
+    // --- Profile Section ---
+    h += '<div class="o-card" style="margin-bottom:12px;">';
+    h += '<h2 style="font-size:16px;margin-bottom:12px;">' + esc(cust.customerName || cust.name || '-') + '</h2>';
+    h += '<dl style="display:grid;grid-template-columns:100px 1fr;gap:4px 8px;font-size:13px;">';
+    h += '<dt style="color:#666;">顧客ID</dt><dd style="font-size:11px;word-break:break-all;">' + (cust.customerId || cust.id || '-') + '</dd>';
+    if (cust.displayName) h += '<dt style="color:#666;">表示名</dt><dd>' + esc(cust.displayName) + '</dd>';
+    h += '<dt style="color:#666;">LINE連携</dt><dd>' + (cust.isLineLinked ? '<span style="color:#06c755;font-weight:700;">連携済み</span>' : '<span style="color:#999;">未連携</span>') + '</dd>';
+    if (cust.lineUserId) h += '<dt style="color:#666;">LINE ID</dt><dd style="font-size:11px;word-break:break-all;">' + esc(cust.lineUserId) + '</dd>';
+    h += '<dt style="color:#666;">登録日</dt><dd>' + (cust.registeredAt ? fmtDate(cust.registeredAt) : '-') + '</dd>';
+
+    const genderLabels = { male: '男性', female: '女性', other: 'その他' };
+    h += '<dt style="color:#666;">生年月日</dt><dd id="cdBirthDate">' + (cust.birthDate ? esc(cust.birthDate) : '<span style="color:#999;">未設定</span>') + ' <button style="border:none;background:none;color:#0984e3;cursor:pointer;font-size:11px;" onclick="editProfileField(\'' + customerId + '\',\'birthDate\',\'' + esc(cust.birthDate || '') + '\')">編集</button></dd>';
+    h += '<dt style="color:#666;">性別</dt><dd id="cdGender">' + (cust.gender ? (genderLabels[cust.gender] || esc(cust.gender)) : '<span style="color:#999;">未設定</span>') + ' <button style="border:none;background:none;color:#0984e3;cursor:pointer;font-size:11px;" onclick="editProfileField(\'' + customerId + '\',\'gender\',\'' + esc(cust.gender || '') + '\')">編集</button></dd>';
+    h += '</dl></div>';
+
+    // --- Tabs ---
+    h += '<div style="display:flex;gap:0;margin-bottom:0;">';
+    h += '<button id="cdTabNotes" style="padding:8px 16px;border:1px solid #ddd;border-bottom:' + (_custDetailTab === 'notes' ? '2px solid #0984e3' : 'none') + ';background:' + (_custDetailTab === 'notes' ? '#fff' : '#f5f5f5') + ';font-size:12px;font-weight:600;cursor:pointer;border-radius:6px 6px 0 0;" onclick="_custDetailTab=\'notes\';showCustomerDetail(\'' + customerId + '\')">メモ・施術記録</button>';
+    h += '<button id="cdTabPhotos" style="padding:8px 16px;border:1px solid #ddd;border-bottom:' + (_custDetailTab === 'photos' ? '2px solid #0984e3' : 'none') + ';background:' + (_custDetailTab === 'photos' ? '#fff' : '#f5f5f5') + ';font-size:12px;font-weight:600;cursor:pointer;border-radius:6px 6px 0 0;" onclick="_custDetailTab=\'photos\';showCustomerDetail(\'' + customerId + '\')">写真</button>';
+    h += '<button id="cdTabHistory" style="padding:8px 16px;border:1px solid #ddd;border-bottom:' + (_custDetailTab === 'history' ? '2px solid #0984e3' : 'none') + ';background:' + (_custDetailTab === 'history' ? '#fff' : '#f5f5f5') + ';font-size:12px;font-weight:600;cursor:pointer;border-radius:6px 6px 0 0;" onclick="_custDetailTab=\'history\';showCustomerDetail(\'' + customerId + '\')">予約履歴</button>';
+    h += '</div>';
+
+    // --- Notes/Records Tab ---
+    if (_custDetailTab === 'notes') {
+      h += '<div class="o-card" style="border-radius:0 8px 8px 8px;">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
+      h += '<h3 style="font-size:14px;">メモ・施術記録 <span style="font-size:11px;color:#999;">(' + notes.length + '件)</span></h3>';
+      h += '<div style="display:flex;gap:6px;">';
+      h += '<button class="btn btn-outline" style="width:auto;padding:4px 10px;font-size:11px;margin:0;" onclick="openNewNote(\'' + customerId + '\',\'note\')">+ 新規メモ</button>';
+      h += '<button class="btn btn-outline" style="width:auto;padding:4px 10px;font-size:11px;margin:0;" onclick="openNewNote(\'' + customerId + '\',\'record\')">+ 新規施術記録</button>';
+      h += '</div></div>';
+      if (!notes.length) {
+        h += '<p style="text-align:center;color:#999;padding:16px 0;font-size:13px;">メモ・施術記録はありません</p>';
+      } else {
+        notes.forEach(n => {
+          const catLabel = n.category === 'record' ? '施術記録' : 'メモ';
+          const catColor = n.category === 'record' ? '#e3f2fd' : '#f3e5f5';
+          const catText = n.category === 'record' ? '#1565c0' : '#7b1fa2';
+          h += '<div style="border:1px solid #e0e0e0;border-radius:8px;padding:10px;margin-bottom:8px;">';
+          h += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+          h += '<div><span style="background:' + catColor + ';color:' + catText + ';font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;">' + catLabel + '</span> ';
+          h += '<span style="font-size:13px;font-weight:600;margin-left:4px;">' + esc(n.title || '無題') + '</span></div>';
+          h += '<span style="font-size:10px;color:#999;">' + fmtDate(n.createdAt) + '</span></div>';
+          h += '<div id="noteBody_' + n.noteId + '" style="display:none;margin-top:8px;padding:8px;background:#fafafa;border-radius:4px;font-size:12px;white-space:pre-wrap;"></div>';
+          h += '<div style="margin-top:6px;display:flex;gap:6px;">';
+          h += '<button style="border:none;background:none;color:#0984e3;cursor:pointer;font-size:11px;" onclick="toggleNoteContent(\'' + customerId + '\',\'' + n.noteId + '\')">内容を表示</button>';
+          h += '<button style="border:none;background:none;color:#0984e3;cursor:pointer;font-size:11px;" onclick="openEditNote(\'' + customerId + '\',\'' + n.noteId + '\',\'' + esc(n.title || '') + '\')">編集</button>';
+          h += '<button style="border:none;background:none;color:#d32f2f;cursor:pointer;font-size:11px;" onclick="confirmDeleteNote(\'' + customerId + '\',\'' + n.noteId + '\')">削除</button>';
+          h += '</div></div>';
+        });
+      }
+      h += '</div>';
+    }
+
+    // --- Photos Tab ---
+    if (_custDetailTab === 'photos') {
+      h += '<div class="o-card" style="border-radius:0 8px 8px 8px;">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
+      h += '<h3 style="font-size:14px;">写真 <span style="font-size:11px;color:#999;">(' + attachments.length + '件)</span></h3>';
+      h += '<label class="btn btn-outline" style="width:auto;padding:4px 10px;font-size:11px;margin:0;cursor:pointer;">+ 写真アップロード<input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(\'' + customerId + '\', this)"></label>';
+      h += '</div>';
+      if (!attachments.length) {
+        h += '<p style="text-align:center;color:#999;padding:16px 0;font-size:13px;">写真はありません</p>';
+      } else {
+        h += '<div id="photoGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">';
+        attachments.forEach(a => {
+          h += '<div style="position:relative;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;aspect-ratio:1;background:#f5f5f5;" id="photoWrap_' + a.attachmentId + '">';
+          h += '<img id="photoImg_' + a.attachmentId + '" style="width:100%;height:100%;object-fit:cover;" src="" alt="' + esc(a.fileName) + '">';
+          h += '<button onclick="confirmDeleteAttachment(\'' + customerId + '\',\'' + a.attachmentId + '\')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;line-height:20px;text-align:center;">&#10005;</button>';
+          h += '</div>';
+        });
+        h += '</div>';
+      }
+      h += '</div>';
+    }
+
+    // --- Reservation History Tab ---
+    if (_custDetailTab === 'history') {
+      h += '<div class="o-card" style="border-radius:0 8px 8px 8px;">';
+      h += '<h3 style="font-size:14px;margin-bottom:8px;">予約履歴 <span style="font-size:11px;color:#999;">(' + reservations.length + '件)</span></h3>';
+      if (!reservations.length) {
+        h += '<p style="text-align:center;color:#999;padding:16px 0;font-size:13px;">予約履歴はありません</p>';
+      } else {
+        h += '<table class="o-table"><thead><tr><th>日時</th><th>ステータス</th></tr></thead><tbody>';
+        reservations.forEach(r => {
+          const statusColors = { confirmed: '#0984e3', completed: '#636e72', cancelled: '#d63031' };
+          const statusLabels = { confirmed: '確定', completed: '完了', cancelled: 'キャンセル' };
+          const col = statusColors[r.status] || '#333';
+          const label = statusLabels[r.status] || r.status;
+          h += '<tr onclick="showReservationDetail(\'' + (r.reservationId || r.id) + '\')" style="cursor:pointer;">'
+            + '<td>' + fmtDateTime(r.dateTime) + '</td>'
+            + '<td><span style="color:' + col + ';font-weight:600;font-size:12px;">' + label + '</span></td></tr>';
+        });
+        h += '</tbody></table>';
+      }
+      h += '</div>';
+    }
+
+    mc.innerHTML = h;
+
+    // Load photo thumbnails via presigned URLs
+    if (_custDetailTab === 'photos' && attachments.length) {
+      attachments.forEach(a => {
+        api('GET', '/api/customers/' + customerId + '/attachments/' + a.attachmentId + '/url')
+          .then(res => {
+            const img = document.getElementById('photoImg_' + a.attachmentId);
+            if (img) img.src = res.presignedUrl;
+          }).catch(() => {});
+      });
+    }
+  } catch (e) {
+    hideLoading();
+    showToast('顧客詳細の取得に失敗しました: ' + e.message, true);
+    renderCustomers(mc);
+  }
+}
+
+// --- Profile Edit ---
+function editProfileField(customerId, field, currentValue) {
+  let html = '';
+  if (field === 'birthDate') {
+    html = '<h3>生年月日の編集</h3>'
+      + '<div class="form-group"><label>生年月日</label><input class="form-input" id="editProfileVal" type="date" value="' + (currentValue || '') + '"></div>'
+      + '<div style="display:flex;gap:8px;"><button class="btn btn-primary" style="flex:1;background:#0984e3;" onclick="saveProfileField(\'' + customerId + '\',\'birthDate\')">保存</button><button class="btn btn-outline" style="flex:1;" onclick="closeModal()">キャンセル</button></div>';
+  } else if (field === 'gender') {
+    html = '<h3>性別の編集</h3>'
+      + '<div class="form-group"><label>性別</label><select class="form-input" id="editProfileVal">'
+      + '<option value="">未設定</option>'
+      + '<option value="male"' + (currentValue === 'male' ? ' selected' : '') + '>男性</option>'
+      + '<option value="female"' + (currentValue === 'female' ? ' selected' : '') + '>女性</option>'
+      + '<option value="other"' + (currentValue === 'other' ? ' selected' : '') + '>その他</option>'
+      + '</select></div>'
+      + '<div style="display:flex;gap:8px;"><button class="btn btn-primary" style="flex:1;background:#0984e3;" onclick="saveProfileField(\'' + customerId + '\',\'gender\')">保存</button><button class="btn btn-outline" style="flex:1;" onclick="closeModal()">キャンセル</button></div>';
+  }
+  showModal(html);
+}
+
+async function saveProfileField(customerId, field) {
+  const val = document.getElementById('editProfileVal').value;
+  showLoading();
+  try {
+    const body = {};
+    body[field] = val || null;
+    await api('PUT', '/api/customers/' + customerId + '/profile', body);
+    closeModal();
+    showToast('プロフィールを更新しました');
+    showCustomerDetail(customerId);
+  } catch (e) {
+    showToast('更新エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+// --- Notes ---
+function openNewNote(customerId, category) {
+  const catLabel = category === 'record' ? '施術記録' : 'メモ';
+  const html = '<h3>新規' + catLabel + '</h3>'
+    + '<div class="form-group"><label>タイトル</label><input class="form-input" id="newNoteTitle" placeholder="タイトル"></div>'
+    + '<div class="form-group"><label>内容</label><textarea class="form-input" id="newNoteContent" rows="6" style="resize:vertical;" placeholder="内容を入力..."></textarea></div>'
+    + '<div style="display:flex;gap:8px;"><button class="btn btn-primary" style="flex:1;background:#0984e3;" onclick="doCreateNote(\'' + customerId + '\',\'' + category + '\')">保存</button><button class="btn btn-outline" style="flex:1;" onclick="closeModal()">キャンセル</button></div>';
+  showModal(html);
+}
+
+async function doCreateNote(customerId, category) {
+  const title = document.getElementById('newNoteTitle').value;
+  const content = document.getElementById('newNoteContent').value;
+  if (!content) { showToast('内容を入力してください', true); return; }
+  showLoading();
+  try {
+    await api('POST', '/api/customers/' + customerId + '/notes', { category: category, title: title, content: content });
+    closeModal();
+    showToast('保存しました');
+    _custDetailTab = 'notes';
+    showCustomerDetail(customerId);
+  } catch (e) {
+    showToast('保存エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+async function toggleNoteContent(customerId, noteId) {
+  const el = document.getElementById('noteBody_' + noteId);
+  if (!el) return;
+  if (el.style.display === 'block') {
+    el.style.display = 'none';
+    return;
+  }
+  el.innerHTML = '<span style="color:#999;">読み込み中...</span>';
+  el.style.display = 'block';
+  try {
+    const data = await api('GET', '/api/customers/' + customerId + '/notes/' + noteId);
+    el.textContent = data.content || '(空)';
+  } catch (e) {
+    el.innerHTML = '<span style="color:#d32f2f;">取得エラー: ' + esc(e.message) + '</span>';
+  }
+}
+
+function openEditNote(customerId, noteId, currentTitle) {
+  // First fetch current content
+  showLoading();
+  api('GET', '/api/customers/' + customerId + '/notes/' + noteId).then(data => {
+    hideLoading();
+    const html = '<h3>メモ編集</h3>'
+      + '<div class="form-group"><label>タイトル</label><input class="form-input" id="editNoteTitle" value="' + esc(data.title || '') + '"></div>'
+      + '<div class="form-group"><label>内容</label><textarea class="form-input" id="editNoteContent" rows="6" style="resize:vertical;">' + esc(data.content || '') + '</textarea></div>'
+      + '<div style="display:flex;gap:8px;"><button class="btn btn-primary" style="flex:1;background:#0984e3;" onclick="doUpdateNote(\'' + customerId + '\',\'' + noteId + '\')">更新</button><button class="btn btn-outline" style="flex:1;" onclick="closeModal()">キャンセル</button></div>';
+    showModal(html);
+  }).catch(e => {
+    hideLoading();
+    showToast('取得エラー: ' + e.message, true);
+  });
+}
+
+async function doUpdateNote(customerId, noteId) {
+  const title = document.getElementById('editNoteTitle').value;
+  const content = document.getElementById('editNoteContent').value;
+  showLoading();
+  try {
+    await api('PUT', '/api/customers/' + customerId + '/notes/' + noteId, { title: title, content: content });
+    closeModal();
+    showToast('更新しました');
+    _custDetailTab = 'notes';
+    showCustomerDetail(customerId);
+  } catch (e) {
+    showToast('更新エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+function confirmDeleteNote(customerId, noteId) {
+  showModal('<h3>メモを削除しますか？</h3><p style="font-size:13px;color:#666;margin-bottom:16px;">この操作は元に戻せません。</p><div style="display:flex;gap:8px;"><button class="btn btn-danger" style="flex:1;" onclick="doDeleteNote(\'' + customerId + '\',\'' + noteId + '\')">削除</button><button class="btn btn-outline" style="flex:1;" onclick="closeModal()">キャンセル</button></div>');
+}
+
+async function doDeleteNote(customerId, noteId) {
+  showLoading();
+  try {
+    await api('DELETE', '/api/customers/' + customerId + '/notes/' + noteId);
+    closeModal();
+    showToast('削除しました');
+    _custDetailTab = 'notes';
+    showCustomerDetail(customerId);
+  } catch (e) {
+    showToast('削除エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+// --- Photos ---
+async function uploadPhoto(customerId, input) {
+  const file = input.files[0];
+  if (!file) return;
+  showLoading();
+  try {
+    // 1. Get presigned URL
+    const res = await api('POST', '/api/customers/' + customerId + '/attachments/presigned-url', {
+      fileName: file.name,
+      fileType: file.type,
+      category: 'photo'
+    });
+    // 2. Upload directly to S3
+    await fetch(res.presignedUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type },
+      body: file
+    });
+    showToast('写真をアップロードしました');
+    _custDetailTab = 'photos';
+    showCustomerDetail(customerId);
+  } catch (e) {
+    showToast('アップロードエラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+function confirmDeleteAttachment(customerId, attachmentId) {
+  showModal('<h3>写真を削除しますか？</h3><p style="font-size:13px;color:#666;margin-bottom:16px;">この操作は元に戻せません。</p><div style="display:flex;gap:8px;"><button class="btn btn-danger" style="flex:1;" onclick="doDeleteAttachment(\'' + customerId + '\',\'' + attachmentId + '\')">削除</button><button class="btn btn-outline" style="flex:1;" onclick="closeModal()">キャンセル</button></div>');
+}
+
+async function doDeleteAttachment(customerId, attachmentId) {
+  showLoading();
+  try {
+    await api('DELETE', '/api/customers/' + customerId + '/attachments/' + attachmentId);
+    closeModal();
+    showToast('削除しました');
+    _custDetailTab = 'photos';
+    showCustomerDetail(customerId);
+  } catch (e) {
+    showToast('削除エラー: ' + e.message, true);
+  } finally { hideLoading(); }
 }
 
 function filterCust() {

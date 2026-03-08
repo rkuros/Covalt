@@ -13,6 +13,7 @@ Globals:
         DATABASE_URL: !Ref DatabaseUrl
         ENCRYPTION_KEY: !Ref EncryptionKey
         LINE_API_BASE_URL: https://api.line.me
+        CUSTOMER_DATA_BUCKET: !Ref CustomerDataBucket
 
 Parameters:
   DatabaseUrl:
@@ -109,12 +110,31 @@ Resources:
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
 
+  # --- Customer Data S3 Bucket ---
+  CustomerDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, PUT]
+            AllowedOrigins: ['*']
+            MaxAge: 3600
+
   # --- API Lambda ---
   ApiFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: app/
       Handler: dist/src/lambda.handler
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref CustomerDataBucket
       Events:
         Api:
           Type: HttpApi
@@ -173,3 +193,6 @@ Outputs:
   StaticSiteBucketName:
     Description: S3 bucket name for static site
     Value: !Ref StaticSiteBucket
+  CustomerDataBucketName:
+    Description: S3 bucket name for customer data
+    Value: !Ref CustomerDataBucket
