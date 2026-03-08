@@ -10,7 +10,15 @@ async function bootstrap() {
   if (cachedServer) return cachedServer;
 
   const expressApp = express();
-  const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
+  // Preserve raw body for webhook signature verification
+  expressApp.use(express.json({
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf;
+    },
+  }));
+  const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp), {
+    bodyParser: false,
+  });
   app.enableCors({ origin: true });
   await app.init();
 

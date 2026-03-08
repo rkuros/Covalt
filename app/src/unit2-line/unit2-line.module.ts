@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { PrismaService } from '../common/prisma/prisma.service';
 
@@ -119,4 +119,18 @@ import { LineController } from './controllers/line.controller';
     PrismaLineFriendshipRepository,
   ],
 })
-export class Unit2LineModule {}
+export class Unit2LineModule implements OnModuleInit {
+  constructor(
+    private readonly webhookReceiveService: WebhookReceiveService,
+    private readonly friendFollowService: FriendFollowService,
+  ) {}
+
+  onModuleInit() {
+    this.webhookReceiveService.registerHandler('follow', (ownerId, event) =>
+      this.friendFollowService.handleFollow(ownerId, event),
+    );
+    this.webhookReceiveService.registerHandler('unfollow', (ownerId, event) =>
+      this.friendFollowService.handleUnfollow(ownerId, event),
+    );
+  }
+}

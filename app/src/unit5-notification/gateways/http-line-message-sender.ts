@@ -1,18 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { LineMessage, LineMessageSender } from '../domain/LineMessageSender';
 import { SendResult, SendErrorType } from '../domain/SendResult';
+import { PrismaService } from '../../common/prisma/prisma.service';
 
 /**
- * Unit 2 の POST /api/line/messages/push を HTTP で呼び出す LineMessageSender 実装。
- * fetch API を使用して Unit 2 のエンドポイントにリクエストを送る。
+ * LINE Messaging API を直接呼び出す LineMessageSender 実装。
+ * DB から channelAccessToken を取得し、LINE Push Message API を呼ぶ。
  */
 @Injectable()
 export class HttpLineMessageSender implements LineMessageSender {
-  private readonly baseUrl: string;
-
-  constructor() {
-    this.baseUrl = process.env['LINE_API_BASE_URL'] ?? 'http://localhost:3000';
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   async send(
     ownerId: string,
@@ -20,24 +17,42 @@ export class HttpLineMessageSender implements LineMessageSender {
     messages: readonly LineMessage[],
   ): Promise<SendResult> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/line/messages/push`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ownerId,
-          lineUserId,
-          messages: messages.map((m) => ({
-            type: m.type,
-            text: m.text,
-          })),
-        }),
+      const config = await this.prisma.lineChannelConfig.findUnique({
+        where: { ownerId },
       });
+
+      if (!config) {
+        return SendResult.fail(
+          SendErrorType.Unknown,
+          `LINE channel config not found for ownerId=${ownerId}`,
+        );
+      }
+
+      const body = {
+        to: lineUserId,
+        messages: messages.map((m) => ({
+          type: 'text' as const,
+          text: m.text,
+        })),
+      };
+
+      const response = await fetch(
+        'https://api.line.me/v2/bot/message/push',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${config.channelAccessToken}`,
+          },
+          body: JSON.stringify(body),
+        },
+      );
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));
-        const errorObj = errorBody as { error?: string; message?: string };
+        const errorObj = errorBody as { message?: string };
 
-        if (errorObj.error === 'USER_BLOCKED') {
+        if (response.status === 400 && errorObj.message?.includes('block')) {
           return SendResult.fail(
             SendErrorType.UserBlocked,
             errorObj.message ?? 'User blocked',
@@ -46,12 +61,14 @@ export class HttpLineMessageSender implements LineMessageSender {
 
         return SendResult.fail(
           SendErrorType.Unknown,
-          `HTTP ${response.status}: ${errorObj.message ?? 'Unknown error'}`,
+          `LINE API ${response.status}: ${errorObj.message ?? 'Unknown error'}`,
         );
       }
 
-      const result = (await response.json()) as { messageId?: string };
-      return SendResult.ok(result.messageId ?? '');
+      const result = (await response.json().catch(() => ({}))) as {
+        sentMessages?: Array<{ id: string }>;
+      };
+      return SendResult.ok(result.sentMessages?.[0]?.id ?? `msg_${Date.now()}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       return SendResult.fail(SendErrorType.NetworkError, message);

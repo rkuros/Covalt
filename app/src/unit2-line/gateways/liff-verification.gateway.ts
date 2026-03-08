@@ -6,23 +6,50 @@ import {
 import { InvalidLiffTokenError } from '../domain/DomainErrors';
 
 /**
- * LIFF アクセストークン検証 Gateway の仮実装。
- * 本番では LINE Platform の Verify API を呼び出す。現時点では console.log で代替する。
+ * LIFF アクセストークン検証 Gateway 実装。
+ * LINE Platform の Verify API + Profile API を呼び出す。
  */
 @Injectable()
 export class LiffVerificationGatewayImpl implements LiffVerificationGateway {
   async verify(accessToken: string): Promise<LiffVerificationResult> {
-    console.log('[LIFF Verification] verify called', {
-      accessToken: accessToken.substring(0, 8) + '...',
-    });
+    // 1. Verify the access token
+    const verifyResponse = await fetch(
+      `https://api.line.me/oauth2/v2.1/verify?access_token=${encodeURIComponent(accessToken)}`,
+    );
 
-    if (!accessToken || accessToken === 'invalid') {
+    if (!verifyResponse.ok) {
       throw new InvalidLiffTokenError();
     }
 
+    const verifyData = (await verifyResponse.json()) as {
+      scope: string;
+      client_id: string;
+      expires_in: number;
+    };
+
+    if (verifyData.expires_in <= 0) {
+      throw new InvalidLiffTokenError('LIFFアクセストークンの有効期限が切れています');
+    }
+
+    // 2. Get user profile using the access token
+    const profileResponse = await fetch('https://api.line.me/v2/profile', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!profileResponse.ok) {
+      throw new InvalidLiffTokenError('LINEプロフィールの取得に失敗しました');
+    }
+
+    const profile = (await profileResponse.json()) as {
+      userId: string;
+      displayName: string;
+    };
+
     return {
-      lineUserId: `U${'0'.repeat(32)}`,
-      displayName: 'LIFF_Test_User',
+      lineUserId: profile.userId,
+      displayName: profile.displayName,
     };
   }
 }

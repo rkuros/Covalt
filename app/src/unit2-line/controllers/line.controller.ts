@@ -4,6 +4,7 @@ import {
   Get,
   Put,
   Delete,
+  Param,
   Body,
   Req,
   Headers,
@@ -109,6 +110,7 @@ export class LineController {
   // POST /api/line/messages/push (PACT: A9)
   // ==========================================
   @Post('messages/push')
+  @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
   async pushMessage(@Body() body: PushMessageBody) {
     try {
@@ -147,29 +149,50 @@ export class LineController {
   }
 
   // ==========================================
-  // POST /api/line/webhook
+  // POST /api/line/webhook/:ownerId
+  // LINE Platform sends: { destination, events: [{ type, timestamp, webhookEventId, source, ... }] }
   // ==========================================
-  @Post('webhook')
+  @Post('webhook/:ownerId')
   @HttpCode(HttpStatus.OK)
   async receiveWebhook(
-    @Body() body: WebhookBody,
+    @Param('ownerId') ownerId: string,
+    @Req() req: any,
+    @Body() body: any,
     @Headers('x-line-signature') signature: string,
   ) {
-    try {
-      const events = body.events.map((e) =>
-        WebhookEvent.create({
-          eventType: e.eventType,
-          timestamp: new Date(e.timestamp),
-          source: e.source,
-          webhookEventId: e.webhookEventId,
-        }),
-      );
+    if (!signature) {
+      throw new UnauthorizedException({
+        error: 'MISSING_SIGNATURE',
+        message: 'x-line-signature header is required',
+      });
+    }
 
-      const rawBody = JSON.stringify(body);
+    try {
+      const lineEvents = (body.events ?? []) as Array<{
+        type: string;
+        timestamp: number;
+        webhookEventId?: string;
+        source?: { type: string; userId?: string; groupId?: string; roomId?: string };
+      }>;
+
+      const supportedTypes = ['follow', 'unfollow', 'message', 'postback'];
+      const events = lineEvents
+        .filter((e) => supportedTypes.includes(e.type))
+        .map((e) =>
+          WebhookEvent.create({
+            eventType: e.type as 'follow' | 'unfollow' | 'message' | 'postback',
+            timestamp: new Date(e.timestamp),
+            source: (e.source ?? { type: 'user' }) as { type: 'user' | 'group' | 'room'; userId?: string; groupId?: string; roomId?: string },
+            webhookEventId: e.webhookEventId,
+          }),
+        );
+
+      // Use raw body for signature verification (not re-serialized JSON)
+      const rawBody = req.rawBody ? req.rawBody.toString('utf-8') : JSON.stringify(body);
       await this.webhookReceiveService.receive(
-        body.ownerId,
+        ownerId,
         rawBody,
-        signature ?? '',
+        signature,
         events,
       );
 

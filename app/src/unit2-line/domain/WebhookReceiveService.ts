@@ -1,4 +1,4 @@
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { WebhookEvent, WebhookEventType } from "./WebhookEvent";
 import { LineChannelConfigRepository } from "./LineChannelConfigRepository";
 import {
@@ -11,7 +11,7 @@ import {
  * LINE Platform からの Webhook リクエストを受信し、署名検証を行い、
  * イベント種別ごとにディスパッチするドメインサービス。
  */
-export type WebhookEventHandler = (event: WebhookEvent) => Promise<void>;
+export type WebhookEventHandler = (ownerId: string, event: WebhookEvent) => Promise<void>;
 
 export class WebhookReceiveService {
   private readonly handlers = new Map<WebhookEventType, WebhookEventHandler>();
@@ -40,7 +40,10 @@ export class WebhookReceiveService {
     const hash = createHmac("SHA256", channelSecret)
       .update(body)
       .digest("base64");
-    return hash === signature;
+    const hashBuf = Buffer.from(hash);
+    const sigBuf = Buffer.from(signature);
+    if (hashBuf.length !== sigBuf.length) return false;
+    return timingSafeEqual(hashBuf, sigBuf);
   }
 
   /**
@@ -78,7 +81,7 @@ export class WebhookReceiveService {
 
       const handler = this.handlers.get(event.eventType);
       if (handler) {
-        await handler(event);
+        await handler(ownerId, event);
       } else {
         console.log(`No handler registered for event type: ${event.eventType}`);
       }
