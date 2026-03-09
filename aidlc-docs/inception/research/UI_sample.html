@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=768, height=1024, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ec5b13",
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#221610",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .calendar-dot { width: 4px; height: 4px; border-radius: 50%; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 flex items-center justify-center min-h-screen">
+<div class="w-[768px] h-[1024px] bg-background-light dark:bg-background-dark flex flex-col relative overflow-hidden shadow-2xl">
+<!-- Header -->
+<header class="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-white/50 backdrop-blur-md">
+<div class="flex items-center gap-3">
+<div class="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined">event_upcoming</span>
+</div>
+<h1 class="text-xl font-bold tracking-tight text-slate-900">スケジュール</h1>
+</div>
+<div class="flex gap-2">
+<button class="p-2 rounded-full hover:bg-primary/10 text-slate-600 transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="p-2 rounded-full hover:bg-primary/10 text-slate-600 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</header>
+<!-- Main Content Area (Scrollable) -->
+<main class="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-6">
+<!-- Monthly Calendar View -->
+<section class="bg-white dark:bg-slate-800/50 rounded-xl p-6 shadow-sm border border-primary/5">
+<div class="flex items-center justify-between mb-8">
+<h2 class="text-lg font-bold text-slate-800">2023年 10月</h2>
+<div class="flex gap-4">
+<button class="flex items-center justify-center p-2 rounded-lg border border-slate-200 hover:bg-slate-50">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="flex items-center justify-center p-2 rounded-lg border border-slate-200 hover:bg-slate-50">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Calendar Grid -->
+<div class="grid grid-cols-7 gap-y-4 text-center">
+<div class="text-xs font-bold text-slate-400 uppercase tracking-widest pb-4">Sun</div>
+<div class="text-xs font-bold text-slate-400 uppercase tracking-widest pb-4">Mon</div>
+<div class="text-xs font-bold text-slate-400 uppercase tracking-widest pb-4">Tue</div>
+<div class="text-xs font-bold text-slate-400 uppercase tracking-widest pb-4">Wed</div>
+<div class="text-xs font-bold text-slate-400 uppercase tracking-widest pb-4">Thu</div>
+<div class="text-xs font-bold text-slate-400 uppercase tracking-widest pb-4">Fri</div>
+<div class="text-xs font-bold text-slate-400 uppercase tracking-widest pb-4">Sat</div>
+<!-- Days -->
+<!-- Empty slots for previous month -->
+<div class="h-16 flex flex-col items-center justify-center opacity-0"></div>
+<div class="h-16 flex flex-col items-center justify-center opacity-0"></div>
+<div class="h-16 flex flex-col items-center justify-center opacity-0"></div>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group relative">
+<span class="text-slate-800 font-medium">1</span>
+<div class="flex gap-0.5 mt-1">
+<div class="calendar-dot bg-primary"></div>
+<div class="calendar-dot bg-slate-300"></div>
+</div>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group relative">
+<span class="text-slate-800 font-medium">2</span>
+<div class="flex gap-0.5 mt-1">
+<div class="calendar-dot bg-primary"></div>
+</div>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group relative">
+<span class="text-slate-800 font-medium">3</span>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group relative">
+<span class="text-slate-800 font-medium">4</span>
+<div class="flex gap-0.5 mt-1">
+<div class="calendar-dot bg-primary"></div>
+<div class="calendar-dot bg-primary"></div>
+</div>
+</button>
+<!-- Row 2 -->
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group">
+<span class="text-slate-800 font-medium">5</span>
+<div class="flex gap-0.5 mt-1">
+<div class="calendar-dot bg-primary"></div>
+</div>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group">
+<span class="text-slate-800 font-medium">6</span>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group">
+<span class="text-slate-800 font-medium">7</span>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group">
+<span class="text-slate-800 font-medium">8</span>
+<div class="flex gap-0.5 mt-1">
+<div class="calendar-dot bg-primary"></div>
+<div class="calendar-dot bg-primary"></div>
+</div>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group">
+<span class="text-slate-800 font-medium">9</span>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group">
+<span class="text-slate-800 font-medium">10</span>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group">
+<span class="text-slate-800 font-medium">11</span>
+</button>
+<!-- Selected Day (12th) -->
+<button class="h-16 flex flex-col items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/30 ring-4 ring-primary/20">
+<span class="font-bold">12</span>
+<div class="flex gap-0.5 mt-1">
+<div class="calendar-dot bg-white"></div>
+<div class="calendar-dot bg-white"></div>
+</div>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group">
+<span class="text-slate-800 font-medium">13</span>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group">
+<span class="text-slate-800 font-medium">14</span>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group">
+<span class="text-slate-800 font-medium">15</span>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group">
+<span class="text-slate-800 font-medium">16</span>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group">
+<span class="text-slate-800 font-medium">17</span>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group">
+<span class="text-slate-800 font-medium">18</span>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group">
+<span class="text-slate-800 font-medium">19</span>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group">
+<span class="text-slate-800 font-medium">20</span>
+</button>
+<button class="h-16 flex flex-col items-center justify-center rounded-xl hover:bg-primary/5 group">
+<span class="text-slate-800 font-medium">21</span>
+</button>
+</div>
+</section>
+<!-- Daily Slots Section -->
+<section class="flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h3 class="text-lg font-bold text-slate-800">10月12日（木）の予定</h3>
+<button class="text-primary text-sm font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-base">add_circle</span>
+                        新規予約
+                    </button>
+</div>
+<div class="grid grid-cols-1 gap-3">
+<!-- Slot: Reserved -->
+<div class="flex items-center gap-4 bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-primary/5 shadow-sm">
+<div class="w-16 text-center border-r border-slate-100 pr-4">
+<p class="text-sm font-bold text-slate-800">10:00</p>
+<p class="text-[10px] text-slate-400">60min</p>
+</div>
+<div class="flex-1">
+<h4 class="text-sm font-bold text-slate-800">田中 太郎 様</h4>
+<p class="text-xs text-slate-500">プレミアムプラン・カット＆カラー</p>
+</div>
+<div class="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold">
+                            予約済み
+                        </div>
+<button class="text-slate-300">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Slot: Available -->
+<div class="flex items-center gap-4 bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-dashed border-primary/20 shadow-sm opacity-80">
+<div class="w-16 text-center border-r border-slate-100 pr-4">
+<p class="text-sm font-bold text-slate-800">11:30</p>
+<p class="text-[10px] text-slate-400">30min</p>
+</div>
+<div class="flex-1">
+<p class="text-sm font-medium text-slate-400 italic">空きスロット</p>
+</div>
+<button class="px-4 py-2 bg-slate-100 hover:bg-primary hover:text-white transition-all text-slate-600 rounded-lg text-xs font-bold">
+                            開放する
+                        </button>
+</div>
+<!-- Slot: Reserved -->
+<div class="flex items-center gap-4 bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-primary/5 shadow-sm">
+<div class="w-16 text-center border-r border-slate-100 pr-4">
+<p class="text-sm font-bold text-slate-800">13:00</p>
+<p class="text-[10px] text-slate-400">90min</p>
+</div>
+<div class="flex-1">
+<h4 class="text-sm font-bold text-slate-800">佐藤 美咲 様</h4>
+<p class="text-xs text-slate-500">ベーシック・パーマ</p>
+</div>
+<div class="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold">
+                            予約済み
+                        </div>
+<button class="text-slate-300">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="bg-white/80 backdrop-blur-lg border-t border-primary/10 px-6 py-3 pb-8 flex items-center justify-around">
+<button class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-bold">ホーム</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+<span class="text-[10px] font-bold">スケジュール</span>
+</button>
+<div class="relative -top-6">
+<button class="size-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg shadow-primary/40 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+<button class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">group</span>
+<span class="text-[10px] font-bold">顧客リスト</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px] font-bold">設定</span>
+</button>
+</nav>
+<!-- Floating Quick Action (Alternate for iPad experience) -->
+<button class="absolute bottom-24 right-6 size-12 bg-white border border-primary/20 text-primary rounded-full flex items-center justify-center shadow-md">
+<span class="material-symbols-outlined">today</span>
+</button>
+</div>
+</body></html>

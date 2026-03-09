@@ -2,9 +2,26 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LINE予約システム - APIテストUI</title>
+<meta name="viewport" content="width=768, height=1024, initial-scale=1.0">
+<title>Covalt - 予約管理システム</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: { "primary": "#ec5b13" },
+      fontFamily: { "display": ["Inter"] },
+      borderRadius: { "DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px" },
+    },
+  },
+}
+</script>
 <style>
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif; }
+.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+.cal-dot { width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#e8e8e8;color:#333;}
 
@@ -23,6 +40,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 /* === CUSTOMER SIDE === */
 /* ==================== */
 
+/* Customer-side design variables (matching liff.html) */
+.phone{--c-primary:#00B4A8;--c-primary-dark:#009688;--c-bg:#F5F7FA;--c-card:#FFF;--c-text:#1A1A2E;--c-sub:#6B7280;--c-border:#E5E7EB;--c-danger:#EF4444;}
+
 /* LINE header */
 .line-header{background:#06c755;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .line-header .back{font-size:20px;cursor:pointer;}
@@ -36,159 +56,113 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 
 /* Rich menu */
 .rich-menu{flex-shrink:0;display:grid;grid-template-columns:1fr 1fr 1fr;background:#fff;border-top:1px solid #e0e0e0;}
-.rich-menu button{padding:18px 8px;border:none;background:#fff;font-size:12px;font-weight:700;color:#06c755;cursor:pointer;border-right:1px solid #f0f0f0;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.rich-menu button{padding:18px 8px;border:none;background:#fff;font-size:12px;font-weight:700;color:var(--c-primary);cursor:pointer;border-right:1px solid #f0f0f0;display:flex;flex-direction:column;align-items:center;gap:6px;}
 .rich-menu button:last-child{border-right:none;}
-.rich-menu button:hover{background:#f0faf0;}
+.rich-menu button:hover{background:#E0F2F1;}
 .rm-icon{font-size:24px;}
 
 /* LIFF overlay */
-.liff-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:#fff;display:flex;flex-direction:column;z-index:10;}
-.liff-header{background:#fff;padding:12px 16px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;gap:10px;flex-shrink:0;}
-.liff-header .close-btn{font-size:22px;cursor:pointer;color:#999;background:none;border:none;padding:0 4px;}
-.liff-header .liff-title{font-size:15px;font-weight:700;flex:1;}
-.liff-body{flex:1;overflow-y:auto;padding:16px;}
+.liff-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:var(--c-bg);display:flex;flex-direction:column;z-index:10;}
+.liff-header{background:var(--c-primary);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;color:#fff;}
+.liff-header .close-btn{font-size:22px;cursor:pointer;color:#fff;background:none;border:none;padding:0 4px;opacity:.85;}
+.liff-header .close-btn:hover{opacity:1;}
+.liff-header .liff-title{font-size:15px;font-weight:600;flex:1;color:#fff;}
+.liff-body{flex:1;overflow-y:auto;padding:12px;background:var(--c-bg);}
 
 /* Calendar */
-.cal-month{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
-.cal-month button{background:none;border:none;font-size:18px;cursor:pointer;padding:4px 8px;}
-.cal-month span{font-size:15px;font-weight:700;}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;margin-bottom:16px;}
-.cal-dow{font-size:11px;color:#999;padding:4px 0;}
-.cal-day{font-size:13px;padding:8px 0;border-radius:8px;cursor:pointer;}
-.cal-day:hover{background:#e8f5e9;}
-.cal-day.today{font-weight:700;color:#06c755;}
-.cal-day.selected{background:#06c755;color:#fff;}
-.cal-day.disabled{color:#ccc;cursor:default;}
+.cal-month{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.cal-month button{background:none;border:none;font-size:20px;cursor:pointer;padding:4px 12px;color:var(--c-sub);}
+.cal-month span{font-size:16px;font-weight:700;color:var(--c-text);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;margin-bottom:12px;background:var(--c-card);border-radius:12px;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.cal-dow{font-size:11px;color:var(--c-sub);padding:4px 0;font-weight:500;}
+.cal-dow:first-child{color:#EF4444;}
+.cal-dow:last-child{color:#3B82F6;}
+.cal-day{font-size:14px;padding:8px 0;border-radius:50%;cursor:pointer;transition:.15s;aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative;}
+.cal-day:hover{background:#E0F2F1;}
+.cal-day.today{font-weight:700;color:var(--c-primary);}
+.cal-day.today::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--c-primary);}
+.cal-day.selected{background:var(--c-primary);color:#fff;font-weight:600;}
+.cal-day.selected::after{background:#fff;}
+.cal-day.disabled{color:var(--c-border);cursor:default;pointer-events:none;}
 .cal-day.disabled:hover{background:none;}
 .cal-day.holiday{color:#d32f2f;text-decoration:line-through;}
 .cal-day.has-slots{position:relative;}
-.cal-day.has-slots::after{content:'';display:block;width:6px;height:6px;background:#06c755;border-radius:50%;margin:2px auto 0;}
-.cal-day.no-slots{color:#ccc;}
-.cal-day.no-slots:hover{background:none;cursor:default;}
+.cal-day.has-slots::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;background:var(--c-primary);border-radius:50%;}
+.cal-day.no-slots{color:var(--c-border);}
+.cal-day.no-slots:hover{background:none;cursor:default;pointer-events:none;}
 .cal-day.selected.has-slots::after{background:#fff;}
 
 /* Slots */
-.slot-list{display:flex;flex-direction:column;gap:6px;}
-.slot-item{padding:12px;border:1px solid #e0e0e0;border-radius:8px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:14px;}
-.slot-item:hover{border-color:#06c755;background:#f0faf0;}
-.slot-item.booked{background:#f5f5f5;color:#999;cursor:default;border-color:#eee;}
-.slot-item.booked:hover{background:#f5f5f5;border-color:#eee;}
-.slot-status{font-size:11px;padding:2px 8px;border-radius:10px;}
-.slot-status.open{background:#e8f5e9;color:#2e7d32;}
+.slot-section-title{font-size:14px;font-weight:600;margin-bottom:8px;color:var(--c-text);}
+.slot-list{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.slot-item{padding:12px 8px;border:1.5px solid var(--c-primary);border-radius:10px;display:flex;justify-content:center;align-items:center;cursor:pointer;font-size:14px;font-weight:500;color:var(--c-primary);background:var(--c-card);text-align:center;transition:.2s;}
+.slot-item:hover,.slot-item:active{background:var(--c-primary);color:#fff;}
+.slot-item.booked{background:var(--c-bg);color:var(--c-sub);cursor:default;border-color:var(--c-border);}
+.slot-item.booked:hover{background:var(--c-bg);border-color:var(--c-border);color:var(--c-sub);}
+.slot-status{font-size:11px;padding:2px 8px;border-radius:10px;display:none;}
+.slot-status.open{background:#DCFCE7;color:#166534;}
 .slot-status.taken{background:#eee;color:#999;}
 
 /* Common buttons */
-.confirm-box{background:#f9f9f9;border-radius:12px;padding:20px;margin:12px 0;}
-.confirm-box dt{font-size:12px;color:#999;margin-top:8px;}
-.confirm-box dd{font-size:15px;font-weight:600;margin-top:2px;}
-.btn{display:block;width:100%;padding:14px;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;text-align:center;margin-top:12px;}
-.btn-primary{background:#06c755;color:#fff;}
-.btn-primary:hover{background:#05b34c;}
-.btn-danger{background:#d32f2f;color:#fff;}
-.btn-danger:hover{background:#b71c1c;}
-.btn-outline{background:#fff;color:#333;border:1px solid #ccc;}
-.btn-outline:hover{background:#f5f5f5;}
+.confirm-box{background:var(--c-card);border-radius:12px;padding:20px;margin:12px 0;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.confirm-box dt{font-size:13px;color:var(--c-sub);margin-top:8px;}
+.confirm-box dd{font-size:15px;font-weight:600;margin-top:2px;color:var(--c-text);}
+.confirm-box .time-label{font-size:22px;font-weight:700;margin:8px 0;color:var(--c-text);}
+.btn{display:block;width:100%;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;text-align:center;margin-top:12px;transition:.2s;}
+.btn-primary{background:var(--c-primary);color:#fff;}
+.btn-primary:hover,.btn-primary:active{background:var(--c-primary-dark);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+.btn-danger{background:transparent;color:var(--c-danger);border:1px solid var(--c-danger);padding:10px;font-size:13px;}
+.btn-danger:hover,.btn-danger:active{background:#FEF2F2;}
+.btn-outline{background:#F3F4F6;color:#374151;border:none;}
+.btn-outline:hover{background:#E5E7EB;}
 
 /* Booking cards (customer) */
-.booking-card{border:1px solid #e0e0e0;border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;}
-.booking-card:hover{border-color:#06c755;}
-.booking-card .bk-date{font-size:15px;font-weight:700;}
-.booking-card .bk-status{font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px;}
-.bk-status.confirmed{background:#e8f5e9;color:#2e7d32;}
-.bk-status.cancelled{background:#fce4ec;color:#c62828;}
-.bk-status.done{background:#e3f2fd;color:#1565c0;}
-.booking-card .bk-id{font-size:11px;color:#999;margin-top:4px;}
+.booking-card{background:var(--c-card);border-radius:12px;padding:16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.booking-card .bk-date{font-size:18px;font-weight:600;color:var(--c-text);}
+.booking-card .bk-status{display:inline-block;font-size:12px;font-weight:500;padding:2px 10px;border-radius:99px;margin-left:8px;}
+.bk-status.confirmed{background:#DCFCE7;color:#166534;}
+.bk-status.cancelled{background:#FEE2E2;color:#991B1B;}
+.bk-status.done{background:#E0E7FF;color:#3730A3;}
+.booking-card .bk-id{font-size:11px;color:var(--c-sub);margin-top:4px;}
+
+/* Customer empty state */
+.liff-body .loading{text-align:center;color:var(--c-sub);padding:40px 0;font-size:14px;}
+.liff-body .cust-empty{text-align:center;color:var(--c-sub);padding:40px 0;font-size:14px;}
+
+/* Customer toast */
+.cust-toast{position:fixed;top:52px;left:50%;transform:translateX(-50%);background:#1F2937;color:#fff;padding:10px 20px;border-radius:8px;font-size:14px;z-index:100;opacity:0;transition:opacity .3s;}
+.cust-toast.show{opacity:1;}
+
+/* Cancel modal (customer) */
+.cust-modal-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:200;}
+.cust-modal-box{background:#fff;border-radius:16px;padding:24px;margin:16px;max-width:320px;width:100%;}
+.cust-modal-box h3{font-size:16px;font-weight:600;margin-bottom:12px;color:var(--c-text);}
 
 /* ================== */
 /* === OWNER SIDE === */
 /* ================== */
-
-/* Tablet top bar */
-.tab-topbar{background:#2d3436;color:#fff;padding:14px 20px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;}
-.tab-topbar .tab-logo{font-size:15px;font-weight:700;}
-.tab-topbar .tab-user{font-size:11px;color:#b2bec3;margin-right:12px;}
-.tab-topbar .tab-logout{background:none;border:1px solid #636e72;color:#b2bec3;padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;}
-.tab-topbar .tab-logout:hover{color:#fff;border-color:#fff;}
-
-/* Tablet body */
-.tab-body{flex:1;overflow-y:auto;background:#f5f6fa;}
-.tab-inner{padding:20px;}
-
-/* Tablet bottom nav */
-.tab-nav{flex-shrink:0;display:grid;grid-template-columns:repeat(4,1fr);background:#fff;border-top:1px solid #e0e0e0;}
-.tab-nav button{padding:10px 4px 12px;border:none;background:#fff;font-size:10px;font-weight:600;color:#999;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;}
-.tab-nav button .nav-icon{font-size:20px;}
-.tab-nav button:hover{color:#0984e3;}
-.tab-nav button.active{color:#0984e3;}
-
-/* Login inside tablet */
-.tab-login{display:flex;justify-content:center;align-items:center;height:100%;background:#f5f6fa;}
-.login-box{background:#fff;padding:32px;border-radius:12px;width:340px;box-shadow:0 2px 12px rgba(0,0,0,.06);}
-.login-box h2{font-size:18px;margin-bottom:20px;text-align:center;}
-.form-group{margin-bottom:14px;}
-.form-group label{display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:#555;}
-.form-input{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;}
-.form-input:focus{outline:none;border-color:#0984e3;}
-.login-error{color:#d32f2f;font-size:12px;margin-bottom:12px;display:none;}
-
-/* Page title */
-.page-title{font-size:18px;font-weight:700;margin-bottom:16px;}
-
-/* Cards */
-.o-card{background:#fff;border-radius:8px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px;}
-
-/* Table */
-.o-table{width:100%;border-collapse:collapse;font-size:12px;}
-.o-table th{text-align:left;padding:8px 10px;border-bottom:2px solid #e0e0e0;font-weight:600;color:#555;}
-.o-table td{padding:8px 10px;border-bottom:1px solid #f0f0f0;}
-.o-table tr:hover{background:#f9f9f9;}
-.o-table tr{cursor:pointer;}
-.status-badge{font-size:11px;padding:2px 8px;border-radius:10px;}
-.status-badge.s-confirmed{background:#e8f5e9;color:#2e7d32;}
-.status-badge.s-cancelled{background:#fce4ec;color:#c62828;}
-.status-badge.s-completed{background:#e3f2fd;color:#1565c0;}
-
-/* View toggle */
-.view-toggle{display:flex;gap:4px;margin-bottom:12px;}
-.view-toggle button{padding:5px 14px;border:1px solid #ddd;background:#fff;border-radius:6px;font-size:12px;cursor:pointer;}
-.view-toggle button.active{background:#0984e3;color:#fff;border-color:#0984e3;}
-
-/* Owner calendar */
-.oc-month{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-.oc-month button{background:none;border:none;font-size:16px;cursor:pointer;padding:4px 8px;color:#0984e3;}
-.oc-month span{font-size:14px;font-weight:700;}
-.oc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:#e0e0e0;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;}
-.oc-dow{background:#f5f6fa;font-size:10px;font-weight:600;color:#999;text-align:center;padding:6px 0;}
-.oc-cell{background:#fff;min-height:80px;padding:4px 6px;font-size:11px;cursor:pointer;position:relative;}
-.oc-cell:hover{background:#f0f7ff;}
-.oc-cell.oc-other{background:#fafafa;color:#ccc;}
-.oc-cell.oc-today{background:#e8f4fd;}
-.oc-cell.oc-holiday{background:#fff5f5;}
-.oc-cell .oc-num{font-weight:600;font-size:12px;margin-bottom:2px;}
-.oc-cell.oc-today .oc-num{color:#0984e3;}
-.oc-cell.oc-holiday .oc-num{color:#d32f2f;text-decoration:line-through;}
-.oc-evt{padding:2px 4px;border-radius:3px;margin-top:1px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
-.oc-evt.oc-available{background:#e8f5e9;color:#2e7d32;}
-.oc-evt.oc-confirmed{background:#e3f2fd;color:#1565c0;}
-.oc-evt.oc-cancelled{background:#fce4ec;color:#c62828;}
-.oc-evt.oc-completed{background:#f5f5f5;color:#757575;}
-
-/* Detail */
-.detail-panel{background:#fff;border-radius:8px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
-.detail-row{display:flex;margin-bottom:10px;}
-.detail-row dt{width:120px;font-size:12px;color:#999;flex-shrink:0;}
-.detail-row dd{font-size:13px;font-weight:500;}
-.detail-actions{display:flex;gap:8px;margin-top:16px;}
-.detail-actions .btn{width:auto;padding:10px 20px;font-size:13px;}
-
-/* Schedule */
-.hours-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:12px;flex-wrap:wrap;}
-.hours-row label{width:40px;font-weight:600;}
-.hours-row select,.hours-row input[type="time"]{padding:5px;border:1px solid #ddd;border-radius:4px;font-size:12px;}
-.slot-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;}
-.slot-chip{padding:8px;border:1px solid #e0e0e0;border-radius:8px;font-size:12px;text-align:center;cursor:pointer;}
-.slot-chip:hover{border-color:#0984e3;}
-.slot-chip.has-booking{background:#e3f2fd;border-color:#90caf9;}
+/* Owner styles handled by Tailwind - minimal overrides only */
+.ow-input{width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:0.5rem;font-size:13px;outline:none;transition:border-color .2s;}
+.ow-input:focus{border-color:#ec5b13;box-shadow:0 0 0 3px rgba(236,91,19,.1);}
+.ow-hours-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13px;flex-wrap:wrap;}
+.ow-hours-row label{width:40px;font-weight:600;color:#475569;}
+.ow-hours-row select,.ow-hours-row input[type="time"]{padding:6px 8px;border:1px solid #e2e8f0;border-radius:0.5rem;font-size:12px;outline:none;}
+.ow-hours-row select:focus,.ow-hours-row input[type="time"]:focus{border-color:#ec5b13;}
+.ow-grid{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;gap:2px;}
+.ow-cal-cell{min-height:80px;padding:4px 6px;font-size:11px;cursor:pointer;position:relative;background:#fff;border-radius:0.5rem;}
+.ow-cal-cell:hover{background:rgba(236,91,19,.04);}
+.ow-cal-cell.ow-other{opacity:.35;}
+.ow-cal-cell.ow-today{background:rgba(236,91,19,.06);}
+.ow-cal-cell.ow-holiday{background:#fff5f5;}
+.ow-cal-cell .ow-num{font-weight:600;font-size:12px;margin-bottom:2px;}
+.ow-cal-cell.ow-today .ow-num{color:#ec5b13;}
+.ow-cal-cell.ow-holiday .ow-num{color:#dc2626;text-decoration:line-through;}
+.ow-evt{padding:2px 4px;border-radius:4px;margin-top:1px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+.ow-evt.ow-available{background:rgba(16,185,129,.1);color:#059669;}
+.ow-evt.ow-confirmed{background:rgba(236,91,19,.1);color:#ec5b13;}
+.ow-evt.ow-cancelled{background:rgba(220,38,38,.08);color:#dc2626;}
+.ow-evt.ow-completed{background:#f1f5f9;color:#64748b;}
 
 /* Toast */
 .toast{position:fixed;top:60px;right:20px;background:#2d3436;color:#fff;padding:14px 20px;border-radius:8px;font-size:13px;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none;max-width:320px;}
@@ -196,14 +170,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 .toast.error{background:#d32f2f;}
 
 /* Modal */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;justify-content:center;align-items:center;z-index:100;display:none;}
-.modal{background:#fff;border-radius:12px;padding:24px;width:380px;max-width:90vw;}
-.modal h3{font-size:16px;margin-bottom:16px;}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);display:flex;justify-content:center;align-items:center;z-index:100;display:none;}
+.modal{background:#fff;border-radius:16px;padding:24px;width:400px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.15);}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:16px;color:#1e293b;}
 
 /* Loading */
-.loading{text-align:center;padding:40px;color:#999;font-size:13px;}
-.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;}
-.loading-overlay .spinner{width:32px;height:32px;border:3px solid #e0e0e0;border-top-color:#0984e3;border-radius:50%;animation:spin .6s linear infinite;}
+.loading{text-align:center;padding:40px;color:#94a3b8;font-size:13px;}
+.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.7);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.loading-overlay .spinner{width:36px;height:36px;border:3px solid #fed7aa;border-top-color:#ec5b13;border-radius:50%;animation:spin .6s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .btn.is-loading{opacity:0.6;pointer-events:none;}
 
@@ -216,8 +190,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 <body>
 
 <div class="top-tab">
-  <button onclick="switchView('customer')">顧客側（LINE / スマホ）<span class="api-badge live">LIVE API</span></button>
-  <button class="active" onclick="switchView('owner')">オーナー側（iPad / タブレット）<span class="api-badge live">LIVE API</span></button>
+  <button onclick="switchView('customer')">顧客側（LINE / スマホ）</button>
+  <button class="active" onclick="switchView('owner')">オーナー側（iPad / タブレット）</button>
 </div>
 
 <!-- ========== CUSTOMER (Phone) ========== -->
@@ -239,47 +213,70 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 
 <!-- ========== OWNER (Tablet) ========== -->
 <div class="device-wrap" id="ownerView">
-  <div class="tablet" id="tabletDevice">
+  <div style="width:768px;height:1024px;background:#f8f6f6;border-radius:0 0 24px 24px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.12);position:relative;" id="tabletDevice">
     <!-- Login -->
     <div id="tabletLogin" style="display:flex;flex-direction:column;height:100%;">
-      <div class="tab-topbar">
-        <span class="tab-logo">予約管理システム <span class="api-badge live">LIVE API</span></span>
-      </div>
-      <div class="tab-body">
-        <div class="tab-login">
-          <div class="login-box">
-            <h2>ログイン</h2>
-            <div class="login-error" id="loginError"></div>
-            <div class="form-group">
-              <label>メールアドレス</label>
-              <input class="form-input" id="loginEmail" type="email" placeholder="メールアドレス">
-            </div>
-            <div class="form-group">
-              <label>パスワード</label>
-              <input class="form-input" id="loginPass" type="password" placeholder="パスワード">
-            </div>
-            <button class="btn btn-primary" style="background:#0984e3;" onclick="doLogin()" id="loginBtn">ログイン</button>
-            <p style="text-align:center;margin-top:12px;font-size:11px;color:#999;">API: ap-southeast-1</p>
+      <header class="flex items-center px-6 py-4 border-b border-primary/10 bg-white/50 backdrop-blur-md flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white"><span class="material-symbols-outlined text-lg">event_upcoming</span></div>
+          <h1 class="text-xl font-bold tracking-tight text-slate-900">Covalt</h1>
+        </div>
+      </header>
+      <div class="flex-1 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-sm p-8 w-80">
+          <h2 class="text-lg font-bold text-center mb-6 text-slate-800">ログイン</h2>
+          <div class="text-red-500 text-sm mb-3" id="loginError" style="display:none;"></div>
+          <div class="mb-4">
+            <label class="block text-xs font-bold text-slate-500 mb-1">メールアドレス</label>
+            <input class="ow-input" id="loginEmail" type="email" placeholder="メールアドレス">
           </div>
+          <div class="mb-4">
+            <label class="block text-xs font-bold text-slate-500 mb-1">パスワード</label>
+            <input class="ow-input" id="loginPass" type="password" placeholder="パスワード">
+          </div>
+          <button class="w-full py-3 bg-primary hover:bg-orange-600 text-white rounded-lg text-sm font-bold transition-colors" onclick="doLogin()" id="loginBtn">ログイン</button>
+          <p class="text-center mt-3 text-[10px] text-slate-400">API: ap-southeast-1</p>
         </div>
       </div>
     </div>
     <!-- Main app -->
     <div id="tabletApp" style="display:none;flex-direction:column;height:100%;">
-      <div class="tab-topbar">
-        <span class="tab-logo">予約管理システム</span>
-        <div>
-          <span class="tab-user" id="userEmail"></span>
-          <button class="tab-logout" onclick="doLogout()">ログアウト</button>
+      <header class="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-white/50 backdrop-blur-md flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white"><span class="material-symbols-outlined text-lg">event_upcoming</span></div>
+          <h1 class="text-xl font-bold tracking-tight text-slate-900">Covalt</h1>
         </div>
-      </div>
-      <div class="tab-body" id="tabBody"><div class="tab-inner" id="mainContent"></div></div>
-      <div class="tab-nav" id="tabNav">
-        <button class="active" data-page="dashboard" onclick="showPage('dashboard')"><span class="nav-icon">&#128203;</span>予約一覧</button>
-        <button data-page="schedule" onclick="showPage('schedule')"><span class="nav-icon">&#128197;</span>スケジュール</button>
-        <button data-page="customers" onclick="showPage('customers')"><span class="nav-icon">&#128101;</span>顧客</button>
-        <button data-page="settings" onclick="showPage('settings')"><span class="nav-icon">&#9881;</span>設定</button>
-      </div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-slate-400" id="userEmail"></span>
+          <button class="p-2 rounded-full hover:bg-primary/10 text-slate-500 transition-colors" onclick="doLogout()" title="ログアウト">
+            <span class="material-symbols-outlined">logout</span>
+          </button>
+        </div>
+      </header>
+      <main class="flex-1 overflow-y-auto" id="tabBody"><div class="px-6 py-6" id="mainContent"></div></main>
+      <nav class="bg-white/80 backdrop-blur-lg border-t border-primary/10 px-4 py-2 pb-5 flex items-center justify-around flex-shrink-0" id="tabNav">
+        <button class="flex flex-col items-center gap-1 text-primary transition-colors" data-page="dashboard" onclick="showPage('dashboard')">
+          <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">list_alt</span>
+          <span class="text-[10px] font-bold">予約一覧</span>
+        </button>
+        <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary transition-colors" data-page="schedule" onclick="showPage('schedule')">
+          <span class="material-symbols-outlined">calendar_today</span>
+          <span class="text-[10px] font-bold">スケジュール</span>
+        </button>
+        <div class="relative -top-5">
+          <button class="w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg shadow-primary/40 active:scale-95 transition-transform" onclick="showQuickAdd()">
+            <span class="material-symbols-outlined text-3xl">add</span>
+          </button>
+        </div>
+        <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary transition-colors" data-page="customers" onclick="showPage('customers')">
+          <span class="material-symbols-outlined">group</span>
+          <span class="text-[10px] font-bold">顧客リスト</span>
+        </button>
+        <button class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary transition-colors" data-page="settings" onclick="showPage('settings')">
+          <span class="material-symbols-outlined">settings</span>
+          <span class="text-[10px] font-bold">設定</span>
+        </button>
+      </nav>
     </div>
   </div>
 </div>
@@ -431,13 +428,27 @@ async function doLogout() {
 
 /* --- Navigation --- */
 function showPage(page) {
-  document.querySelectorAll('#tabNav button').forEach(b => b.classList.toggle('active', b.dataset.page === page));
+  document.querySelectorAll('#tabNav button[data-page]').forEach(b => {
+    const active = b.dataset.page === page;
+    b.classList.toggle('text-primary', active);
+    b.classList.toggle('text-slate-400', !active);
+    const icon = b.querySelector('.material-symbols-outlined');
+    if (icon) icon.style.fontVariationSettings = active ? "'FILL' 1" : "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24";
+  });
   document.getElementById('tabBody').scrollTop = 0;
   const mc = document.getElementById('mainContent');
   if (page === 'dashboard') renderDashboard(mc);
   else if (page === 'schedule') renderSchedule(mc);
   else if (page === 'customers') renderCustomers(mc);
   else if (page === 'settings') renderSettings(mc);
+}
+
+function showQuickAdd() {
+  showModal('<h3 style="font-size:16px;font-weight:700;margin-bottom:16px;">クイックアクション</h3>'
+    + '<div style="display:flex;flex-direction:column;gap:10px;">'
+    + '<button style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;cursor:pointer;text-align:left;" onclick="closeModal();showPage(\'schedule\')"><span class="material-symbols-outlined" style="color:#ec5b13;">calendar_month</span><span style="font-size:14px;font-weight:600;color:#334155;">スロット管理</span></button>'
+    + '<button style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;cursor:pointer;text-align:left;" onclick="closeModal();openNewCustomer()"><span class="material-symbols-outlined" style="color:#ec5b13;">person_add</span><span style="font-size:14px;font-weight:600;color:#334155;">新規顧客登録</span></button>'
+    + '</div>');
 }
 
 /* --- Dashboard --- */
@@ -472,30 +483,39 @@ async function renderDashboard(mc) {
     showToast('予約取得エラー: ' + e.message, true);
   }
 
-  let h = '<h1 class="page-title">予約一覧 <span style="font-size:12px;color:#999;">(' + cachedReservations.length + '件)</span></h1>';
-  h += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">';
-  h += '<div class="view-toggle">';
+  let h = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">';
+  h += '<h1 style="font-size:18px;font-weight:700;color:#1e293b;">予約一覧 <span style="font-size:13px;font-weight:400;color:#94a3b8;">(' + cachedReservations.length + '件)</span></h1>';
+  h += '</div>';
+  h += '<div style="display:flex;gap:6px;margin-bottom:16px;">';
   ['day','week','month','calendar'].forEach(v => {
     const label = {day:'日', week:'週', month:'月', calendar:'カレンダー'}[v];
-    h += '<button class="' + (viewMode === v ? 'active' : '') + '" onclick="viewMode=\'' + v + '\';renderDashboard(document.getElementById(\'mainContent\'))">' + label + '</button>';
+    const active = viewMode === v;
+    h += '<button style="padding:6px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:all .2s;' + (active ? 'background:#ec5b13;color:#fff;' : 'background:#fff;color:#64748b;border:1px solid #e2e8f0;') + '" onclick="viewMode=\'' + v + '\';renderDashboard(document.getElementById(\'mainContent\'))">' + label + '</button>';
   });
-  h += '</div></div>';
+  h += '</div>';
 
   if (viewMode === 'calendar') {
     h += renderOwnerCalendar();
   } else {
     const sorted = [...cachedReservations].sort((a,b) => new Date(a.dateTime) - new Date(b.dateTime));
-    h += '<div class="o-card"><table class="o-table"><thead><tr><th>予約ID</th><th>日時</th><th>顧客名</th><th>ステータス</th></tr></thead><tbody>';
+    h += '<div style="background:#fff;border-radius:12px;padding:4px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);">';
+    h += '<table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="border-bottom:2px solid #f1f5f9;">';
+    h += '<th style="text-align:left;padding:12px 14px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">予約ID</th>';
+    h += '<th style="text-align:left;padding:12px 14px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">日時</th>';
+    h += '<th style="text-align:left;padding:12px 14px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">顧客名</th>';
+    h += '<th style="text-align:left;padding:12px 14px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">ステータス</th>';
+    h += '</tr></thead><tbody>';
     if (!sorted.length) {
-      h += '<tr><td colspan="4" style="text-align:center;color:#999;padding:20px;">予約はありません</td></tr>';
+      h += '<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:40px 0;font-size:13px;">予約はありません</td></tr>';
     } else {
       sorted.forEach(r => {
         const shortId = r.reservationId.substring(0, 8);
-        h += '<tr onclick="showReservationDetail(\'' + r.reservationId + '\')">';
-        h += '<td>' + shortId + '...</td>';
-        h += '<td>' + fmtDateTime(r.dateTime) + '</td>';
-        h += '<td>' + (r.customerName || '-') + '</td>';
-        h += '<td><span class="status-badge s-' + r.status + '">' + statusLabel(r.status) + '</span></td>';
+        const badgeStyle = r.status === 'confirmed' ? 'background:rgba(236,91,19,.1);color:#ec5b13;' : r.status === 'cancelled' ? 'background:rgba(220,38,38,.08);color:#dc2626;' : 'background:#f1f5f9;color:#64748b;';
+        h += '<tr style="cursor:pointer;border-bottom:1px solid #f8fafc;" onmouseover="this.style.background=\'rgba(236,91,19,.03)\'" onmouseout="this.style.background=\'\'" onclick="showReservationDetail(\'' + r.reservationId + '\')">';
+        h += '<td style="padding:12px 14px;font-size:12px;color:#94a3b8;">' + shortId + '...</td>';
+        h += '<td style="padding:12px 14px;color:#334155;">' + fmtDateTime(r.dateTime) + '</td>';
+        h += '<td style="padding:12px 14px;font-weight:600;color:#1e293b;">' + (r.customerName || '-') + '</td>';
+        h += '<td style="padding:12px 14px;"><span style="font-size:11px;padding:3px 10px;border-radius:9999px;font-weight:700;' + badgeStyle + '">' + statusLabel(r.status) + '</span></td>';
         h += '</tr>';
       });
     }
@@ -511,30 +531,35 @@ function renderOwnerCalendar() {
   const prevLast = new Date(ocYear, ocMonth, 0).getDate();
   const dows = ['日','月','火','水','木','金','土'];
 
-  let h = '<div class="o-card" style="padding:12px;">';
-  h += '<div class="oc-month"><button onclick="ocMonth--;if(ocMonth<0){ocMonth=11;ocYear--;}renderDashboard(document.getElementById(\'mainContent\'))">&#10094;</button><span>' + ocYear + '年' + (ocMonth+1) + '月</span><button onclick="ocMonth++;if(ocMonth>11){ocMonth=0;ocYear++;}renderDashboard(document.getElementById(\'mainContent\'))">&#10095;</button></div>';
-  h += '<div class="oc-grid">';
-  dows.forEach(d => h += '<div class="oc-dow">' + d + '</div>');
+  let h = '<div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);margin-bottom:16px;">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">';
+  h += '<h2 style="font-size:16px;font-weight:700;color:#1e293b;">' + ocYear + '年 ' + (ocMonth+1) + '月</h2>';
+  h += '<div style="display:flex;gap:8px;">';
+  h += '<button style="display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;" onclick="ocMonth--;if(ocMonth<0){ocMonth=11;ocYear--;}renderDashboard(document.getElementById(\'mainContent\'))"><span class="material-symbols-outlined" style="font-size:16px;">chevron_left</span></button>';
+  h += '<button style="display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;" onclick="ocMonth++;if(ocMonth>11){ocMonth=0;ocYear++;}renderDashboard(document.getElementById(\'mainContent\'))"><span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span></button>';
+  h += '</div></div>';
+  h += '<div class="ow-grid">';
+  dows.forEach(d => h += '<div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.1em;padding:6px 0;">' + d + '</div>');
 
   for (let i = 0; i < startDow; i++) {
-    h += '<div class="oc-cell oc-other"><div class="oc-num">' + (prevLast - startDow + 1 + i) + '</div></div>';
+    h += '<div class="ow-cal-cell ow-other"><div class="ow-num">' + (prevLast - startDow + 1 + i) + '</div></div>';
   }
 
   for (let d = 1; d <= lastDay; d++) {
     const dt = new Date(ocYear, ocMonth, d);
     const isToday = d === DAY && ocMonth === MONTH && ocYear === YEAR;
-    let cls = 'oc-cell';
-    if (isToday) cls += ' oc-today';
-    h += '<div class="' + cls + '"><div class="oc-num">' + d + '</div>';
+    let cls = 'ow-cal-cell';
+    if (isToday) cls += ' ow-today';
+    h += '<div class="' + cls + '"><div class="ow-num">' + d + '</div>';
 
-    // Find reservations for this day
     const dayRsvs = cachedReservations.filter(r => {
+      if (r.status === 'cancelled') return false;
       const rd = new Date(r.dateTime);
       return rd.getFullYear() === ocYear && rd.getMonth() === ocMonth && rd.getDate() === d;
     }).sort((a,b) => new Date(a.dateTime) - new Date(b.dateTime));
 
     dayRsvs.forEach(r => {
-      h += '<div class="oc-evt oc-' + r.status + '" onclick="event.stopPropagation();showReservationDetail(\'' + r.reservationId + '\')" title="' + fmtTime(r.dateTime) + ' ' + (r.customerName || '') + '">';
+      h += '<div class="ow-evt ow-' + r.status + '" onclick="event.stopPropagation();showReservationDetail(\'' + r.reservationId + '\')" title="' + fmtTime(r.dateTime) + ' ' + (r.customerName || '') + '">';
       h += fmtTime(r.dateTime) + ' ' + (r.customerName || '').substring(0, 4);
       h += '</div>';
     });
@@ -544,7 +569,7 @@ function renderOwnerCalendar() {
   const totalCells = startDow + lastDay;
   const remaining = (7 - totalCells % 7) % 7;
   for (let i = 1; i <= remaining; i++) {
-    h += '<div class="oc-cell oc-other"><div class="oc-num">' + i + '</div></div>';
+    h += '<div class="ow-cal-cell ow-other"><div class="ow-num">' + i + '</div></div>';
   }
   h += '</div></div>';
   return h;
@@ -566,32 +591,47 @@ async function showReservationDetail(id) {
 
   const canCancel = r.status === 'confirmed';
   const canComplete = r.status === 'confirmed';
+  const badgeStyle = r.status === 'confirmed' ? 'background:rgba(236,91,19,.1);color:#ec5b13;' : r.status === 'cancelled' ? 'background:rgba(220,38,38,.08);color:#dc2626;' : 'background:#f1f5f9;color:#64748b;';
 
-  let h = '<h1 class="page-title">予約詳細</h1><div class="detail-panel">';
-  h += '<div class="detail-row"><dt>予約ID</dt><dd style="font-size:11px;word-break:break-all;">' + r.reservationId + '</dd></div>';
-  h += '<div class="detail-row"><dt>日時</dt><dd>' + fmtDateTime(r.dateTime) + '</dd></div>';
-  h += '<div class="detail-row"><dt>所要時間</dt><dd>' + r.durationMinutes + '分</dd></div>';
-  h += '<div class="detail-row"><dt>顧客名</dt><dd>' + (r.customerName || '-') + '</dd></div>';
-  h += '<div class="detail-row"><dt>ステータス</dt><dd><span class="status-badge s-' + r.status + '">' + statusLabel(r.status) + '</span></dd></div>';
-  h += '<div class="detail-row"><dt>作成者</dt><dd>' + r.createdBy + '</dd></div>';
-  h += '<div class="detail-row"><dt>作成日時</dt><dd>' + fmtDateTime(r.createdAt) + '</dd></div>';
+  let h = '<div style="margin-bottom:16px;">';
+  h += '<button style="display:flex;align-items:center;gap:6px;background:none;border:none;color:#64748b;cursor:pointer;font-size:13px;font-weight:600;" onclick="showPage(\'dashboard\')"><span class="material-symbols-outlined" style="font-size:18px;">arrow_back</span>一覧に戻る</button>';
+  h += '</div>';
+  h += '<h1 style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:16px;">予約詳細</h1>';
+  h += '<div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);">';
+
+  var rows = [
+    ['予約ID', '<span style="font-size:11px;word-break:break-all;color:#94a3b8;">' + r.reservationId + '</span>'],
+    ['日時', fmtDateTime(r.dateTime)],
+    ['所要時間', r.durationMinutes + '分'],
+    ['顧客名', '<span style="font-weight:700;">' + (r.customerName || '-') + '</span>'],
+    ['ステータス', '<span style="font-size:11px;padding:3px 10px;border-radius:9999px;font-weight:700;' + badgeStyle + '">' + statusLabel(r.status) + '</span>'],
+    ['作成者', r.createdBy],
+    ['作成日時', fmtDateTime(r.createdAt)],
+  ];
+  rows.forEach(function(row) {
+    h += '<div style="display:flex;padding:10px 0;border-bottom:1px solid #f8fafc;"><dt style="width:120px;font-size:12px;color:#94a3b8;flex-shrink:0;">' + row[0] + '</dt><dd style="font-size:13px;color:#334155;">' + row[1] + '</dd></div>';
+  });
 
   if (r.histories && r.histories.length) {
-    h += '<h3 style="font-size:13px;margin-top:16px;margin-bottom:8px;">変更履歴</h3>';
-    h += '<table class="o-table"><thead><tr><th>種別</th><th>日時</th><th>操作者</th></tr></thead><tbody>';
+    h += '<h3 style="font-size:13px;font-weight:700;margin-top:20px;margin-bottom:10px;color:#475569;">変更履歴</h3>';
+    h += '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:2px solid #f1f5f9;">';
+    h += '<th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;">種別</th>';
+    h += '<th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;">日時</th>';
+    h += '<th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;">操作者</th>';
+    h += '</tr></thead><tbody>';
     r.histories.forEach(hi => {
-      h += '<tr><td>' + hi.changeType + '</td><td>' + fmtDateTime(hi.changedAt) + '</td><td>' + hi.changedBy + '</td></tr>';
+      h += '<tr style="border-bottom:1px solid #f8fafc;"><td style="padding:8px 10px;color:#475569;">' + hi.changeType + '</td><td style="padding:8px 10px;color:#475569;">' + fmtDateTime(hi.changedAt) + '</td><td style="padding:8px 10px;color:#475569;">' + hi.changedBy + '</td></tr>';
     });
     h += '</tbody></table>';
   }
 
   if (canCancel || canComplete) {
-    h += '<div class="detail-actions">';
-    if (canComplete) h += '<button class="btn btn-primary" style="background:#0984e3;" onclick="completeReservation(\'' + r.reservationId + '\')">完了にする</button>';
-    if (canCancel) h += '<button class="btn btn-danger" onclick="confirmCancelReservation(\'' + r.reservationId + '\')">キャンセル</button>';
+    h += '<div style="display:flex;gap:10px;margin-top:20px;">';
+    if (canComplete) h += '<button style="padding:10px 24px;background:#ec5b13;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;" onclick="completeReservation(\'' + r.reservationId + '\')">完了にする</button>';
+    if (canCancel) h += '<button style="padding:10px 24px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;" onclick="confirmCancelReservation(\'' + r.reservationId + '\')">キャンセル</button>';
     h += '</div>';
   }
-  h += '<button class="btn btn-outline" style="margin-top:12px;" onclick="showPage(\'dashboard\')">一覧に戻る</button></div>';
+  h += '</div>';
   mc.innerHTML = h;
 }
 
@@ -655,94 +695,92 @@ async function renderSchedule(mc) {
     showToast('スケジュール取得エラー: ' + e.message, true);
   }
 
-  let h = '<h1 class="page-title">スケジュール設定</h1>';
+  const _card = 'background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);margin-bottom:16px;';
+  const _secTitle = 'font-size:14px;font-weight:700;color:#1e293b;margin-bottom:10px;';
+  const _btnPrimary = 'padding:6px 16px;background:#ec5b13;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;';
+  const _btnOutline = 'padding:6px 16px;background:#fff;color:#64748b;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;';
+  const _btnDanger = 'padding:4px 10px;background:none;border:1px solid #f87171;color:#f87171;border-radius:6px;font-size:10px;cursor:pointer;';
+  const _inp = 'padding:6px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;outline:none;';
 
-  // --- Calendar ---
+  let h = '<h1 style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:16px;">スケジュール設定</h1>';
+
   h += renderScheduleCalendar();
-
-  // --- Day detail (slots + reservations) ---
   h += '<div id="schDayDetail"></div>';
 
   // --- Business hours ---
-  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:10px;">営業時間</h3>';
+  h += '<div style="' + _card + '"><h3 style="' + _secTitle + '"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:text-bottom;color:#ec5b13;margin-right:6px;">schedule</span>営業時間</h3>';
   DAY_KEYS.forEach(dk => {
     const bh = cachedBusinessHours.find(b => b.dayOfWeek === dk);
     const isOpen = bh ? bh.isBusinessDay : true;
     const start = bh?.startTime || '10:00';
     const end = bh?.endTime || '18:00';
-    h += '<div class="hours-row" id="bh-' + dk + '">';
+    h += '<div class="ow-hours-row" id="bh-' + dk + '">';
     h += '<label>' + DAY_MAP[dk] + '曜</label>';
-    h += '<select data-day="' + dk + '" data-field="open"><option value="1"' + (isOpen ? ' selected' : '') + '>営業</option><option value="0"' + (!isOpen ? ' selected' : '') + '>定休</option></select>';
-    h += '<input type="time" value="' + start + '" data-day="' + dk + '" data-field="start">';
-    h += '<span>〜</span>';
-    h += '<input type="time" value="' + end + '" data-day="' + dk + '" data-field="end">';
+    h += '<select style="' + _inp + '" data-day="' + dk + '" data-field="open"><option value="1"' + (isOpen ? ' selected' : '') + '>営業</option><option value="0"' + (!isOpen ? ' selected' : '') + '>定休</option></select>';
+    h += '<input type="time" value="' + start + '" style="' + _inp + '" data-day="' + dk + '" data-field="start">';
+    h += '<span style="color:#94a3b8;">〜</span>';
+    h += '<input type="time" value="' + end + '" style="' + _inp + '" data-day="' + dk + '" data-field="end">';
     h += '</div>';
   });
-  h += '<button class="btn btn-primary" style="background:#0984e3;width:auto;padding:6px 20px;margin-top:10px;font-size:12px;" onclick="saveBusinessHours()">保存</button></div>';
+  h += '<button style="' + _btnPrimary + 'margin-top:12px;" onclick="saveBusinessHours()">保存</button></div>';
 
   // --- Closed days ---
-  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">休業日</h3>';
-  h += '<div style="display:flex;gap:6px;align-items:center;"><input class="form-input" type="date" id="holidayInput" style="width:180px;font-size:12px;"><input class="form-input" id="holidayReason" placeholder="理由（任意）" style="width:140px;font-size:12px;"><button class="btn btn-outline" style="width:auto;padding:6px 14px;font-size:12px;margin:0;" onclick="addClosedDay()">追加</button></div>';
-  h += '<div style="margin-top:8px;">';
+  h += '<div style="' + _card + '"><h3 style="' + _secTitle + '"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:text-bottom;color:#ec5b13;margin-right:6px;">event_busy</span>休業日</h3>';
+  h += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><input style="' + _inp + 'width:160px;" type="date" id="holidayInput"><input style="' + _inp + 'width:140px;" id="holidayReason" placeholder="理由（任意）"><button style="' + _btnOutline + '" onclick="addClosedDay()">追加</button></div>';
+  h += '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">';
   cachedClosedDays.forEach(cd => {
-    h += '<span style="display:inline-block;background:#fce4ec;padding:3px 10px;border-radius:12px;font-size:11px;margin:3px;">' + cd.date + (cd.reason ? ' (' + cd.reason + ')' : '') + ' <span style="cursor:pointer;margin-left:4px;" onclick="removeClosedDay(\'' + cd.closedDayId + '\')">&times;</span></span>';
+    h += '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(220,38,38,.06);color:#dc2626;padding:4px 12px;border-radius:9999px;font-size:11px;font-weight:600;">' + cd.date + (cd.reason ? ' (' + cd.reason + ')' : '') + '<span style="cursor:pointer;font-size:14px;line-height:1;" onclick="removeClosedDay(\'' + cd.closedDayId + '\')">&times;</span></span>';
   });
   h += '</div></div>';
 
-  // --- Slot generation (bulk + single in one card) ---
-  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">スロット生成</h3>';
-  h += '<p style="font-size:12px;color:#666;margin-bottom:6px;">一括生成</p>';
-  h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">';
-  h += '<input class="form-input" type="date" id="slotGenDate" style="width:160px;font-size:12px;">';
-  h += '<select class="form-input" id="slotGenDuration" style="width:90px;font-size:12px;"><option value="30">30分</option><option value="60" selected>60分</option><option value="90">90分</option><option value="120">120分</option></select>';
-  h += '<select class="form-input" id="slotGenBuffer" style="width:120px;font-size:12px;"><option value="0">バッファなし</option><option value="5">5分</option><option value="10">10分</option><option value="15">15分</option><option value="30">30分</option><option value="60">60分</option></select>';
-  h += '<button class="btn btn-primary" style="background:#0984e3;width:auto;padding:6px 14px;font-size:12px;margin:0;" onclick="generateSlots()">一括生成</button>';
-  h += '</div><div id="slotGenResult" style="margin-top:4px;"></div>';
-  h += '<hr style="border:none;border-top:1px solid #eee;margin:10px 0;">';
-  h += '<p style="font-size:12px;color:#666;margin-bottom:6px;">個別追加</p>';
-  h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">';
-  h += '<input class="form-input" type="date" id="singleSlotDate" style="width:160px;font-size:12px;">';
-  h += '<input class="form-input" type="time" id="singleSlotStart" value="09:00" style="width:100px;font-size:12px;">';
-  h += '<span style="font-size:12px;">〜</span>';
-  h += '<input class="form-input" type="time" id="singleSlotEnd" value="10:00" style="width:100px;font-size:12px;">';
-  h += '<button class="btn btn-primary" style="background:#00b894;width:auto;padding:6px 14px;font-size:12px;margin:0;" onclick="createSingleSlot()">追加</button>';
-  h += '</div><div id="singleSlotResult" style="margin-top:4px;"></div></div>';
+  // --- Slot generation ---
+  h += '<div style="' + _card + '"><h3 style="' + _secTitle + '"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:text-bottom;color:#ec5b13;margin-right:6px;">auto_awesome</span>スロット生成</h3>';
+  h += '<p style="font-size:12px;color:#64748b;margin-bottom:8px;font-weight:600;">一括生成</p>';
+  h += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">';
+  h += '<input style="' + _inp + 'width:150px;" type="date" id="slotGenDate">';
+  h += '<select style="' + _inp + 'width:90px;" id="slotGenDuration"><option value="30">30分</option><option value="60" selected>60分</option><option value="90">90分</option><option value="120">120分</option></select>';
+  h += '<select style="' + _inp + 'width:120px;" id="slotGenBuffer"><option value="0">バッファなし</option><option value="5">5分</option><option value="10">10分</option><option value="15">15分</option><option value="30">30分</option><option value="60">60分</option></select>';
+  h += '<button style="' + _btnPrimary + '" onclick="generateSlots()">一括生成</button>';
+  h += '</div><div id="slotGenResult" style="margin-top:6px;"></div>';
+  h += '<div style="border-top:1px solid #f1f5f9;margin:12px 0;"></div>';
+  h += '<p style="font-size:12px;color:#64748b;margin-bottom:8px;font-weight:600;">個別追加</p>';
+  h += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">';
+  h += '<input style="' + _inp + 'width:150px;" type="date" id="singleSlotDate">';
+  h += '<input style="' + _inp + 'width:100px;" type="time" id="singleSlotStart" value="09:00">';
+  h += '<span style="color:#94a3b8;">〜</span>';
+  h += '<input style="' + _inp + 'width:100px;" type="time" id="singleSlotEnd" value="10:00">';
+  h += '<button style="padding:6px 16px;background:#10b981;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;" onclick="createSingleSlot()">追加</button>';
+  h += '</div><div id="singleSlotResult" style="margin-top:6px;"></div></div>';
 
   // --- Templates ---
-  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">テンプレート</h3>';
-  h += '<p style="font-size:12px;color:#666;margin-bottom:6px;">1日の空き枠構成を保存し、日付や営業日に一括適用できます。</p>';
-
-  // Save template from a date
-  h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">';
-  h += '<input class="form-input" type="date" id="tplFromDate" style="width:160px;font-size:12px;">';
-  h += '<input class="form-input" id="tplName" placeholder="テンプレート名" style="width:160px;font-size:12px;">';
-  h += '<button class="btn btn-outline" style="width:auto;padding:6px 14px;font-size:12px;margin:0;" onclick="saveTemplate()">保存</button>';
+  h += '<div style="' + _card + '"><h3 style="' + _secTitle + '"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:text-bottom;color:#ec5b13;margin-right:6px;">content_copy</span>テンプレート</h3>';
+  h += '<p style="font-size:12px;color:#64748b;margin-bottom:8px;">1日の空き枠構成を保存し、日付や営業日に一括適用できます。</p>';
+  h += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">';
+  h += '<input style="' + _inp + 'width:150px;" type="date" id="tplFromDate">';
+  h += '<input style="' + _inp + 'width:150px;" id="tplName" placeholder="テンプレート名">';
+  h += '<button style="' + _btnOutline + '" onclick="saveTemplate()">保存</button>';
   h += '</div>';
-
-  // Template list
   if (cachedTemplates.length === 0) {
-    h += '<p style="font-size:11px;color:#999;">テンプレートがありません。日付を選択してスロット構成を保存してください。</p>';
+    h += '<p style="font-size:12px;color:#94a3b8;">テンプレートがありません。日付を選択してスロット構成を保存してください。</p>';
   } else {
-    h += '<div style="display:flex;flex-direction:column;gap:6px;">';
+    h += '<div style="display:flex;flex-direction:column;gap:8px;">';
     cachedTemplates.forEach(tpl => {
-      h += '<div style="border:1px solid #e0e0e0;border-radius:6px;padding:8px 10px;font-size:12px;">';
-      h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">';
-      h += '<strong style="flex:1;">' + tpl.name + '</strong>';
-      h += '<span style="font-size:10px;color:#999;">' + tpl.entries.length + '枠</span>';
-      h += '<button style="background:none;border:1px solid #e57373;color:#e57373;border-radius:4px;padding:1px 6px;font-size:10px;cursor:pointer;" onclick="deleteTemplate(\'' + tpl.templateId + '\')">&times;</button>';
+      h += '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px;font-size:12px;">';
+      h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">';
+      h += '<strong style="flex:1;color:#1e293b;">' + tpl.name + '</strong>';
+      h += '<span style="font-size:10px;color:#94a3b8;">' + tpl.entries.length + '枠</span>';
+      h += '<button style="' + _btnDanger + '" onclick="deleteTemplate(\'' + tpl.templateId + '\')">&times;</button>';
       h += '</div>';
-      h += '<div style="font-size:10px;color:#666;margin-bottom:6px;">' + tpl.entries.map(e => e.startTime + '-' + e.endTime).join(', ') + '</div>';
-
-      // Apply controls
-      h += '<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">';
-      h += '<input type="date" id="tplApplyDate-' + tpl.templateId + '" style="padding:3px;border:1px solid #ddd;border-radius:4px;font-size:11px;width:140px;">';
-      h += '<button class="btn btn-primary" style="background:#0984e3;width:auto;padding:4px 10px;font-size:11px;margin:0;" onclick="applyTemplateToDate(\'' + tpl.templateId + '\')">この日に適用</button>';
+      h += '<div style="font-size:10px;color:#64748b;margin-bottom:8px;">' + tpl.entries.map(e => e.startTime + '-' + e.endTime).join(', ') + '</div>';
+      h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">';
+      h += '<input type="date" id="tplApplyDate-' + tpl.templateId + '" style="' + _inp + 'width:140px;">';
+      h += '<button style="' + _btnPrimary + '" onclick="applyTemplateToDate(\'' + tpl.templateId + '\')">この日に適用</button>';
       h += '</div>';
-      h += '<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-top:4px;">';
-      h += '<input type="date" id="tplRangeStart-' + tpl.templateId + '" style="padding:3px;border:1px solid #ddd;border-radius:4px;font-size:11px;width:130px;">';
-      h += '<span style="font-size:11px;">〜</span>';
-      h += '<input type="date" id="tplRangeEnd-' + tpl.templateId + '" style="padding:3px;border:1px solid #ddd;border-radius:4px;font-size:11px;width:130px;">';
-      h += '<button class="btn btn-primary" style="background:#00b894;width:auto;padding:4px 10px;font-size:11px;margin:0;" onclick="applyTemplateToRange(\'' + tpl.templateId + '\')">営業日に適用</button>';
+      h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px;">';
+      h += '<input type="date" id="tplRangeStart-' + tpl.templateId + '" style="' + _inp + 'width:130px;">';
+      h += '<span style="color:#94a3b8;">〜</span>';
+      h += '<input type="date" id="tplRangeEnd-' + tpl.templateId + '" style="' + _inp + 'width:130px;">';
+      h += '<button style="padding:6px 14px;background:#10b981;color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;" onclick="applyTemplateToRange(\'' + tpl.templateId + '\')">営業日に適用</button>';
       h += '</div>';
       h += '</div>';
     });
@@ -767,13 +805,18 @@ function renderScheduleCalendar() {
   const dows = ['日','月','火','水','木','金','土'];
   const closedSet = new Set(cachedClosedDays.map(cd => cd.date));
 
-  let h = '<div class="o-card" style="padding:12px;">';
-  h += '<div class="oc-month"><button onclick="schMonth--;if(schMonth<0){schMonth=11;schYear--;}renderSchedule(document.getElementById(\'mainContent\'))">&#10094;</button><span>' + schYear + '年' + (schMonth+1) + '月</span><button onclick="schMonth++;if(schMonth>11){schMonth=0;schYear++;}renderSchedule(document.getElementById(\'mainContent\'))">&#10095;</button></div>';
-  h += '<div class="oc-grid">';
-  dows.forEach(d => h += '<div class="oc-dow">' + d + '</div>');
+  let h = '<div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);margin-bottom:16px;">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">';
+  h += '<h2 style="font-size:16px;font-weight:700;color:#1e293b;">' + schYear + '年 ' + (schMonth+1) + '月</h2>';
+  h += '<div style="display:flex;gap:8px;">';
+  h += '<button style="display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;" onclick="schMonth--;if(schMonth<0){schMonth=11;schYear--;}renderSchedule(document.getElementById(\'mainContent\'))"><span class="material-symbols-outlined" style="font-size:16px;">chevron_left</span></button>';
+  h += '<button style="display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;" onclick="schMonth++;if(schMonth>11){schMonth=0;schYear++;}renderSchedule(document.getElementById(\'mainContent\'))"><span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span></button>';
+  h += '</div></div>';
+  h += '<div class="ow-grid">';
+  dows.forEach(d => h += '<div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.1em;padding:6px 0;">' + d + '</div>');
 
   for (let i = 0; i < startDow; i++) {
-    h += '<div class="oc-cell oc-other"><div class="oc-num">' + (prevLast - startDow + 1 + i) + '</div></div>';
+    h += '<div class="ow-cal-cell ow-other"><div class="ow-num">' + (prevLast - startDow + 1 + i) + '</div></div>';
   }
 
   for (let d = 1; d <= lastDay; d++) {
@@ -782,33 +825,28 @@ function renderScheduleCalendar() {
     const isToday = d === DAY && schMonth === MONTH && schYear === YEAR;
     const isClosed = closedSet.has(iso);
     const isSel = schSelectedDate === iso;
-    // Check day-of-week closed
-    const jsDay = dt.getDay(); // 0=Sun
+    const jsDay = dt.getDay();
     const dayKeyMap = [null,'MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
     const dayEnum = dayKeyMap[jsDay === 0 ? 7 : jsDay];
     const bh = cachedBusinessHours.find(b => b.dayOfWeek === dayEnum);
     const isRegularClosed = bh && !bh.isBusinessDay;
 
-    let cls = 'oc-cell';
-    if (isToday) cls += ' oc-today';
-    if (isClosed || isRegularClosed) cls += ' oc-holiday';
-    const selStyle = isSel ? ' style="outline:2px solid #0984e3;outline-offset:-2px;"' : '';
+    let cls = 'ow-cal-cell';
+    if (isToday) cls += ' ow-today';
+    if (isClosed || isRegularClosed) cls += ' ow-holiday';
+    const selStyle = isSel ? 'outline:2px solid #ec5b13;outline-offset:-2px;background:rgba(236,91,19,.06);' : '';
 
-    h += '<div class="' + cls + '"' + selStyle + ' onclick="selectSchDay(\'' + iso + '\')">';
-    h += '<div class="oc-num">' + d + '</div>';
+    h += '<div class="' + cls + '" style="' + selStyle + '" onclick="selectSchDay(\'' + iso + '\')">';
+    h += '<div class="ow-num">' + d + '</div>';
 
-    // Show individual slots (available + booked) on calendar, same style as dashboard
     const slotInfo = schSlotSummary[iso];
     const availSlots = slotInfo ? (slotInfo.availableSlots || []) : [];
-
-    // Build reservation lookup for this day (exclude cancelled)
     const dayRsvs = schReservations.filter(r => {
       if (r.status === 'cancelled') return false;
       const rd = new Date(r.dateTime);
       return rd.getFullYear() === schYear && rd.getMonth() === schMonth && rd.getDate() === d;
     }).sort((a,b) => new Date(a.dateTime) - new Date(b.dateTime));
 
-    // Merge available slots and reservations into a single timeline sorted by time
     const events = [];
     availSlots.forEach(s => {
       events.push({ time: s.startTime, type: 'available', label: s.startTime + ' 空き' });
@@ -820,9 +858,9 @@ function renderScheduleCalendar() {
 
     events.forEach(ev => {
       if (ev.type === 'available') {
-        h += '<div class="oc-evt oc-available" title="' + ev.label + '">' + ev.label + '</div>';
+        h += '<div class="ow-evt ow-available" title="' + ev.label + '">' + ev.label + '</div>';
       } else {
-        h += '<div class="oc-evt oc-' + ev.type + '" onclick="event.stopPropagation();showReservationDetail(\'' + ev.rsvId + '\')" title="' + ev.label + '">' + ev.label + '</div>';
+        h += '<div class="ow-evt ow-' + ev.type + '" onclick="event.stopPropagation();showReservationDetail(\'' + ev.rsvId + '\')" title="' + ev.label + '">' + ev.label + '</div>';
       }
     });
     h += '</div>';
@@ -831,7 +869,7 @@ function renderScheduleCalendar() {
   const totalCells = startDow + lastDay;
   const remaining = (7 - totalCells % 7) % 7;
   for (let i = 1; i <= remaining; i++) {
-    h += '<div class="oc-cell oc-other"><div class="oc-num">' + i + '</div></div>';
+    h += '<div class="ow-cal-cell ow-other"><div class="ow-num">' + i + '</div></div>';
   }
   h += '</div></div>';
   return h;
@@ -872,78 +910,86 @@ async function loadDaySlots(dateStr) {
   const dayLabel = d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate();
   const dowNames = ['日','月','火','水','木','金','土'];
 
-  let h = '<div class="o-card">';
-  h += '<h3 style="font-size:14px;margin-bottom:8px;">' + dayLabel + '（' + dowNames[d.getDay()] + '）のスロット・予約</h3>';
+  const _inp2 = 'padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;outline:none;';
+
+  let h = '<div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);margin-bottom:16px;">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">';
+  h += '<h3 style="font-size:15px;font-weight:700;color:#1e293b;">' + dayLabel + '（' + dowNames[d.getDay()] + '）の予定</h3>';
+  h += '</div>';
 
   if (isHoliday) {
-    h += '<p style="color:#d32f2f;font-size:12px;">休業日</p>';
+    h += '<p style="color:#dc2626;font-size:13px;font-weight:600;"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:text-bottom;">event_busy</span> 休業日</p>';
   } else if (slots.length === 0) {
-    h += '<p style="color:#999;font-size:12px;">スロットがありません。「スロット生成」で作成してください。</p>';
+    h += '<p style="color:#94a3b8;font-size:13px;">スロットがありません。下の「一括生成」で作成してください。</p>';
   } else {
-    // Build reservation lookup by reservationId
     const rsvByRsvId = {};
     dayRsvs.forEach(r => { rsvByRsvId[r.reservationId] = r; });
 
-    h += '<div style="display:flex;flex-direction:column;gap:4px;">';
+    h += '<div style="display:flex;flex-direction:column;gap:8px;">';
     slots.sort((a, b) => a.startTime.localeCompare(b.startTime)).forEach(s => {
-      // Primary: slot status determines display
       const isBooked = s.status === 'booked';
-      // Secondary: find linked reservation for customer info
       const r = s.reservationId ? rsvByRsvId[s.reservationId] : null;
+      const durMin = s.durationMinutes || '';
 
-      h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e0e0e0;border-radius:6px;font-size:12px;';
-      if (isBooked && r && r.status === 'confirmed') h += 'background:#f0f7ff;border-color:#90caf9;';
-      else if (isBooked && r && r.status === 'completed') h += 'background:#f5f5f5;border-color:#ccc;';
-      else if (isBooked) h += 'background:#fff8e1;border-color:#ffe082;';
-      else h += 'background:#f9fff9;';
-      h += '">';
-
-      // Time
-      h += '<span style="font-weight:700;width:90px;">' + s.startTime + ' - ' + s.endTime + '</span>';
-
-      // Status: slot.status is the source of truth
       if (isBooked) {
-        var label = '予約済';
-        var badgeCls = 'background:#e3f2fd;color:#1565c0;';
-        if (r && r.status === 'completed') { label = '完了'; badgeCls = 'background:#f5f5f5;color:#888;'; }
-        h += '<span style="font-size:11px;padding:2px 8px;border-radius:10px;' + badgeCls + '">' + label + '</span>';
-        h += '<span style="flex:1;">' + (r ? r.customerName || '' : '') + '</span>';
-        if (r) h += '<span style="font-size:10px;color:#999;cursor:pointer;" onclick="showReservationDetail(\'' + r.reservationId + '\')">' + r.reservationId.substring(0,8) + '...</span>';
+        // Reserved slot - card style from UI sample
+        h += '<div style="display:flex;align-items:center;gap:12px;background:#fff;padding:14px;border-radius:12px;border:1px solid rgba(236,91,19,.08);box-shadow:0 1px 2px rgba(0,0,0,.03);">';
+        h += '<div style="width:60px;text-align:center;border-right:1px solid #f1f5f9;padding-right:12px;">';
+        h += '<p style="font-size:14px;font-weight:700;color:#1e293b;">' + s.startTime + '</p>';
+        if (durMin) h += '<p style="font-size:10px;color:#94a3b8;">' + durMin + 'min</p>';
+        h += '</div>';
+        h += '<div style="flex:1;">';
+        h += '<h4 style="font-size:13px;font-weight:700;color:#1e293b;">' + (r ? (r.customerName || '') + ' 様' : '') + '</h4>';
+        h += '<p style="font-size:11px;color:#64748b;">' + s.startTime + ' - ' + s.endTime + '</p>';
+        h += '</div>';
+        var bLabel = '予約済み', bStyle = 'background:rgba(236,91,19,.1);color:#ec5b13;';
+        if (r && r.status === 'completed') { bLabel = '完了'; bStyle = 'background:#f1f5f9;color:#64748b;'; }
+        h += '<div style="padding:4px 12px;' + bStyle + 'border-radius:9999px;font-size:11px;font-weight:700;">' + bLabel + '</div>';
+        if (r) h += '<button style="color:#cbd5e1;background:none;border:none;cursor:pointer;" onclick="showReservationDetail(\'' + r.reservationId + '\')"><span class="material-symbols-outlined">more_vert</span></button>';
+        h += '</div>';
       } else {
-        h += '<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#e8f5e9;color:#2e7d32;">空き</span>';
-        h += '<span style="flex:1;"></span>';
-        h += '<button style="background:none;border:1px solid #e57373;color:#e57373;border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;" onclick="event.stopPropagation();deleteSlot(\'' + s.slotId + '\',\'' + dateStr + '\')">&times; 削除</button>';
+        // Available slot - dashed border style from UI sample
+        h += '<div style="display:flex;align-items:center;gap:12px;background:#fff;padding:14px;border-radius:12px;border:1px dashed rgba(236,91,19,.25);opacity:.85;">';
+        h += '<div style="width:60px;text-align:center;border-right:1px solid #f1f5f9;padding-right:12px;">';
+        h += '<p style="font-size:14px;font-weight:700;color:#1e293b;">' + s.startTime + '</p>';
+        if (durMin) h += '<p style="font-size:10px;color:#94a3b8;">' + durMin + 'min</p>';
+        h += '</div>';
+        h += '<div style="flex:1;">';
+        h += '<p style="font-size:13px;font-weight:500;color:#94a3b8;font-style:italic;">空きスロット</p>';
+        h += '<p style="font-size:11px;color:#cbd5e1;">' + s.startTime + ' - ' + s.endTime + '</p>';
+        h += '</div>';
+        h += '<button style="padding:6px 14px;background:#f1f5f9;color:#64748b;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;" onclick="event.stopPropagation();deleteSlot(\'' + s.slotId + '\',\'' + dateStr + '\')"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:text-bottom;">close</span> 削除</button>';
+        h += '</div>';
       }
-
-      h += '</div>';
     });
     h += '</div>';
   }
 
-  // Quick generate button for this date
-  h += '<div style="margin-top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">';
-  h += '<button class="btn btn-outline" style="width:auto;padding:5px 12px;font-size:11px;margin:0;" onclick="quickGenSlots(\'' + dateStr + '\')">一括生成</button>';
-  h += '<select id="quickGenDur" style="padding:4px;border:1px solid #ddd;border-radius:4px;font-size:11px;"><option value="30">30分</option><option value="60" selected>60分</option><option value="90">90分</option></select>';
-  h += '<select id="quickGenBuf" style="padding:4px;border:1px solid #ddd;border-radius:4px;font-size:11px;"><option value="0">バッファなし</option><option value="5">5分</option><option value="10">10分</option><option value="15">15分</option><option value="30">30分</option></select>';
+  // Quick actions
+  h += '<div style="border-top:1px solid #f1f5f9;margin-top:14px;padding-top:14px;">';
+  h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">';
+  h += '<button style="padding:6px 14px;background:#ec5b13;color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;" onclick="quickGenSlots(\'' + dateStr + '\')"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:text-bottom;">auto_awesome</span> 一括生成</button>';
+  h += '<select id="quickGenDur" style="' + _inp2 + '"><option value="30">30分</option><option value="60" selected>60分</option><option value="90">90分</option></select>';
+  h += '<select id="quickGenBuf" style="' + _inp2 + '"><option value="0">バッファなし</option><option value="5">5分</option><option value="10">10分</option><option value="15">15分</option><option value="30">30分</option></select>';
   h += '</div>';
-  h += '<div style="margin-top:6px;display:flex;gap:6px;align-items:center;">';
-  h += '<input type="time" id="quickSingleStart" value="09:00" style="padding:4px;border:1px solid #ddd;border-radius:4px;font-size:11px;width:90px;">';
-  h += '<span style="font-size:11px;">〜</span>';
-  h += '<input type="time" id="quickSingleEnd" value="10:00" style="padding:4px;border:1px solid #ddd;border-radius:4px;font-size:11px;width:90px;">';
-  h += '<button class="btn btn-outline" style="width:auto;padding:5px 12px;font-size:11px;margin:0;border-color:#00b894;color:#00b894;" onclick="quickAddSlot(\'' + dateStr + '\')">1枠追加</button>';
+  h += '<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">';
+  h += '<input type="time" id="quickSingleStart" value="09:00" style="' + _inp2 + 'width:90px;">';
+  h += '<span style="font-size:11px;color:#94a3b8;">〜</span>';
+  h += '<input type="time" id="quickSingleEnd" value="10:00" style="' + _inp2 + 'width:90px;">';
+  h += '<button style="padding:6px 14px;background:#10b981;color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;" onclick="quickAddSlot(\'' + dateStr + '\')"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:text-bottom;">add</span> 1枠追加</button>';
   h += '</div>';
 
-  // Template apply for this date
   if (cachedTemplates.length > 0) {
-    h += '<div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">';
-    h += '<select id="quickTpl" style="padding:4px;border:1px solid #ddd;border-radius:4px;font-size:11px;">';
+    h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">';
+    h += '<select id="quickTpl" style="' + _inp2 + '">';
     cachedTemplates.forEach(tpl => {
       h += '<option value="' + tpl.templateId + '">' + tpl.name + ' (' + tpl.entries.length + '枠)</option>';
     });
     h += '</select>';
-    h += '<button class="btn btn-outline" style="width:auto;padding:5px 12px;font-size:11px;margin:0;border-color:#6c5ce7;color:#6c5ce7;" onclick="quickApplyTemplate(\'' + dateStr + '\')">テンプレ適用</button>';
+    h += '<button style="padding:6px 14px;background:#8b5cf6;color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;" onclick="quickApplyTemplate(\'' + dateStr + '\')"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:text-bottom;">content_copy</span> テンプレ適用</button>';
     h += '</div>';
   }
+  h += '</div>';
 
   h += '</div>';
   el.innerHTML = h;
@@ -1167,22 +1213,27 @@ async function renderCustomers(mc) {
     showToast('顧客取得エラー: ' + e.message, true);
   }
 
-  let h = '<h1 class="page-title">顧客管理 <span style="font-size:12px;color:#999;">(' + cachedCustomers.length + '件)</span></h1>';
-  h += '<div style="display:flex;gap:6px;margin-bottom:12px;">';
-  h += '<input class="form-input" style="max-width:220px;font-size:12px;" placeholder="顧客名で検索..." id="custSearch" oninput="filterCust()">';
-  h += '<button class="btn btn-outline" style="width:auto;padding:6px 14px;font-size:12px;margin:0;" onclick="openNewCustomer()">+ 新規登録</button></div>';
+  let h = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">';
+  h += '<h1 style="font-size:18px;font-weight:700;color:#1e293b;">顧客リスト <span style="font-size:13px;font-weight:400;color:#94a3b8;">(' + cachedCustomers.length + '件)</span></h1>';
+  h += '<button style="display:flex;align-items:center;gap:4px;padding:8px 16px;background:#ec5b13;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;" onclick="openNewCustomer()"><span class="material-symbols-outlined" style="font-size:16px;">person_add</span>新規登録</button>';
+  h += '</div>';
+  h += '<div style="margin-bottom:12px;"><input class="ow-input" style="max-width:280px;" placeholder="顧客名で検索..." id="custSearch" oninput="filterCust()"></div>';
 
-  h += '<div class="o-card"><table class="o-table" id="custTable"><thead><tr><th>顧客名</th><th>顧客ID</th></tr></thead><tbody>';
+  h += '<div style="background:#fff;border-radius:12px;padding:4px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);">';
+  h += '<table style="width:100%;border-collapse:collapse;font-size:13px;" id="custTable"><thead><tr style="border-bottom:2px solid #f1f5f9;">';
+  h += '<th style="text-align:left;padding:12px 14px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">顧客名</th>';
+  h += '<th style="text-align:left;padding:12px 14px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">顧客ID</th>';
+  h += '</tr></thead><tbody>';
   if (!cachedCustomers.length) {
-    h += '<tr><td colspan="2" style="text-align:center;color:#999;padding:20px;">顧客はまだ登録されていません</td></tr>';
+    h += '<tr><td colspan="2" style="text-align:center;color:#94a3b8;padding:40px 0;font-size:13px;">顧客はまだ登録されていません</td></tr>';
   } else {
     cachedCustomers.forEach(c => {
       const id = c.customerId || c.id;
       const name = c.customerName || c.name || '-';
-      const lineBadge = c.isLineLinked ? '<span style="display:inline-block;background:#06c755;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:6px;">LINE</span>' : '';
-      h += '<tr style="cursor:pointer;" onclick="showCustomerDetail(\'' + id + '\')">'
-        + '<td>' + esc(name) + lineBadge + '</td>'
-        + '<td style="font-size:11px;color:#999;">' + (id || '').substring(0, 8) + '...</td></tr>';
+      const lineBadge = c.isLineLinked ? '<span style="display:inline-block;background:#06c755;color:#fff;font-size:9px;padding:2px 6px;border-radius:9999px;margin-left:6px;font-weight:700;">LINE</span>' : '';
+      h += '<tr style="cursor:pointer;border-bottom:1px solid #f8fafc;" onmouseover="this.style.background=\'rgba(236,91,19,.03)\'" onmouseout="this.style.background=\'\'" onclick="showCustomerDetail(\'' + id + '\')">'
+        + '<td style="padding:12px 14px;font-weight:600;color:#1e293b;">' + esc(name) + lineBadge + '</td>'
+        + '<td style="padding:12px 14px;font-size:11px;color:#94a3b8;">' + (id || '').substring(0, 8) + '...</td></tr>';
     });
   }
   h += '</tbody></table></div>';
@@ -1210,56 +1261,62 @@ async function showCustomerDetail(customerId) {
     const notes = notesData.notes || [];
     const attachments = (attachData.attachments || []).filter(a => a.category === 'photo');
 
-    let h = '<div style="margin-bottom:12px;"><button class="btn btn-outline" style="width:auto;padding:6px 14px;font-size:12px;margin:0;" onclick="renderCustomers(document.getElementById(\'mainContent\'))">&#8592; 顧客一覧に戻る</button></div>';
+    let h = '<div style="margin-bottom:16px;">';
+    h += '<button style="display:flex;align-items:center;gap:6px;background:none;border:none;color:#64748b;cursor:pointer;font-size:13px;font-weight:600;" onclick="renderCustomers(document.getElementById(\'mainContent\'))"><span class="material-symbols-outlined" style="font-size:18px;">arrow_back</span>顧客一覧に戻る</button>';
+    h += '</div>';
 
     // --- Profile Section ---
-    h += '<div class="o-card" style="margin-bottom:12px;">';
-    h += '<h2 style="font-size:16px;margin-bottom:12px;">' + esc(cust.customerName || cust.name || '-') + '</h2>';
-    h += '<dl style="display:grid;grid-template-columns:100px 1fr;gap:4px 8px;font-size:13px;">';
-    h += '<dt style="color:#666;">顧客ID</dt><dd style="font-size:11px;word-break:break-all;">' + (cust.customerId || cust.id || '-') + '</dd>';
-    if (cust.displayName) h += '<dt style="color:#666;">表示名</dt><dd>' + esc(cust.displayName) + '</dd>';
-    h += '<dt style="color:#666;">LINE連携</dt><dd>' + (cust.isLineLinked ? '<span style="color:#06c755;font-weight:700;">連携済み</span>' : '<span style="color:#999;">未連携</span>') + '</dd>';
-    if (cust.lineUserId) h += '<dt style="color:#666;">LINE ID</dt><dd style="font-size:11px;word-break:break-all;">' + esc(cust.lineUserId) + '</dd>';
-    h += '<dt style="color:#666;">登録日</dt><dd>' + (cust.registeredAt ? fmtDate(cust.registeredAt) : '-') + '</dd>';
+    h += '<div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);margin-bottom:16px;">';
+    h += '<h2 style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:16px;">' + esc(cust.customerName || cust.name || '-') + '</h2>';
+    h += '<dl style="display:grid;grid-template-columns:110px 1fr;gap:6px 12px;font-size:13px;">';
+    h += '<dt style="color:#94a3b8;font-size:12px;">顧客ID</dt><dd style="font-size:11px;word-break:break-all;color:#64748b;">' + (cust.customerId || cust.id || '-') + '</dd>';
+    if (cust.displayName) h += '<dt style="color:#94a3b8;font-size:12px;">表示名</dt><dd style="color:#334155;">' + esc(cust.displayName) + '</dd>';
+    h += '<dt style="color:#94a3b8;font-size:12px;">LINE連携</dt><dd>' + (cust.isLineLinked ? '<span style="color:#06c755;font-weight:700;">連携済み</span>' : '<span style="color:#94a3b8;">未連携</span>') + '</dd>';
+    if (cust.lineUserId) h += '<dt style="color:#94a3b8;font-size:12px;">LINE ID</dt><dd style="font-size:11px;word-break:break-all;color:#64748b;">' + esc(cust.lineUserId) + '</dd>';
+    h += '<dt style="color:#94a3b8;font-size:12px;">登録日</dt><dd style="color:#334155;">' + (cust.registeredAt ? fmtDate(cust.registeredAt) : '-') + '</dd>';
 
     const genderLabels = { male: '男性', female: '女性', other: 'その他' };
-    h += '<dt style="color:#666;">生年月日</dt><dd id="cdBirthDate">' + (cust.birthDate ? esc(cust.birthDate) : '<span style="color:#999;">未設定</span>') + ' <button style="border:none;background:none;color:#0984e3;cursor:pointer;font-size:11px;" onclick="editProfileField(\'' + customerId + '\',\'birthDate\',\'' + esc(cust.birthDate || '') + '\')">編集</button></dd>';
-    h += '<dt style="color:#666;">性別</dt><dd id="cdGender">' + (cust.gender ? (genderLabels[cust.gender] || esc(cust.gender)) : '<span style="color:#999;">未設定</span>') + ' <button style="border:none;background:none;color:#0984e3;cursor:pointer;font-size:11px;" onclick="editProfileField(\'' + customerId + '\',\'gender\',\'' + esc(cust.gender || '') + '\')">編集</button></dd>';
+    h += '<dt style="color:#94a3b8;font-size:12px;">生年月日</dt><dd id="cdBirthDate" style="color:#334155;">' + (cust.birthDate ? esc(cust.birthDate) : '<span style="color:#94a3b8;">未設定</span>') + ' <button style="border:none;background:none;color:#ec5b13;cursor:pointer;font-size:11px;font-weight:600;" onclick="editProfileField(\'' + customerId + '\',\'birthDate\',\'' + esc(cust.birthDate || '') + '\')">編集</button></dd>';
+    h += '<dt style="color:#94a3b8;font-size:12px;">性別</dt><dd id="cdGender" style="color:#334155;">' + (cust.gender ? (genderLabels[cust.gender] || esc(cust.gender)) : '<span style="color:#94a3b8;">未設定</span>') + ' <button style="border:none;background:none;color:#ec5b13;cursor:pointer;font-size:11px;font-weight:600;" onclick="editProfileField(\'' + customerId + '\',\'gender\',\'' + esc(cust.gender || '') + '\')">編集</button></dd>';
     h += '</dl></div>';
 
     // --- Tabs ---
-    h += '<div style="display:flex;gap:0;margin-bottom:0;">';
-    h += '<button id="cdTabNotes" style="padding:8px 16px;border:1px solid #ddd;border-bottom:' + (_custDetailTab === 'notes' ? '2px solid #0984e3' : 'none') + ';background:' + (_custDetailTab === 'notes' ? '#fff' : '#f5f5f5') + ';font-size:12px;font-weight:600;cursor:pointer;border-radius:6px 6px 0 0;" onclick="_custDetailTab=\'notes\';showCustomerDetail(\'' + customerId + '\')">メモ・施術記録</button>';
-    h += '<button id="cdTabPhotos" style="padding:8px 16px;border:1px solid #ddd;border-bottom:' + (_custDetailTab === 'photos' ? '2px solid #0984e3' : 'none') + ';background:' + (_custDetailTab === 'photos' ? '#fff' : '#f5f5f5') + ';font-size:12px;font-weight:600;cursor:pointer;border-radius:6px 6px 0 0;" onclick="_custDetailTab=\'photos\';showCustomerDetail(\'' + customerId + '\')">写真</button>';
-    h += '<button id="cdTabHistory" style="padding:8px 16px;border:1px solid #ddd;border-bottom:' + (_custDetailTab === 'history' ? '2px solid #0984e3' : 'none') + ';background:' + (_custDetailTab === 'history' ? '#fff' : '#f5f5f5') + ';font-size:12px;font-weight:600;cursor:pointer;border-radius:6px 6px 0 0;" onclick="_custDetailTab=\'history\';showCustomerDetail(\'' + customerId + '\')">施術履歴</button>';
+    const _tabActive = 'padding:10px 20px;border:none;border-bottom:3px solid #ec5b13;background:#fff;font-size:12px;font-weight:700;cursor:pointer;border-radius:10px 10px 0 0;color:#ec5b13;';
+    const _tabInactive = 'padding:10px 20px;border:none;border-bottom:3px solid transparent;background:#f8f6f6;font-size:12px;font-weight:600;cursor:pointer;border-radius:10px 10px 0 0;color:#94a3b8;';
+    h += '<div style="display:flex;gap:2px;margin-bottom:0;">';
+    h += '<button id="cdTabNotes" style="' + (_custDetailTab === 'notes' ? _tabActive : _tabInactive) + '" onclick="_custDetailTab=\'notes\';showCustomerDetail(\'' + customerId + '\')">メモ・施術記録</button>';
+    h += '<button id="cdTabPhotos" style="' + (_custDetailTab === 'photos' ? _tabActive : _tabInactive) + '" onclick="_custDetailTab=\'photos\';showCustomerDetail(\'' + customerId + '\')">写真</button>';
+    h += '<button id="cdTabHistory" style="' + (_custDetailTab === 'history' ? _tabActive : _tabInactive) + '" onclick="_custDetailTab=\'history\';showCustomerDetail(\'' + customerId + '\')">施術履歴</button>';
     h += '</div>';
+
+    const _cdCard = 'background:#fff;border-radius:0 12px 12px 12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);';
 
     // --- Notes/Records Tab ---
     if (_custDetailTab === 'notes') {
-      h += '<div class="o-card" style="border-radius:0 8px 8px 8px;">';
-      h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
-      h += '<h3 style="font-size:14px;">メモ・施術記録 <span style="font-size:11px;color:#999;">(' + notes.length + '件)</span></h3>';
+      h += '<div style="' + _cdCard + '">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
+      h += '<h3 style="font-size:14px;font-weight:700;color:#1e293b;">メモ・施術記録 <span style="font-size:11px;font-weight:400;color:#94a3b8;">(' + notes.length + '件)</span></h3>';
       h += '<div style="display:flex;gap:6px;">';
-      h += '<button class="btn btn-outline" style="width:auto;padding:4px 10px;font-size:11px;margin:0;" onclick="openNewNote(\'' + customerId + '\',\'note\')">+ 新規メモ</button>';
-      h += '<button class="btn btn-outline" style="width:auto;padding:4px 10px;font-size:11px;margin:0;" onclick="openNewNote(\'' + customerId + '\',\'record\')">+ 新規施術記録</button>';
+      h += '<button style="display:flex;align-items:center;gap:4px;padding:6px 12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:11px;font-weight:700;color:#64748b;cursor:pointer;" onclick="openNewNote(\'' + customerId + '\',\'note\')"><span class="material-symbols-outlined" style="font-size:14px;">note_add</span>メモ</button>';
+      h += '<button style="display:flex;align-items:center;gap:4px;padding:6px 12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:11px;font-weight:700;color:#64748b;cursor:pointer;" onclick="openNewNote(\'' + customerId + '\',\'record\')"><span class="material-symbols-outlined" style="font-size:14px;">medical_information</span>施術記録</button>';
       h += '</div></div>';
       if (!notes.length) {
-        h += '<p style="text-align:center;color:#999;padding:16px 0;font-size:13px;">メモ・施術記録はありません</p>';
+        h += '<p style="text-align:center;color:#94a3b8;padding:24px 0;font-size:13px;">メモ・施術記録はありません</p>';
       } else {
         notes.forEach(n => {
           const catLabel = n.category === 'record' ? '施術記録' : 'メモ';
-          const catColor = n.category === 'record' ? '#e3f2fd' : '#f3e5f5';
-          const catText = n.category === 'record' ? '#1565c0' : '#7b1fa2';
-          h += '<div style="border:1px solid #e0e0e0;border-radius:8px;padding:10px;margin-bottom:8px;">';
+          const catBg = n.category === 'record' ? 'rgba(236,91,19,.1)' : 'rgba(139,92,246,.1)';
+          const catCol = n.category === 'record' ? '#ec5b13' : '#8b5cf6';
+          h += '<div style="border:1px solid #f1f5f9;border-radius:10px;padding:12px;margin-bottom:8px;">';
           h += '<div style="display:flex;justify-content:space-between;align-items:center;">';
-          h += '<div><span style="background:' + catColor + ';color:' + catText + ';font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;">' + catLabel + '</span> ';
-          h += '<span style="font-size:13px;font-weight:600;margin-left:4px;">' + esc(n.title || '無題') + '</span></div>';
-          h += '<span style="font-size:10px;color:#999;">' + fmtDate(n.createdAt) + '</span></div>';
-          h += '<div id="noteBody_' + n.noteId + '" style="display:none;margin-top:8px;padding:8px;background:#fafafa;border-radius:4px;font-size:12px;white-space:pre-wrap;"></div>';
-          h += '<div style="margin-top:6px;display:flex;gap:6px;">';
-          h += '<button style="border:none;background:none;color:#0984e3;cursor:pointer;font-size:11px;" onclick="toggleNoteContent(\'' + customerId + '\',\'' + n.noteId + '\')">内容を表示</button>';
-          h += '<button style="border:none;background:none;color:#0984e3;cursor:pointer;font-size:11px;" onclick="openEditNote(\'' + customerId + '\',\'' + n.noteId + '\',\'' + esc(n.title || '') + '\')">編集</button>';
-          h += '<button style="border:none;background:none;color:#d32f2f;cursor:pointer;font-size:11px;" onclick="confirmDeleteNote(\'' + customerId + '\',\'' + n.noteId + '\')">削除</button>';
+          h += '<div><span style="background:' + catBg + ';color:' + catCol + ';font-size:10px;padding:3px 8px;border-radius:6px;font-weight:700;">' + catLabel + '</span> ';
+          h += '<span style="font-size:13px;font-weight:700;margin-left:6px;color:#1e293b;">' + esc(n.title || '無題') + '</span></div>';
+          h += '<span style="font-size:10px;color:#94a3b8;">' + fmtDate(n.createdAt) + '</span></div>';
+          h += '<div id="noteBody_' + n.noteId + '" style="display:none;margin-top:10px;padding:10px;background:#f8fafc;border-radius:8px;font-size:12px;white-space:pre-wrap;color:#475569;"></div>';
+          h += '<div style="margin-top:8px;display:flex;gap:8px;">';
+          h += '<button style="border:none;background:none;color:#ec5b13;cursor:pointer;font-size:11px;font-weight:600;" onclick="toggleNoteContent(\'' + customerId + '\',\'' + n.noteId + '\')">内容を表示</button>';
+          h += '<button style="border:none;background:none;color:#ec5b13;cursor:pointer;font-size:11px;font-weight:600;" onclick="openEditNote(\'' + customerId + '\',\'' + n.noteId + '\',\'' + esc(n.title || '') + '\')">編集</button>';
+          h += '<button style="border:none;background:none;color:#dc2626;cursor:pointer;font-size:11px;font-weight:600;" onclick="confirmDeleteNote(\'' + customerId + '\',\'' + n.noteId + '\')">削除</button>';
           h += '</div></div>';
         });
       }
@@ -1268,19 +1325,19 @@ async function showCustomerDetail(customerId) {
 
     // --- Photos Tab ---
     if (_custDetailTab === 'photos') {
-      h += '<div class="o-card" style="border-radius:0 8px 8px 8px;">';
-      h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
-      h += '<h3 style="font-size:14px;">写真 <span style="font-size:11px;color:#999;">(' + attachments.length + '件)</span></h3>';
-      h += '<label class="btn btn-outline" style="width:auto;padding:4px 10px;font-size:11px;margin:0;cursor:pointer;">+ 写真アップロード<input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(\'' + customerId + '\', this)"></label>';
+      h += '<div style="' + _cdCard + '">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
+      h += '<h3 style="font-size:14px;font-weight:700;color:#1e293b;">写真 <span style="font-size:11px;font-weight:400;color:#94a3b8;">(' + attachments.length + '件)</span></h3>';
+      h += '<label style="display:flex;align-items:center;gap:4px;padding:6px 12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:11px;font-weight:700;color:#64748b;cursor:pointer;"><span class="material-symbols-outlined" style="font-size:14px;">add_photo_alternate</span>アップロード<input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(\'' + customerId + '\', this)"></label>';
       h += '</div>';
       if (!attachments.length) {
-        h += '<p style="text-align:center;color:#999;padding:16px 0;font-size:13px;">写真はありません</p>';
+        h += '<p style="text-align:center;color:#94a3b8;padding:24px 0;font-size:13px;">写真はありません</p>';
       } else {
-        h += '<div id="photoGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">';
+        h += '<div id="photoGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">';
         attachments.forEach(a => {
-          h += '<div style="position:relative;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;aspect-ratio:1;background:#f5f5f5;" id="photoWrap_' + a.attachmentId + '">';
+          h += '<div style="position:relative;border:1px solid #f1f5f9;border-radius:10px;overflow:hidden;aspect-ratio:1;background:#f8fafc;" id="photoWrap_' + a.attachmentId + '">';
           h += '<img id="photoImg_' + a.attachmentId + '" style="width:100%;height:100%;object-fit:cover;" src="" alt="' + esc(a.fileName) + '">';
-          h += '<button onclick="confirmDeleteAttachment(\'' + customerId + '\',\'' + a.attachmentId + '\')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;line-height:20px;text-align:center;">&#10005;</button>';
+          h += '<button onclick="confirmDeleteAttachment(\'' + customerId + '\',\'' + a.attachmentId + '\')" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;line-height:22px;text-align:center;">&#10005;</button>';
           h += '</div>';
         });
         h += '</div>';
@@ -1290,20 +1347,23 @@ async function showCustomerDetail(customerId) {
 
     // --- Reservation History Tab ---
     if (_custDetailTab === 'history') {
-      h += '<div class="o-card" style="border-radius:0 8px 8px 8px;">';
-      h += '<h3 style="font-size:14px;margin-bottom:8px;">施術履歴 <span style="font-size:11px;color:#999;">(' + reservations.length + '件)</span></h3>';
+      h += '<div style="' + _cdCard + '">';
+      h += '<h3 style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:10px;">施術履歴 <span style="font-size:11px;font-weight:400;color:#94a3b8;">(' + reservations.length + '件)</span></h3>';
       if (!reservations.length) {
-        h += '<p style="text-align:center;color:#999;padding:16px 0;font-size:13px;">施術履歴はありません</p>';
+        h += '<p style="text-align:center;color:#94a3b8;padding:24px 0;font-size:13px;">施術履歴はありません</p>';
       } else {
-        h += '<table class="o-table"><thead><tr><th>日時</th><th>ステータス</th></tr></thead><tbody>';
+        h += '<table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="border-bottom:2px solid #f1f5f9;">';
+        h += '<th style="text-align:left;padding:10px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;">日時</th>';
+        h += '<th style="text-align:left;padding:10px;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;">ステータス</th>';
+        h += '</tr></thead><tbody>';
         reservations.forEach(r => {
-          const statusColors = { confirmed: '#0984e3', completed: '#636e72', cancelled: '#d63031' };
+          const badgeStyles = { confirmed: 'background:rgba(236,91,19,.1);color:#ec5b13;', completed: 'background:#f1f5f9;color:#64748b;', cancelled: 'background:rgba(220,38,38,.08);color:#dc2626;' };
           const statusLabels = { confirmed: '確定', completed: '完了', cancelled: 'キャンセル' };
-          const col = statusColors[r.status] || '#333';
+          const bStyle = badgeStyles[r.status] || '';
           const label = statusLabels[r.status] || r.status;
-          h += '<tr onclick="showReservationDetail(\'' + (r.reservationId || r.id) + '\')" style="cursor:pointer;">'
-            + '<td>' + fmtDateTime(r.dateTime) + '</td>'
-            + '<td><span style="color:' + col + ';font-weight:600;font-size:12px;">' + label + '</span></td></tr>';
+          h += '<tr style="cursor:pointer;border-bottom:1px solid #f8fafc;" onmouseover="this.style.background=\'rgba(236,91,19,.03)\'" onmouseout="this.style.background=\'\'" onclick="showReservationDetail(\'' + (r.reservationId || r.id) + '\')">'
+            + '<td style="padding:10px;color:#334155;">' + fmtDateTime(r.dateTime) + '</td>'
+            + '<td style="padding:10px;"><span style="font-size:11px;padding:3px 10px;border-radius:9999px;font-weight:700;' + bStyle + '">' + label + '</span></td></tr>';
         });
         h += '</tbody></table>';
       }
@@ -1531,28 +1591,36 @@ async function renderSettings(mc) {
     cancellationPolicy = settings.cancellationPolicy || '';
   } catch (e) { /* default empty */ }
 
-  let h = '<h1 class="page-title">設定</h1>';
-  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:10px;">アカウント情報</h3>';
-  h += '<div class="detail-row"><dt style="width:120px;">メール</dt><dd>' + (currentUser?.email || '-') + '</dd></div>';
-  h += '<div class="detail-row"><dt style="width:120px;">オーナーID</dt><dd style="font-size:11px;word-break:break-all;">' + (currentUser?.ownerId || '-') + '</dd></div>';
+  const _sCard = 'background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);margin-bottom:16px;';
+  const _sTitle = 'font-size:14px;font-weight:700;color:#1e293b;margin-bottom:12px;';
+  const _sRow = 'display:flex;padding:8px 0;border-bottom:1px solid #f8fafc;';
+  const _sDt = 'width:140px;font-size:12px;color:#94a3b8;flex-shrink:0;';
+  const _sDd = 'font-size:13px;color:#334155;';
+  const _sLabel = 'display:block;font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;';
+
+  let h = '<h1 style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:16px;">設定</h1>';
+
+  h += '<div style="' + _sCard + '"><h3 style="' + _sTitle + '"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:text-bottom;color:#ec5b13;margin-right:6px;">person</span>アカウント情報</h3>';
+  h += '<div style="' + _sRow + '"><dt style="' + _sDt + '">メール</dt><dd style="' + _sDd + '">' + (currentUser?.email || '-') + '</dd></div>';
+  h += '<div style="' + _sRow + '"><dt style="' + _sDt + '">オーナーID</dt><dd style="' + _sDd + 'font-size:11px;word-break:break-all;">' + (currentUser?.ownerId || '-') + '</dd></div>';
   h += '</div>';
 
-  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">キャンセルポリシー</h3>';
-  h += '<p style="font-size:12px;color:#666;margin-bottom:8px;">顧客がキャンセルする際に表示されるポリシーを設定します。</p>';
-  h += '<textarea class="form-input" id="cfgCancelPolicy" rows="5" style="font-size:12px;resize:vertical;" placeholder="例: 予約日の前日までにキャンセルしてください。当日キャンセルはキャンセル料が発生します。">' + cancellationPolicy.replace(/</g,'&lt;') + '</textarea>';
-  h += '<button class="btn btn-primary" style="background:#0984e3;width:auto;padding:6px 20px;font-size:12px;margin-top:8px;" onclick="saveCancellationPolicy()">保存</button></div>';
+  h += '<div style="' + _sCard + '"><h3 style="' + _sTitle + '"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:text-bottom;color:#ec5b13;margin-right:6px;">policy</span>キャンセルポリシー</h3>';
+  h += '<p style="font-size:12px;color:#64748b;margin-bottom:10px;">顧客がキャンセルする際に表示されるポリシーを設定します。</p>';
+  h += '<textarea class="ow-input" id="cfgCancelPolicy" rows="5" style="resize:vertical;" placeholder="例: 予約日の前日までにキャンセルしてください。当日キャンセルはキャンセル料が発生します。">' + cancellationPolicy.replace(/</g,'&lt;') + '</textarea>';
+  h += '<button style="padding:8px 20px;background:#ec5b13;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-top:10px;" onclick="saveCancellationPolicy()">保存</button></div>';
 
-  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">LINE接続設定</h3>';
-  h += '<p style="font-size:12px;color:#666;margin-bottom:10px;">LINE Developers Console から取得した情報を設定します。</p>';
-  h += '<div class="form-group"><label>チャネルアクセストークン</label><input class="form-input" id="cfgToken" placeholder="Channel Access Token" style="font-size:12px;"></div>';
-  h += '<div class="form-group"><label>チャネルシークレット</label><input class="form-input" id="cfgSecret" placeholder="Channel Secret" style="font-size:12px;"></div>';
-  h += '<div class="form-group"><label>LIFF ID</label><input class="form-input" id="cfgLiff" placeholder="LIFF ID" style="font-size:12px;"></div>';
-  h += '<div class="form-group"><label>Webhook URL</label><input class="form-input" value="' + API_BASE + '/api/line/webhook" readonly style="font-size:12px;background:#f5f5f5;"></div>';
-  h += '<button class="btn btn-primary" style="background:#0984e3;width:auto;padding:6px 20px;font-size:12px;" onclick="saveLineConfig()">保存</button></div>';
+  h += '<div style="' + _sCard + '"><h3 style="' + _sTitle + '"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:text-bottom;color:#06c755;margin-right:6px;">chat</span>LINE接続設定</h3>';
+  h += '<p style="font-size:12px;color:#64748b;margin-bottom:12px;">LINE Developers Console から取得した情報を設定します。</p>';
+  h += '<div style="margin-bottom:12px;"><label style="' + _sLabel + '">チャネルアクセストークン</label><input class="ow-input" id="cfgToken" placeholder="Channel Access Token"></div>';
+  h += '<div style="margin-bottom:12px;"><label style="' + _sLabel + '">チャネルシークレット</label><input class="ow-input" id="cfgSecret" placeholder="Channel Secret"></div>';
+  h += '<div style="margin-bottom:12px;"><label style="' + _sLabel + '">LIFF ID</label><input class="ow-input" id="cfgLiff" placeholder="LIFF ID"></div>';
+  h += '<div style="margin-bottom:12px;"><label style="' + _sLabel + '">Webhook URL</label><input class="ow-input" value="' + API_BASE + '/api/line/webhook" readonly style="background:#f8fafc;color:#94a3b8;"></div>';
+  h += '<button style="padding:8px 20px;background:#ec5b13;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;" onclick="saveLineConfig()">保存</button></div>';
 
-  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">API情報</h3>';
-  h += '<div class="detail-row"><dt style="width:120px;">エンドポイント</dt><dd style="font-size:11px;word-break:break-all;">' + API_BASE + '</dd></div>';
-  h += '<div class="detail-row"><dt style="width:120px;">リージョン</dt><dd>ap-southeast-1 (Singapore)</dd></div>';
+  h += '<div style="' + _sCard + '"><h3 style="' + _sTitle + '"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:text-bottom;color:#ec5b13;margin-right:6px;">api</span>API情報</h3>';
+  h += '<div style="' + _sRow + '"><dt style="' + _sDt + '">エンドポイント</dt><dd style="' + _sDd + 'font-size:11px;word-break:break-all;">' + API_BASE + '</dd></div>';
+  h += '<div style="' + _sRow + '"><dt style="' + _sDt + '">リージョン</dt><dd style="' + _sDd + '">ap-southeast-1 (Singapore)</dd></div>';
   h += '</div>';
   mc.innerHTML = h;
 }
@@ -1680,7 +1748,7 @@ function renderBookingLiff() {
   selectedDate = null;
   selectedSlot = null;
   custSlotSummary = {};
-  document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">日時を選択</span></div><div class="liff-body" id="liffBody"></div>';
+  document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約する</span></div><div class="liff-body" id="liffBody"></div>';
   renderCalendar();
 }
 
@@ -1851,15 +1919,16 @@ async function loadAvailableSlots(dt) {
   try {
     const data = await api('GET', '/api/slots/available?ownerId=' + ownerId + '&date=' + dateStr);
     const slots = data.slots || [];
-    let h = '<h4 style="font-size:14px;margin-bottom:8px;">' + fmt(dt) + ' の空き状況</h4>';
+    const dows = ['日','月','火','水','木','金','土'];
+    const dateLabel = (dt.getMonth()+1) + '月' + dt.getDate() + '日 (' + dows[dt.getDay()] + ')';
+    let h = '<div class="slot-section-title">' + dateLabel + ' の空き</div>';
     if (slots.length === 0) {
-      h += '<p style="color:#999;font-size:13px;padding:12px 0;">この日の空きスロットはありません</p>';
+      h += '<div class="cust-empty">この日の空きはありません</div>';
     } else {
       h += '<div class="slot-list">';
       slots.sort((a, b) => a.startTime.localeCompare(b.startTime)).forEach((s, idx) => {
         h += '<div class="slot-item" onclick="selectSlot(' + idx + ')">';
-        h += '<span>' + s.startTime + ' - ' + s.endTime + '</span>';
-        h += '<span class="slot-status open">予約可</span>';
+        h += s.startTime;
         h += '</div>';
       });
       h += '</div>';
@@ -1868,7 +1937,7 @@ async function loadAvailableSlots(dt) {
     // Store slots for reference when selecting
     container._slots = slots;
   } catch (e) {
-    container.innerHTML = '<p style="color:#d32f2f;font-size:13px;">空き状況の取得に失敗しました: ' + e.message + '</p>';
+    container.innerHTML = '<div class="cust-empty">読み込みに失敗しました</div>';
   }
 }
 
@@ -1878,15 +1947,15 @@ function selectSlot(idx) {
   if (!slots || !slots[idx]) return;
   selectedSlot = slots[idx];
   const durationMinutes = selectedSlot.durationMinutes || 60;
+  const dows = ['日','月','火','水','木','金','土'];
+  const dateLabel = (selectedDate.getMonth()+1) + '月' + selectedDate.getDate() + '日 (' + dows[selectedDate.getDay()] + ')';
   const body = document.getElementById('liffBody');
-  body.innerHTML = '<h4 style="font-size:15px;margin-bottom:8px;">予約内容の確認</h4>'
-    + '<div class="confirm-box">'
-    + '<dt>日付</dt><dd>' + fmt(selectedDate) + '</dd>'
-    + '<dt>時間</dt><dd>' + selectedSlot.startTime + ' - ' + selectedSlot.endTime + '</dd>'
-    + '<dt>所要時間</dt><dd>' + durationMinutes + '分</dd>'
-    + '<dt>お名前</dt><dd>' + mockCustomerName + '</dd>'
+  body.innerHTML = '<div class="confirm-box">'
+    + '<div style="font-size:13px;color:var(--c-sub)">' + dateLabel + '</div>'
+    + '<div class="time-label">' + selectedSlot.startTime + ' - ' + selectedSlot.endTime + '</div>'
+    + '<div style="font-size:13px;color:var(--c-sub);margin-bottom:4px">' + durationMinutes + '分 / ' + mockCustomerName + '</div>'
+    + '<button class="btn btn-primary" onclick="confirmBooking()">この時間で予約する</button>'
     + '</div>'
-    + '<button class="btn btn-primary" onclick="confirmBooking()">予約を確定する</button>'
     + '<button class="btn btn-outline" onclick="renderBookingLiff()">戻る</button>';
 }
 
@@ -1908,12 +1977,16 @@ async function confirmBooking() {
     hideLoading();
     const rsvId = res.reservationId || res.id || '';
     const shortId = rsvId.substring(0, 8);
-    document.getElementById('liffBody').innerHTML = '<div style="text-align:center;padding:40px 0;">'
-      + '<div style="font-size:48px;margin-bottom:16px;">&#10004;</div>'
-      + '<h3 style="font-size:18px;margin-bottom:8px;">予約が確定しました</h3>'
-      + '<p style="font-size:13px;color:#666;">' + fmt(selectedDate) + ' ' + selectedSlot.startTime + ' - ' + selectedSlot.endTime + '</p>'
-      + '<p style="font-size:12px;color:#999;margin-top:4px;">' + shortId + '...</p>'
-      + '<button class="btn btn-outline" style="margin-top:24px;" onclick="liffClose()">閉じる</button>'
+    const dows = ['日','月','火','水','木','金','土'];
+    const bookedDate = (selectedDate.getMonth()+1) + '月' + selectedDate.getDate() + '日 (' + dows[selectedDate.getDay()] + ')';
+    const bookedTime = selectedSlot.startTime + ' - ' + selectedSlot.endTime;
+    document.getElementById('liffBody').innerHTML = '<div class="confirm-box" style="text-align:center">'
+      + '<div style="font-size:48px;margin-bottom:12px;color:var(--c-primary)">&#10003;</div>'
+      + '<div style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--c-text)">予約が完了しました</div>'
+      + '<div style="font-size:13px;color:var(--c-sub)">' + bookedDate + '</div>'
+      + '<div style="font-size:16px;font-weight:600;margin:4px 0;color:var(--c-text)">' + bookedTime + '</div>'
+      + '<div style="font-size:12px;color:var(--c-sub);margin-top:4px">' + shortId + '...</div>'
+      + '<button class="btn btn-primary" style="margin-top:16px;" onclick="liffClose()">OK</button>'
       + '</div>';
     addBotMsg('予約が確定しました\n\n日時: ' + fmt(selectedDate) + ' ' + selectedSlot.startTime + ' - ' + selectedSlot.endTime + '\n予約ID: ' + shortId + '...\n\nご来店お待ちしております。');
   } catch (e) {
@@ -1938,15 +2011,23 @@ async function renderListLiff() {
     hideLoading();
     let h = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約一覧</span></div><div class="liff-body">';
     if (!upcoming.length) {
-      h += '<p style="color:#999;text-align:center;padding:40px 0;">今後の予約はありません</p>';
+      h += '<div class="cust-empty">予約はありません</div>';
     } else {
       upcoming.forEach(r => {
-        const shortId = r.reservationId.substring(0, 8);
+        const dt = new Date(r.dateTime);
+        const dows = ['日','月','火','水','木','金','土'];
+        const dateStr = (dt.getMonth()+1) + '/' + dt.getDate() + ' (' + dows[dt.getDay()] + ')';
+        const time = String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+        const dur = r.durationMinutes || 60;
+        const endMin = dt.getMinutes() + dur;
+        const endH = dt.getHours() + Math.floor(endMin / 60);
+        const endM = endMin % 60;
+        const endTime = String(endH).padStart(2,'0') + ':' + String(endM).padStart(2,'0');
         h += '<div class="booking-card">';
-        h += '<span class="bk-date">' + fmtDateTime(r.dateTime) + '</span>';
+        h += '<div style="font-size:13px;color:var(--c-sub)">' + dateStr + '</div>';
+        h += '<div class="bk-date">' + time + ' - ' + endTime + '</div>';
         h += '<span class="bk-status confirmed">確定</span>';
-        h += '<div class="bk-id">' + shortId + '...</div>';
-        h += '<button class="btn btn-danger" style="margin-top:8px;padding:8px;font-size:12px;" onclick="showCancelConfirm(\'' + r.reservationId + '\')">キャンセル</button>';
+        h += '<button class="btn btn-danger" onclick="showCancelConfirm(\'' + r.reservationId + '\')">キャンセル</button>';
         h += '</div>';
       });
     }
@@ -1954,7 +2035,7 @@ async function renderListLiff() {
     document.getElementById('liffOverlay').innerHTML = h;
   } catch (e) {
     hideLoading();
-    document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約一覧</span></div><div class="liff-body"><p style="color:#d32f2f;text-align:center;padding:40px 0;">予約取得エラー: ' + e.message + '</p></div>';
+    document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約一覧</span></div><div class="liff-body"><div class="cust-empty">予約はありません</div></div>';
   }
 }
 
@@ -1967,18 +2048,14 @@ async function showCancelConfirm(reservationId) {
   } catch (e) { /* no policy */ }
 
   let h = '<div class="liff-header"><button class="close-btn" onclick="renderListLiff()">&times;</button><span class="liff-title">キャンセル確認</span></div><div class="liff-body">';
-  h += '<div style="text-align:center;padding:16px 0;">';
-  h += '<div style="font-size:36px;margin-bottom:12px;">&#9888;</div>';
-  h += '<h3 style="font-size:16px;margin-bottom:12px;">この予約をキャンセルしますか？</h3>';
+  h += '<div class="cust-modal-box" style="margin:0 auto;">';
+  h += '<h3>予約をキャンセルしますか？</h3>';
   if (policy) {
-    h += '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:12px;margin:12px 0;text-align:left;">';
-    h += '<div style="font-size:12px;font-weight:700;color:#f57f17;margin-bottom:6px;">キャンセルポリシー</div>';
-    h += '<div style="font-size:12px;color:#333;white-space:pre-wrap;">' + policy.replace(/</g,'&lt;') + '</div>';
-    h += '</div>';
+    h += '<div style="font-size:13px;color:var(--c-sub);margin-bottom:16px;white-space:pre-wrap;line-height:1.6;max-height:200px;overflow-y:auto">' + policy.replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</div>';
   }
-  h += '<div style="display:flex;gap:8px;margin-top:16px;">';
-  h += '<button class="btn btn-danger" style="flex:1;padding:12px;font-size:14px;" onclick="cancelCustomerReservation(\'' + reservationId + '\')">キャンセルする</button>';
+  h += '<div style="display:flex;gap:8px;">';
   h += '<button class="btn btn-outline" style="flex:1;padding:12px;font-size:14px;" onclick="renderListLiff()">戻る</button>';
+  h += '<button class="btn" style="flex:1;padding:12px;font-size:14px;background:var(--c-danger);color:#fff;" onclick="cancelCustomerReservation(\'' + reservationId + '\')">キャンセルする</button>';
   h += '</div></div></div>';
   document.getElementById('liffOverlay').innerHTML = h;
 }
@@ -1997,23 +2074,30 @@ async function cancelCustomerReservation(reservationId) {
   }
 }
 
+let _historyData = []; // cached history reservations
+let _historyNotes = []; // cached notes for history
+let _historyAttachments = []; // cached attachments for history
+let _historyCustId = null;
+
 async function renderHistoryLiff() {
   document.getElementById('lineTitle').textContent = '施術履歴';
   document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">施術履歴</span></div><div class="liff-body"><div class="loading">読み込み中...</div></div>';
   showLoading();
   try {
     const custId = await ensureMockCustomer();
-    // Fetch a broad range to cover past reservations
+    _historyCustId = custId;
     const pastStart = isoDate(YEAR - 1, 0, 1);
     const todayStr = isoDate(YEAR, MONTH, DAY + 1);
     const farFuture = isoDate(YEAR + 1, MONTH, DAY);
-    // Get both past and future to find completed/cancelled
-    const [pastData, futureData] = await Promise.all([
+    const [pastData, futureData, notesData, attachData] = await Promise.all([
       api('GET', '/api/owner/reservations?startDate=' + pastStart + '&endDate=' + todayStr),
       api('GET', '/api/owner/reservations?startDate=' + todayStr + '&endDate=' + farFuture),
+      api('GET', '/api/customers/' + custId + '/notes').catch(() => ({ notes: [] })),
+      api('GET', '/api/customers/' + custId + '/attachments').catch(() => ({ attachments: [] })),
     ]);
     const allRsvs = [...(pastData.reservations || []), ...(futureData.reservations || [])];
-    // Filter: mock customer + completed/cancelled, or past confirmed
+    _historyNotes = (notesData.notes || []);
+    _historyAttachments = (attachData.attachments || []).filter(a => a.category === 'photo');
     const todayDate = new Date(YEAR, MONTH, DAY);
     const history = allRsvs.filter(r => {
       if (r.customerId !== custId) return false;
@@ -2021,30 +2105,169 @@ async function renderHistoryLiff() {
       if (r.status === 'confirmed' && new Date(r.dateTime) < todayDate) return true;
       return false;
     }).sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
-    // Deduplicate by reservationId
     const seen = new Set();
-    const unique = history.filter(r => { if (seen.has(r.reservationId)) return false; seen.add(r.reservationId); return true; });
+    _historyData = history.filter(r => { if (seen.has(r.reservationId)) return false; seen.add(r.reservationId); return true; });
     hideLoading();
-    const statusLabelCust = s => s === 'confirmed' ? '確定' : s === 'cancelled' ? 'キャンセル済' : s === 'completed' ? '完了' : s;
-    let h = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">施術履歴</span></div><div class="liff-body">';
-    if (!unique.length) {
-      h += '<p style="color:#999;text-align:center;padding:40px 0;">履歴はありません</p>';
-    } else {
-      unique.forEach(r => {
-        const shortId = r.reservationId.substring(0, 8);
-        const sCls = r.status === 'confirmed' ? 'confirmed' : r.status === 'cancelled' ? 'cancelled' : 'done';
-        h += '<div class="booking-card">';
-        h += '<span class="bk-date">' + fmtDateTime(r.dateTime) + '</span>';
-        h += '<span class="bk-status ' + sCls + '">' + statusLabelCust(r.status) + '</span>';
-        h += '<div class="bk-id">' + shortId + '...</div>';
-        h += '</div>';
-      });
-    }
-    h += '</div>';
-    document.getElementById('liffOverlay').innerHTML = h;
+    renderHistoryList();
   } catch (e) {
     hideLoading();
-    document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">施術履歴</span></div><div class="liff-body"><p style="color:#d32f2f;text-align:center;padding:40px 0;">履歴取得エラー: ' + e.message + '</p></div>';
+    document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">施術履歴</span></div><div class="liff-body"><div class="cust-empty">施術履歴はありません</div></div>';
+  }
+}
+
+function renderHistoryList() {
+  const statusLabelCust = s => s === 'confirmed' ? '確定' : s === 'cancelled' ? 'キャンセル済' : s === 'completed' ? '完了' : s;
+  let h = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">施術履歴</span></div><div class="liff-body">';
+  if (!_historyData.length) {
+    h += '<div class="cust-empty">施術履歴はありません</div>';
+  } else {
+    _historyData.forEach((r, idx) => {
+      const dt = new Date(r.dateTime);
+      const dows = ['日','月','火','水','木','金','土'];
+      const dateStr = (dt.getMonth()+1) + '/' + dt.getDate() + ' (' + dows[dt.getDay()] + ')';
+      const time = String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+      const dur = r.durationMinutes || 60;
+      const endMin = dt.getMinutes() + dur;
+      const endH = dt.getHours() + Math.floor(endMin / 60);
+      const endM = endMin % 60;
+      const endTime = String(endH).padStart(2,'0') + ':' + String(endM).padStart(2,'0');
+      const sCls = r.status === 'confirmed' ? 'confirmed' : r.status === 'cancelled' ? 'cancelled' : 'done';
+      // Count matching notes/photos for this date
+      const rsvDateKey = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+      const matchNotes = _historyNotes.filter(n => n.createdAt && n.createdAt.substring(0,10) === rsvDateKey);
+      const matchRecords = matchNotes.filter(n => n.category === 'record');
+      const matchMemos = matchNotes.filter(n => n.category === 'note');
+      const matchPhotos = _historyAttachments.filter(a => a.createdAt && a.createdAt.substring(0,10) === rsvDateKey);
+      const hasExtras = matchNotes.length > 0 || matchPhotos.length > 0;
+      h += '<div class="booking-card" style="cursor:pointer;" onclick="showHistoryDetail(' + idx + ')">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+      h += '<div><div style="font-size:13px;color:var(--c-sub)">' + dateStr + '</div>';
+      h += '<div class="bk-date">' + time + ' - ' + endTime + '</div></div>';
+      h += '<span class="bk-status ' + sCls + '">' + statusLabelCust(r.status) + '</span>';
+      h += '</div>';
+      if (hasExtras) {
+        h += '<div style="display:flex;gap:8px;margin-top:6px;font-size:11px;color:var(--c-sub);">';
+        if (matchRecords.length) h += '<span style="display:flex;align-items:center;gap:2px;">&#128221; 記録 ' + matchRecords.length + '件</span>';
+        if (matchMemos.length) h += '<span style="display:flex;align-items:center;gap:2px;">&#128214; メモ ' + matchMemos.length + '件</span>';
+        if (matchPhotos.length) h += '<span style="display:flex;align-items:center;gap:2px;">&#128247; 写真 ' + matchPhotos.length + '件</span>';
+        h += '</div>';
+      }
+      h += '</div>';
+    });
+  }
+  h += '</div>';
+  document.getElementById('liffOverlay').innerHTML = h;
+}
+
+async function showHistoryDetail(idx) {
+  const r = _historyData[idx];
+  if (!r) return;
+  const dt = new Date(r.dateTime);
+  const dows = ['日','月','火','水','木','金','土'];
+  const dateStr = dt.getFullYear() + '/' + (dt.getMonth()+1) + '/' + dt.getDate() + ' (' + dows[dt.getDay()] + ')';
+  const time = String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+  const dur = r.durationMinutes || 60;
+  const endMin = dt.getMinutes() + dur;
+  const endH = dt.getHours() + Math.floor(endMin / 60);
+  const endM = endMin % 60;
+  const endTime = String(endH).padStart(2,'0') + ':' + String(endM).padStart(2,'0');
+  const statusLabelCust = s => s === 'confirmed' ? '確定' : s === 'cancelled' ? 'キャンセル済' : s === 'completed' ? '完了' : s;
+  const sCls = r.status === 'confirmed' ? 'confirmed' : r.status === 'cancelled' ? 'cancelled' : 'done';
+
+  // Match notes/photos by date
+  const rsvDateKey = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+  const matchNotes = _historyNotes.filter(n => n.createdAt && n.createdAt.substring(0,10) === rsvDateKey);
+  const matchPhotos = _historyAttachments.filter(a => a.createdAt && a.createdAt.substring(0,10) === rsvDateKey);
+
+  let h = '<div class="liff-header"><button class="close-btn" onclick="renderHistoryList()">&times;</button><span class="liff-title">施術詳細</span></div><div class="liff-body">';
+
+  // Reservation info
+  h += '<div style="background:#f8f8f8;border-radius:12px;padding:16px;margin-bottom:16px;">';
+  h += '<div style="font-size:15px;font-weight:700;margin-bottom:4px;">' + dateStr + '</div>';
+  h += '<div style="font-size:14px;color:#555;">' + time + ' - ' + endTime + '（' + dur + '分）</div>';
+  h += '<span class="bk-status ' + sCls + '" style="margin-top:8px;display:inline-block;">' + statusLabelCust(r.status) + '</span>';
+  h += '</div>';
+
+  // Separate records and memos
+  const matchRecords = matchNotes.filter(n => n.category === 'record');
+  const matchMemos = matchNotes.filter(n => n.category === 'note');
+
+  // Treatment records
+  h += '<div style="margin-bottom:16px;">';
+  h += '<h4 style="font-size:14px;font-weight:700;margin-bottom:8px;">&#128221; 施術記録</h4>';
+  if (!matchRecords.length) {
+    h += '<p style="font-size:13px;color:#999;padding:8px 0;">この日の施術記録はありません</p>';
+  } else {
+    matchRecords.forEach(n => {
+      h += '<div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:8px;">';
+      h += '<div style="font-size:13px;font-weight:700;">' + esc(n.title || '無題') + '</div>';
+      h += '<div id="histNote_' + n.noteId + '" style="display:none;margin-top:8px;font-size:12px;color:#555;white-space:pre-wrap;line-height:1.6;"></div>';
+      h += '<button style="border:none;background:none;color:#06c755;cursor:pointer;font-size:12px;font-weight:600;margin-top:4px;" onclick="toggleHistoryNote(\'' + n.noteId + '\')">内容を表示</button>';
+      h += '</div>';
+    });
+  }
+  h += '</div>';
+
+  // Memos
+  h += '<div style="margin-bottom:16px;">';
+  h += '<h4 style="font-size:14px;font-weight:700;margin-bottom:8px;">&#128214; メモ</h4>';
+  if (!matchMemos.length) {
+    h += '<p style="font-size:13px;color:#999;padding:8px 0;">この日のメモはありません</p>';
+  } else {
+    matchMemos.forEach(n => {
+      h += '<div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:8px;">';
+      h += '<div style="font-size:13px;font-weight:700;">' + esc(n.title || '無題') + '</div>';
+      h += '<div id="histNote_' + n.noteId + '" style="display:none;margin-top:8px;font-size:12px;color:#555;white-space:pre-wrap;line-height:1.6;"></div>';
+      h += '<button style="border:none;background:none;color:#06c755;cursor:pointer;font-size:12px;font-weight:600;margin-top:4px;" onclick="toggleHistoryNote(\'' + n.noteId + '\')">内容を表示</button>';
+      h += '</div>';
+    });
+  }
+  h += '</div>';
+
+  // Photos
+  h += '<div style="margin-bottom:16px;">';
+  h += '<h4 style="font-size:14px;font-weight:700;margin-bottom:8px;">&#128247; 写真</h4>';
+  if (!matchPhotos.length) {
+    h += '<p style="font-size:13px;color:#999;padding:8px 0;">この日の写真はありません</p>';
+  } else {
+    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
+    matchPhotos.forEach(a => {
+      h += '<div style="aspect-ratio:1;border-radius:8px;overflow:hidden;background:#f0f0f0;">';
+      h += '<img id="histPhoto_' + a.attachmentId + '" style="width:100%;height:100%;object-fit:cover;" src="" alt="' + esc(a.fileName) + '">';
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+
+  h += '<button class="btn btn-outline" style="width:100%;margin-top:8px;" onclick="renderHistoryList()">一覧に戻る</button>';
+  h += '</div>';
+  document.getElementById('liffOverlay').innerHTML = h;
+
+  // Load photo presigned URLs
+  if (matchPhotos.length && _historyCustId) {
+    matchPhotos.forEach(a => {
+      api('GET', '/api/customers/' + _historyCustId + '/attachments/' + a.attachmentId + '/url')
+        .then(res => {
+          const img = document.getElementById('histPhoto_' + a.attachmentId);
+          if (img) img.src = res.presignedUrl;
+        }).catch(() => {});
+    });
+  }
+}
+
+async function toggleHistoryNote(noteId) {
+  const el = document.getElementById('histNote_' + noteId);
+  if (!el) return;
+  if (el.style.display === 'block') { el.style.display = 'none'; return; }
+  if (!_historyCustId) return;
+  el.innerHTML = '<span style="color:#999;">読み込み中...</span>';
+  el.style.display = 'block';
+  try {
+    const data = await api('GET', '/api/customers/' + _historyCustId + '/notes/' + noteId);
+    el.textContent = data.content || '(空)';
+  } catch (e) {
+    el.innerHTML = '<span style="color:#d32f2f;">取得エラー</span>';
   }
 }
 
