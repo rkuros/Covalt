@@ -8,7 +8,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --primary:#00B4A8;--primary-dark:#009688;--bg:#F5F7FA;--card:#FFF;
+  --primary:#ec5b13;--primary-dark:#c44b10;--bg:#f8f6f6;--card:#FFF;
   --text:#1A1A2E;--sub:#6B7280;--border:#E5E7EB;--danger:#EF4444;
   --nav-h:56px;--header-h:44px;
 }
@@ -17,13 +17,13 @@ html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Hiragino San
 .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-header{position:fixed;top:0;left:0;right:0;height:var(--header-h);background:var(--primary);color:#fff;display:flex;align-items:center;padding:0 16px;z-index:10;font-weight:600;font-size:17px}
+header{position:fixed;top:0;left:0;right:0;height:var(--header-h);background:rgba(255,255,255,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#1e293b;border-bottom:1px solid rgba(236,91,19,.1);display:flex;align-items:center;padding:0 16px;z-index:10;font-weight:600;font-size:17px}
 header .name{margin-left:8px;font-weight:400;font-size:14px;opacity:.85}
 
 main{padding:calc(var(--header-h) + 12px) 12px calc(var(--nav-h) + 12px);min-height:100%}
 .view{display:none}.view.active{display:block}
 
-nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:var(--card);border-top:1px solid var(--border);display:flex;align-items:center;z-index:10}
+nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:var(--card);border-top:1px solid rgba(236,91,19,.1);display:flex;align-items:center;z-index:10}
 nav button{flex:1;border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--sub);font-size:10px;cursor:pointer;transition:.2s}
 nav button.active{color:var(--primary)}
 nav button svg{width:24px;height:24px;fill:currentColor}
@@ -33,9 +33,9 @@ nav button svg{width:24px;height:24px;fill:currentColor}
 .card-date{font-size:13px;color:var(--sub);margin-bottom:4px}
 .card-time{font-size:18px;font-weight:600}
 .card-status{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:500;margin-top:6px}
-.status-confirmed{background:#DCFCE7;color:#166534}
-.status-cancelled{background:#FEE2E2;color:#991B1B}
-.status-completed{background:#E0E7FF;color:#3730A3}
+.status-confirmed{background:rgba(236,91,19,.1);color:#ec5b13}
+.status-cancelled{background:rgba(220,38,38,.08);color:#dc2626}
+.status-completed{background:#f1f5f9;color:#64748b}
 .btn{display:block;width:100%;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:.2s}
 .btn-primary{background:var(--primary);color:#fff}
 .btn-primary:active{background:var(--primary-dark)}
@@ -52,7 +52,7 @@ nav button svg{width:24px;height:24px;fill:currentColor}
 .cal-dow:first-child{color:#EF4444}
 .cal-dow:last-child{color:#3B82F6}
 .cal-day{text-align:center;padding:8px 0;font-size:14px;border-radius:50%;cursor:pointer;transition:.15s;aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative}
-.cal-day:hover{background:#E0F2F1}
+.cal-day:hover{background:rgba(236,91,19,.05)}
 .cal-day.today{font-weight:700}
 .cal-day.today::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--primary)}
 .cal-day.selected{background:var(--primary);color:#fff;font-weight:600}
@@ -388,11 +388,12 @@ async function loadHistory() {
   el.innerHTML = '<div class="empty">読み込み中...</div>';
   try {
     const data = await api('GET', '/api/reservations/history', null, { 'x-owner-id': ownerId });
-    if (!data.reservations || data.reservations.length === 0) {
+    const history = (data.reservations || []).filter(r => r.status !== 'cancelled');
+    if (!history.length) {
       el.innerHTML = '<div class="empty">施術履歴はありません</div>';
       return;
     }
-    el.innerHTML = data.reservations.map(r => reservationCard(r, false)).join('');
+    el.innerHTML = history.map(r => reservationCard(r, false)).join('');
   } catch (e) {
     el.innerHTML = '<div class="empty">施術履歴はありません</div>';
   }

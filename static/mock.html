@@ -41,32 +41,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 /* ==================== */
 
 /* Customer-side design variables (matching liff.html) */
-.phone{--c-primary:#00B4A8;--c-primary-dark:#009688;--c-bg:#F5F7FA;--c-card:#FFF;--c-text:#1A1A2E;--c-sub:#6B7280;--c-border:#E5E7EB;--c-danger:#EF4444;}
+.phone{--c-primary:#ec5b13;--c-primary-dark:#d4510f;--c-bg:#f8f6f6;--c-card:#FFF;--c-text:#1e293b;--c-sub:#64748b;--c-border:#E5E7EB;--c-danger:#dc2626;}
 
 /* LINE header */
-.line-header{background:#06c755;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
-.line-header .back{font-size:20px;cursor:pointer;}
-.line-header .title{font-size:15px;font-weight:700;flex:1;}
+.line-header{background:rgba(255,255,255,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#1e293b;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;border-bottom:1px solid rgba(236,91,19,.1);}
+.line-header .back{font-size:20px;cursor:pointer;color:#64748b;}
+.line-header .title{font-size:15px;font-weight:700;flex:1;color:#1e293b;}
 
 /* Chat area */
-.chat-area{flex:1;overflow-y:auto;padding:12px 16px;background:#7baabd;display:flex;flex-direction:column;gap:8px;}
+.chat-area{flex:1;overflow-y:auto;padding:12px 16px;background:#f8f6f6;display:flex;flex-direction:column;gap:8px;}
 .msg{max-width:80%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.5;word-break:break-word;}
-.msg-bot{background:#fff;color:#333;align-self:flex-start;border-bottom-left-radius:4px;}
-.msg-user{background:#06c755;color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
+.msg-bot{background:#fff;color:#334155;align-self:flex-start;border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.msg-user{background:#ec5b13;color:#fff;align-self:flex-end;border-bottom-right-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
 
 /* Rich menu */
-.rich-menu{flex-shrink:0;display:grid;grid-template-columns:1fr 1fr 1fr;background:#fff;border-top:1px solid #e0e0e0;}
-.rich-menu button{padding:18px 8px;border:none;background:#fff;font-size:12px;font-weight:700;color:var(--c-primary);cursor:pointer;border-right:1px solid #f0f0f0;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.rich-menu{flex-shrink:0;display:grid;grid-template-columns:1fr 1fr 1fr;background:rgba(255,255,255,.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid rgba(236,91,19,.1);}
+.rich-menu button{padding:18px 8px;border:none;background:transparent;font-size:12px;font-weight:700;color:var(--c-primary);cursor:pointer;border-right:1px solid rgba(236,91,19,.05);display:flex;flex-direction:column;align-items:center;gap:6px;transition:background .2s;}
 .rich-menu button:last-child{border-right:none;}
-.rich-menu button:hover{background:#E0F2F1;}
+.rich-menu button:hover{background:rgba(236,91,19,.06);}
 .rm-icon{font-size:24px;}
 
 /* LIFF overlay */
 .liff-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:var(--c-bg);display:flex;flex-direction:column;z-index:10;}
-.liff-header{background:var(--c-primary);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;color:#fff;}
-.liff-header .close-btn{font-size:22px;cursor:pointer;color:#fff;background:none;border:none;padding:0 4px;opacity:.85;}
+.liff-header{background:rgba(255,255,255,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;color:#1e293b;border-bottom:1px solid rgba(236,91,19,.1);}
+.liff-header .close-btn{font-size:22px;cursor:pointer;color:#64748b;background:none;border:none;padding:0 4px;opacity:.85;transition:opacity .2s;}
 .liff-header .close-btn:hover{opacity:1;}
-.liff-header .liff-title{font-size:15px;font-weight:600;flex:1;color:#fff;}
+.liff-header .liff-title{font-size:15px;font-weight:600;flex:1;color:#1e293b;}
 .liff-body{flex:1;overflow-y:auto;padding:12px;background:var(--c-bg);}
 
 /* Calendar */
@@ -78,7 +78,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 .cal-dow:first-child{color:#EF4444;}
 .cal-dow:last-child{color:#3B82F6;}
 .cal-day{font-size:14px;padding:8px 0;border-radius:50%;cursor:pointer;transition:.15s;aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative;}
-.cal-day:hover{background:#E0F2F1;}
+.cal-day:hover{background:rgba(236,91,19,.06);}
 .cal-day.today{font-weight:700;color:var(--c-primary);}
 .cal-day.today::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--c-primary);}
 .cal-day.selected{background:var(--c-primary);color:#fff;font-weight:600;}
@@ -100,8 +100,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 .slot-item.booked{background:var(--c-bg);color:var(--c-sub);cursor:default;border-color:var(--c-border);}
 .slot-item.booked:hover{background:var(--c-bg);border-color:var(--c-border);color:var(--c-sub);}
 .slot-status{font-size:11px;padding:2px 8px;border-radius:10px;display:none;}
-.slot-status.open{background:#DCFCE7;color:#166534;}
-.slot-status.taken{background:#eee;color:#999;}
+.slot-status.open{background:rgba(236,91,19,.1);color:#ec5b13;}
+.slot-status.taken{background:#f1f5f9;color:#64748b;}
 
 /* Common buttons */
 .confirm-box{background:var(--c-card);border-radius:12px;padding:20px;margin:12px 0;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06);}
@@ -118,12 +118,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 .btn-outline:hover{background:#E5E7EB;}
 
 /* Booking cards (customer) */
-.booking-card{background:var(--c-card);border-radius:12px;padding:16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.booking-card{background:var(--c-card);border-radius:12px;padding:16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);}
 .booking-card .bk-date{font-size:18px;font-weight:600;color:var(--c-text);}
-.booking-card .bk-status{display:inline-block;font-size:12px;font-weight:500;padding:2px 10px;border-radius:99px;margin-left:8px;}
-.bk-status.confirmed{background:#DCFCE7;color:#166534;}
-.bk-status.cancelled{background:#FEE2E2;color:#991B1B;}
-.bk-status.done{background:#E0E7FF;color:#3730A3;}
+.booking-card .bk-status{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;margin-left:8px;}
+.bk-status.confirmed{background:rgba(236,91,19,.1);color:#ec5b13;}
+.bk-status.cancelled{background:rgba(220,38,38,.08);color:#dc2626;}
+.bk-status.done{background:#f1f5f9;color:#64748b;}
 .booking-card .bk-id{font-size:11px;color:var(--c-sub);margin-top:4px;}
 
 /* Customer empty state */
@@ -136,8 +136,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 
 /* Cancel modal (customer) */
 .cust-modal-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:200;}
-.cust-modal-box{background:#fff;border-radius:16px;padding:24px;margin:16px;max-width:320px;width:100%;}
-.cust-modal-box h3{font-size:16px;font-weight:600;margin-bottom:12px;color:var(--c-text);}
+.cust-modal-box{background:#fff;border-radius:12px;padding:24px;margin:16px;max-width:320px;width:100%;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);}
+.cust-modal-box h3{font-size:16px;font-weight:700;margin-bottom:12px;color:var(--c-text);}
 
 /* ================== */
 /* === OWNER SIDE === */
@@ -452,7 +452,7 @@ function showQuickAdd() {
 }
 
 /* --- Dashboard --- */
-let viewMode = 'month';
+let viewMode = 'calendar';
 let ocMonth = MONTH, ocYear = YEAR;
 
 async function renderDashboard(mc) {
@@ -576,7 +576,7 @@ function renderOwnerCalendar() {
 }
 
 /* --- Reservation Detail --- */
-async function showReservationDetail(id) {
+async function showReservationDetail(id, fromCustomerId) {
   const mc = document.getElementById('mainContent');
   mc.innerHTML = '<div class="loading">読み込み中...</div>';
 
@@ -585,7 +585,7 @@ async function showReservationDetail(id) {
     r = await api('GET', '/api/owner/reservations/' + id);
   } catch (e) {
     showToast('予約取得エラー: ' + e.message, true);
-    showPage('dashboard');
+    if (fromCustomerId) { _custDetailTab = 'history'; showCustomerDetail(fromCustomerId); } else { showPage('dashboard'); }
     return;
   }
 
@@ -593,8 +593,10 @@ async function showReservationDetail(id) {
   const canComplete = r.status === 'confirmed';
   const badgeStyle = r.status === 'confirmed' ? 'background:rgba(236,91,19,.1);color:#ec5b13;' : r.status === 'cancelled' ? 'background:rgba(220,38,38,.08);color:#dc2626;' : 'background:#f1f5f9;color:#64748b;';
 
+  const backAction = fromCustomerId ? "_custDetailTab='history';showCustomerDetail('" + fromCustomerId + "')" : "showPage('dashboard')";
+  const backLabel = fromCustomerId ? '施術履歴に戻る' : '一覧に戻る';
   let h = '<div style="margin-bottom:16px;">';
-  h += '<button style="display:flex;align-items:center;gap:6px;background:none;border:none;color:#64748b;cursor:pointer;font-size:13px;font-weight:600;" onclick="showPage(\'dashboard\')"><span class="material-symbols-outlined" style="font-size:18px;">arrow_back</span>一覧に戻る</button>';
+  h += '<button style="display:flex;align-items:center;gap:6px;background:none;border:none;color:#64748b;cursor:pointer;font-size:13px;font-weight:600;" onclick="' + backAction + '"><span class="material-symbols-outlined" style="font-size:18px;">arrow_back</span>' + backLabel + '</button>';
   h += '</div>';
   h += '<h1 style="font-size:18px;font-weight:700;color:#1e293b;margin-bottom:16px;">予約詳細</h1>';
   h += '<div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);">';
@@ -632,7 +634,155 @@ async function showReservationDetail(id) {
     h += '</div>';
   }
   h += '</div>';
+
+  // Show notes, records, and photos when accessed from customer history
+  if (fromCustomerId) {
+    h += '<div id="rsvDetailExtras" style="margin-top:16px;"><div class="loading" style="text-align:center;padding:16px;color:#94a3b8;font-size:13px;">記録・写真を読み込み中...</div></div>';
+  }
+
   mc.innerHTML = h;
+
+  // Fetch and render notes/photos for this reservation date
+  if (fromCustomerId) {
+    loadReservationExtras(fromCustomerId, r.dateTime);
+  }
+}
+
+var _rsvExtrasCustomerId = null;
+var _rsvExtrasDateTime = null;
+
+async function loadReservationExtras(customerId, dateTime) {
+  _rsvExtrasCustomerId = customerId;
+  _rsvExtrasDateTime = dateTime;
+  const container = document.getElementById('rsvDetailExtras');
+  if (!container) return;
+  const dt = new Date(dateTime);
+  const rsvDateKey = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+  try {
+    const [notesData, attachData] = await Promise.all([
+      api('GET', '/api/customers/' + customerId + '/notes').catch(() => ({ notes: [] })),
+      api('GET', '/api/customers/' + customerId + '/attachments').catch(() => ({ attachments: [] })),
+    ]);
+    const allNotes = notesData.notes || [];
+    const allPhotos = (attachData.attachments || []).filter(a => a.category === 'photo');
+    const matchRecords = allNotes.filter(n => n.category === 'record' && n.createdAt && n.createdAt.substring(0,10) === rsvDateKey);
+    const matchMemos = allNotes.filter(n => n.category === 'note' && n.createdAt && n.createdAt.substring(0,10) === rsvDateKey);
+    const matchPhotos = allPhotos.filter(a => a.createdAt && a.createdAt.substring(0,10) === rsvDateKey);
+
+    const cardStyle = 'background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);margin-bottom:12px;';
+    const addBtnStyle = 'display:flex;align-items:center;gap:4px;border:1px dashed #ec5b13;background:none;color:#ec5b13;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;margin-top:8px;';
+    let h = '';
+
+    // Records
+    h += '<div style="' + cardStyle + '">';
+    h += '<h3 style="font-size:13px;font-weight:700;color:#475569;margin-bottom:10px;"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;color:#ec5b13;">description</span> 施術記録' + (matchRecords.length ? '（' + matchRecords.length + '件）' : '') + '</h3>';
+    if (!matchRecords.length) {
+      h += '<p style="font-size:12px;color:#94a3b8;margin-bottom:4px;">この日の施術記録はありません</p>';
+    } else {
+      matchRecords.forEach(n => {
+        h += '<div style="padding:8px 0;border-bottom:1px solid #f8fafc;">';
+        h += '<div style="font-size:13px;font-weight:600;color:#334155;">' + esc(n.title || '無題') + '</div>';
+        h += '<div id="rsvNote_' + n.noteId + '" style="display:none;margin-top:6px;font-size:12px;color:#64748b;white-space:pre-wrap;line-height:1.6;"></div>';
+        h += '<button style="border:none;background:none;color:#ec5b13;cursor:pointer;font-size:12px;font-weight:600;margin-top:4px;" onclick="toggleRsvNote(\'' + customerId + '\',\'' + n.noteId + '\')">内容を表示</button>';
+        h += '</div>';
+      });
+    }
+    h += '<button style="' + addBtnStyle + '" onclick="openRsvNewNote(\'' + customerId + '\',\'record\')"><span class="material-symbols-outlined" style="font-size:14px;">add</span>施術記録を追加</button>';
+    h += '</div>';
+
+    // Memos
+    h += '<div style="' + cardStyle + '">';
+    h += '<h3 style="font-size:13px;font-weight:700;color:#475569;margin-bottom:10px;"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;color:#ec5b13;">sticky_note_2</span> メモ' + (matchMemos.length ? '（' + matchMemos.length + '件）' : '') + '</h3>';
+    if (!matchMemos.length) {
+      h += '<p style="font-size:12px;color:#94a3b8;margin-bottom:4px;">この日のメモはありません</p>';
+    } else {
+      matchMemos.forEach(n => {
+        h += '<div style="padding:8px 0;border-bottom:1px solid #f8fafc;">';
+        h += '<div style="font-size:13px;font-weight:600;color:#334155;">' + esc(n.title || '無題') + '</div>';
+        h += '<div id="rsvNote_' + n.noteId + '" style="display:none;margin-top:6px;font-size:12px;color:#64748b;white-space:pre-wrap;line-height:1.6;"></div>';
+        h += '<button style="border:none;background:none;color:#ec5b13;cursor:pointer;font-size:12px;font-weight:600;margin-top:4px;" onclick="toggleRsvNote(\'' + customerId + '\',\'' + n.noteId + '\')">内容を表示</button>';
+        h += '</div>';
+      });
+    }
+    h += '<button style="' + addBtnStyle + '" onclick="openRsvNewNote(\'' + customerId + '\',\'note\')"><span class="material-symbols-outlined" style="font-size:14px;">add</span>メモを追加</button>';
+    h += '</div>';
+
+    // Photos
+    h += '<div style="' + cardStyle + '">';
+    h += '<h3 style="font-size:13px;font-weight:700;color:#475569;margin-bottom:10px;"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;color:#ec5b13;">photo_library</span> 写真' + (matchPhotos.length ? '（' + matchPhotos.length + '件）' : '') + '</h3>';
+    if (!matchPhotos.length) {
+      h += '<p style="font-size:12px;color:#94a3b8;margin-bottom:4px;">この日の写真はありません</p>';
+    } else {
+      h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;">';
+      matchPhotos.forEach(a => {
+        var pDate = a.createdAt ? new Date(a.createdAt) : null;
+        var pDateStr = pDate ? (pDate.getMonth()+1) + '/' + pDate.getDate() : '';
+        h += '<div style="border-radius:8px;overflow:hidden;background:#f1f5f9;">';
+        h += '<div style="aspect-ratio:1;"><img id="rsvPhoto_' + a.attachmentId + '" style="width:100%;height:100%;object-fit:cover;" src="" alt="' + esc(a.fileName) + '"></div>';
+        if (pDateStr) h += '<div style="padding:3px 0;text-align:center;font-size:10px;color:#94a3b8;background:#fff;">' + pDateStr + '</div>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+    h += '<label style="' + addBtnStyle + 'display:inline-flex;"><span class="material-symbols-outlined" style="font-size:14px;">add_photo_alternate</span>写真を追加<input type="file" accept="image/*" multiple style="display:none;" onchange="uploadRsvPhoto(\'' + customerId + '\', this)"></label>';
+    h += '</div>';
+
+    container.innerHTML = h;
+
+    // Load presigned URLs for photos
+    if (matchPhotos.length) {
+      matchPhotos.forEach(a => {
+        api('GET', '/api/customers/' + customerId + '/attachments/' + a.attachmentId + '/url')
+          .then(res => { const img = document.getElementById('rsvPhoto_' + a.attachmentId); if (img) img.src = res.presignedUrl; })
+          .catch(() => {});
+      });
+    }
+  } catch (e) {
+    container.innerHTML = '<p style="text-align:center;color:#dc2626;padding:16px 0;font-size:13px;">記録の取得に失敗しました</p>';
+  }
+}
+
+function openRsvNewNote(customerId, category) {
+  const catLabel = category === 'record' ? '施術記録' : 'メモ';
+  const html = '<h3 style="font-size:16px;font-weight:700;margin-bottom:16px;">新規' + catLabel + '</h3>'
+    + '<div style="margin-bottom:12px;"><label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">タイトル</label><input class="ow-input" id="rsvNewNoteTitle" placeholder="タイトル"></div>'
+    + '<div style="margin-bottom:12px;"><label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">内容</label><textarea class="ow-input" id="rsvNewNoteContent" rows="6" style="resize:vertical;" placeholder="内容を入力..."></textarea></div>'
+    + '<div style="display:flex;gap:8px;"><button class="btn btn-primary" style="flex:1;background:#ec5b13;" onclick="doCreateRsvNote(\'' + customerId + '\',\'' + category + '\')">保存</button><button class="btn btn-outline" style="flex:1;" onclick="closeModal()">キャンセル</button></div>';
+  showModal(html);
+}
+
+async function doCreateRsvNote(customerId, category) {
+  const title = document.getElementById('rsvNewNoteTitle').value;
+  const content = document.getElementById('rsvNewNoteContent').value;
+  if (!content) { showToast('内容を入力してください', true); return; }
+  showLoading();
+  try {
+    await api('POST', '/api/customers/' + customerId + '/notes', { category: category, title: title, content: content });
+    closeModal();
+    showToast('保存しました');
+    loadReservationExtras(_rsvExtrasCustomerId, _rsvExtrasDateTime);
+  } catch (e) {
+    showToast('保存エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+async function uploadRsvPhoto(customerId, input) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  showLoading();
+  try {
+    for (const file of files) {
+      const res = await api('POST', '/api/customers/' + customerId + '/attachments/presigned-url', {
+        fileName: file.name, fileType: file.type, category: 'photo'
+      });
+      await fetch(res.presignedUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+    }
+    showToast(files.length + '枚の写真をアップロードしました');
+    await new Promise(r => setTimeout(r, 500));
+    await loadReservationExtras(_rsvExtrasCustomerId, _rsvExtrasDateTime);
+  } catch (e) {
+    showToast('アップロードエラー: ' + e.message, true);
+  } finally { hideLoading(); }
 }
 
 function confirmCancelReservation(id) {
@@ -755,13 +905,11 @@ async function renderSchedule(mc) {
   // --- Templates ---
   h += '<div style="' + _card + '"><h3 style="' + _secTitle + '"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:text-bottom;color:#ec5b13;margin-right:6px;">content_copy</span>テンプレート</h3>';
   h += '<p style="font-size:12px;color:#64748b;margin-bottom:8px;">1日の空き枠構成を保存し、日付や営業日に一括適用できます。</p>';
-  h += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">';
-  h += '<input style="' + _inp + 'width:150px;" type="date" id="tplFromDate">';
-  h += '<input style="' + _inp + 'width:150px;" id="tplName" placeholder="テンプレート名">';
-  h += '<button style="' + _btnOutline + '" onclick="saveTemplate()">保存</button>';
+  h += '<div style="display:flex;gap:8px;margin-bottom:10px;">';
+  h += '<button style="' + _btnPrimary + '" onclick="openTemplateEditor()">新規テンプレート作成</button>';
   h += '</div>';
   if (cachedTemplates.length === 0) {
-    h += '<p style="font-size:12px;color:#94a3b8;">テンプレートがありません。日付を選択してスロット構成を保存してください。</p>';
+    h += '<p style="font-size:12px;color:#94a3b8;">テンプレートがありません。</p>';
   } else {
     h += '<div style="display:flex;flex-direction:column;gap:8px;">';
     cachedTemplates.forEach(tpl => {
@@ -769,6 +917,7 @@ async function renderSchedule(mc) {
       h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">';
       h += '<strong style="flex:1;color:#1e293b;">' + tpl.name + '</strong>';
       h += '<span style="font-size:10px;color:#94a3b8;">' + tpl.entries.length + '枠</span>';
+      h += '<button style="' + _btnOutline + 'padding:4px 8px;font-size:11px;" onclick="openTemplateEditor(\'' + tpl.templateId + '\')"><span class="material-symbols-outlined" style="font-size:14px;">edit</span></button>';
       h += '<button style="' + _btnDanger + '" onclick="deleteTemplate(\'' + tpl.templateId + '\')">&times;</button>';
       h += '</div>';
       h += '<div style="font-size:10px;color:#64748b;margin-bottom:8px;">' + tpl.entries.map(e => e.startTime + '-' + e.endTime).join(', ') + '</div>';
@@ -1038,16 +1187,139 @@ async function quickAddSlot(dateStr) {
   } finally { hideLoading(); }
 }
 
-async function saveTemplate() {
-  const fromDate = document.getElementById('tplFromDate').value;
-  const name = document.getElementById('tplName').value.trim();
+var _tplEditorEntries = [];
+var _tplEditingId = null;
+
+function openTemplateEditor(templateId) {
+  _tplEditingId = templateId || null;
+  _tplEditorEntries = [];
+  var title = '新規テンプレート作成';
+  var nameVal = '';
+
+  if (_tplEditingId) {
+    var tpl = cachedTemplates.find(t => t.templateId === _tplEditingId);
+    if (tpl) {
+      title = 'テンプレート編集';
+      nameVal = tpl.name;
+      _tplEditorEntries = tpl.entries.map(e => ({ start: e.startTime.substring(0,5), end: e.endTime.substring(0,5) }));
+    }
+  }
+
+  var h = '<h3 style="font-size:16px;font-weight:700;margin-bottom:16px;">' + title + '</h3>';
+  h += '<div style="margin-bottom:12px;"><label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:4px;">テンプレート名</label>';
+  h += '<input class="ow-input" id="tplEditorName" value="' + esc(nameVal) + '" placeholder="例: 平日パターン"></div>';
+
+  // Slot entries editor
+  h += '<div style="margin-bottom:12px;">';
+  h += '<label style="font-size:12px;font-weight:600;color:#475569;display:block;margin-bottom:8px;">スロット構成</label>';
+  h += '<div id="tplEntryList"></div>';
+  h += '<div style="display:flex;gap:6px;align-items:center;margin-top:8px;">';
+  h += '<input class="ow-input" type="time" id="tplNewStart" value="09:00" style="width:100px;">';
+  h += '<span style="color:#94a3b8;">〜</span>';
+  h += '<input class="ow-input" type="time" id="tplNewEnd" value="10:00" style="width:100px;">';
+  h += '<button style="padding:6px 12px;background:#10b981;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;" onclick="addTplEntry()"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">add</span> 追加</button>';
+  h += '</div>';
+
+  // Quick fill
+  h += '<div style="margin-top:10px;padding:10px;background:#f8f6f6;border-radius:8px;">';
+  h += '<div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:6px;">一括生成</div>';
+  h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">';
+  h += '<input class="ow-input" type="time" id="tplBulkStart" value="09:00" style="width:90px;">';
+  h += '<span style="color:#94a3b8;">〜</span>';
+  h += '<input class="ow-input" type="time" id="tplBulkEnd" value="18:00" style="width:90px;">';
+  h += '<input class="ow-input" type="number" id="tplBulkDur" value="60" min="10" step="5" style="width:60px;" placeholder="分">';
+  h += '<span style="font-size:11px;color:#94a3b8;">分</span>';
+  h += '<button style="padding:5px 10px;background:#ec5b13;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;" onclick="bulkGenTplEntries()">生成</button>';
+  h += '</div></div>';
+
+  h += '</div>';
+
+  h += '<div style="display:flex;gap:8px;margin-top:16px;">';
+  h += '<button class="btn btn-primary" style="flex:1;background:#ec5b13;" onclick="saveTplFromEditor()">' + (_tplEditingId ? '更新' : '保存') + '</button>';
+  h += '<button class="btn btn-outline" style="flex:1;" onclick="closeModal()">キャンセル</button>';
+  h += '</div>';
+
+  showModal(h);
+  renderTplEntryList();
+}
+
+function renderTplEntryList() {
+  var el = document.getElementById('tplEntryList');
+  if (!el) return;
+  if (!_tplEditorEntries.length) {
+    el.innerHTML = '<p style="font-size:12px;color:#94a3b8;padding:8px 0;">スロットがありません。下のフォームから追加してください。</p>';
+    return;
+  }
+  var h = '<div style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;">';
+  _tplEditorEntries.sort((a,b) => a.start.localeCompare(b.start));
+  _tplEditorEntries.forEach((e, i) => {
+    h += '<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;">';
+    h += '<span class="material-symbols-outlined" style="font-size:14px;color:#ec5b13;">schedule</span>';
+    h += '<span style="font-weight:600;color:#334155;">' + e.start + '</span>';
+    h += '<span style="color:#94a3b8;">〜</span>';
+    h += '<span style="font-weight:600;color:#334155;">' + e.end + '</span>';
+    var durMin = (parseInt(e.end.split(':')[0])*60+parseInt(e.end.split(':')[1])) - (parseInt(e.start.split(':')[0])*60+parseInt(e.start.split(':')[1]));
+    h += '<span style="font-size:10px;color:#94a3b8;margin-left:4px;">(' + durMin + '分)</span>';
+    h += '<span style="flex:1;"></span>';
+    h += '<button style="background:none;border:none;color:#dc2626;cursor:pointer;padding:2px;" onclick="removeTplEntry(' + i + ')"><span class="material-symbols-outlined" style="font-size:16px;">close</span></button>';
+    h += '</div>';
+  });
+  h += '</div>';
+  el.innerHTML = h;
+}
+
+function addTplEntry() {
+  var s = document.getElementById('tplNewStart').value;
+  var e = document.getElementById('tplNewEnd').value;
+  if (!s || !e) { showToast('開始・終了時刻を入力してください', true); return; }
+  if (s >= e) { showToast('終了時刻は開始時刻より後にしてください', true); return; }
+  _tplEditorEntries.push({ start: s, end: e });
+  renderTplEntryList();
+  // Advance start/end for next entry
+  document.getElementById('tplNewStart').value = e;
+  var endMin = parseInt(e.split(':')[0])*60 + parseInt(e.split(':')[1]);
+  var dur = endMin - (parseInt(s.split(':')[0])*60 + parseInt(s.split(':')[1]));
+  var nextEnd = endMin + dur;
+  document.getElementById('tplNewEnd').value = String(Math.floor(nextEnd/60)).padStart(2,'0') + ':' + String(nextEnd%60).padStart(2,'0');
+}
+
+function removeTplEntry(idx) {
+  _tplEditorEntries.splice(idx, 1);
+  renderTplEntryList();
+}
+
+function bulkGenTplEntries() {
+  var s = document.getElementById('tplBulkStart').value;
+  var e = document.getElementById('tplBulkEnd').value;
+  var dur = parseInt(document.getElementById('tplBulkDur').value);
+  if (!s || !e || !dur || dur < 5) { showToast('値を正しく入力してください', true); return; }
+  _tplEditorEntries = [];
+  var cur = parseInt(s.split(':')[0])*60 + parseInt(s.split(':')[1]);
+  var endM = parseInt(e.split(':')[0])*60 + parseInt(e.split(':')[1]);
+  while (cur + dur <= endM) {
+    _tplEditorEntries.push({
+      start: String(Math.floor(cur/60)).padStart(2,'0') + ':' + String(cur%60).padStart(2,'0'),
+      end: String(Math.floor((cur+dur)/60)).padStart(2,'0') + ':' + String((cur+dur)%60).padStart(2,'0')
+    });
+    cur += dur;
+  }
+  renderTplEntryList();
+}
+
+async function saveTplFromEditor() {
+  var name = document.getElementById('tplEditorName').value.trim();
   if (!name) { showToast('テンプレート名を入力してください', true); return; }
-  if (!fromDate) { showToast('日付を選択してください', true); return; }
+  if (!_tplEditorEntries.length) { showToast('スロットを1つ以上追加してください', true); return; }
+  var entries = _tplEditorEntries.map(e => ({ startTime: e.start, endTime: e.end }));
   showLoading();
   try {
-    await api('POST', '/api/schedule/templates', { name, fromDate });
+    if (_tplEditingId) {
+      await api('DELETE', '/api/schedule/templates/' + _tplEditingId);
+    }
+    await api('POST', '/api/schedule/templates', { name: name, entries: entries });
+    closeModal();
     hideLoading();
-    showToast('テンプレートを保存しました');
+    showToast(_tplEditingId ? 'テンプレートを更新しました' : 'テンプレートを保存しました');
     renderSchedule(document.getElementById('mainContent'));
   } catch (e) {
     hideLoading();
@@ -1328,15 +1600,18 @@ async function showCustomerDetail(customerId) {
       h += '<div style="' + _cdCard + '">';
       h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
       h += '<h3 style="font-size:14px;font-weight:700;color:#1e293b;">写真 <span style="font-size:11px;font-weight:400;color:#94a3b8;">(' + attachments.length + '件)</span></h3>';
-      h += '<label style="display:flex;align-items:center;gap:4px;padding:6px 12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:11px;font-weight:700;color:#64748b;cursor:pointer;"><span class="material-symbols-outlined" style="font-size:14px;">add_photo_alternate</span>アップロード<input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(\'' + customerId + '\', this)"></label>';
+      h += '<label style="display:flex;align-items:center;gap:4px;padding:6px 12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:11px;font-weight:700;color:#64748b;cursor:pointer;"><span class="material-symbols-outlined" style="font-size:14px;">add_photo_alternate</span>アップロード<input type="file" accept="image/*" multiple style="display:none;" onchange="uploadPhoto(\'' + customerId + '\', this)"></label>';
       h += '</div>';
       if (!attachments.length) {
         h += '<p style="text-align:center;color:#94a3b8;padding:24px 0;font-size:13px;">写真はありません</p>';
       } else {
         h += '<div id="photoGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">';
         attachments.forEach(a => {
-          h += '<div style="position:relative;border:1px solid #f1f5f9;border-radius:10px;overflow:hidden;aspect-ratio:1;background:#f8fafc;" id="photoWrap_' + a.attachmentId + '">';
-          h += '<img id="photoImg_' + a.attachmentId + '" style="width:100%;height:100%;object-fit:cover;" src="" alt="' + esc(a.fileName) + '">';
+          var photoDate = a.createdAt ? new Date(a.createdAt) : null;
+          var photoDateStr = photoDate ? (photoDate.getMonth()+1) + '/' + photoDate.getDate() : '';
+          h += '<div style="position:relative;border:1px solid #f1f5f9;border-radius:10px;overflow:hidden;background:#f8fafc;" id="photoWrap_' + a.attachmentId + '">';
+          h += '<div style="aspect-ratio:1;"><img id="photoImg_' + a.attachmentId + '" style="width:100%;height:100%;object-fit:cover;" src="" alt="' + esc(a.fileName) + '"></div>';
+          if (photoDateStr) h += '<div style="padding:4px 0;text-align:center;font-size:10px;color:#94a3b8;background:#fff;">' + photoDateStr + '</div>';
           h += '<button onclick="confirmDeleteAttachment(\'' + customerId + '\',\'' + a.attachmentId + '\')" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;line-height:22px;text-align:center;">&#10005;</button>';
           h += '</div>';
         });
@@ -1361,7 +1636,7 @@ async function showCustomerDetail(customerId) {
           const statusLabels = { confirmed: '確定', completed: '完了', cancelled: 'キャンセル' };
           const bStyle = badgeStyles[r.status] || '';
           const label = statusLabels[r.status] || r.status;
-          h += '<tr style="cursor:pointer;border-bottom:1px solid #f8fafc;" onmouseover="this.style.background=\'rgba(236,91,19,.03)\'" onmouseout="this.style.background=\'\'" onclick="showReservationDetail(\'' + (r.reservationId || r.id) + '\')">'
+          h += '<tr style="cursor:pointer;border-bottom:1px solid #f8fafc;" onmouseover="this.style.background=\'rgba(236,91,19,.03)\'" onmouseout="this.style.background=\'\'" onclick="showReservationDetail(\'' + (r.reservationId || r.id) + '\',\'' + customerId + '\')">'
             + '<td style="padding:10px;color:#334155;">' + fmtDateTime(r.dateTime) + '</td>'
             + '<td style="padding:10px;"><span style="font-size:11px;padding:3px 10px;border-radius:9999px;font-weight:700;' + bStyle + '">' + label + '</span></td></tr>';
         });
@@ -1517,23 +1792,17 @@ async function doDeleteNote(customerId, noteId) {
 
 // --- Photos ---
 async function uploadPhoto(customerId, input) {
-  const file = input.files[0];
-  if (!file) return;
+  const files = Array.from(input.files);
+  if (!files.length) return;
   showLoading();
   try {
-    // 1. Get presigned URL
-    const res = await api('POST', '/api/customers/' + customerId + '/attachments/presigned-url', {
-      fileName: file.name,
-      fileType: file.type,
-      category: 'photo'
-    });
-    // 2. Upload directly to S3
-    await fetch(res.presignedUrl, {
-      method: 'PUT',
-      headers: { 'Content-Type': file.type },
-      body: file
-    });
-    showToast('写真をアップロードしました');
+    for (const file of files) {
+      const res = await api('POST', '/api/customers/' + customerId + '/attachments/presigned-url', {
+        fileName: file.name, fileType: file.type, category: 'photo'
+      });
+      await fetch(res.presignedUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+    }
+    showToast(files.length + '枚の写真をアップロードしました');
     _custDetailTab = 'photos';
     showCustomerDetail(customerId);
   } catch (e) {
@@ -2078,6 +2347,7 @@ let _historyData = []; // cached history reservations
 let _historyNotes = []; // cached notes for history
 let _historyAttachments = []; // cached attachments for history
 let _historyCustId = null;
+let _currentHistoryIdx = null;
 
 async function renderHistoryLiff() {
   document.getElementById('lineTitle').textContent = '施術履歴';
@@ -2101,7 +2371,7 @@ async function renderHistoryLiff() {
     const todayDate = new Date(YEAR, MONTH, DAY);
     const history = allRsvs.filter(r => {
       if (r.customerId !== custId) return false;
-      if (r.status === 'completed' || r.status === 'cancelled') return true;
+      if (r.status === 'completed') return true;
       if (r.status === 'confirmed' && new Date(r.dateTime) < todayDate) return true;
       return false;
     }).sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
@@ -2160,6 +2430,7 @@ function renderHistoryList() {
 }
 
 async function showHistoryDetail(idx) {
+  _currentHistoryIdx = idx;
   const r = _historyData[idx];
   if (!r) return;
   const dt = new Date(r.dateTime);
@@ -2182,9 +2453,9 @@ async function showHistoryDetail(idx) {
   let h = '<div class="liff-header"><button class="close-btn" onclick="renderHistoryList()">&times;</button><span class="liff-title">施術詳細</span></div><div class="liff-body">';
 
   // Reservation info
-  h += '<div style="background:#f8f8f8;border-radius:12px;padding:16px;margin-bottom:16px;">';
-  h += '<div style="font-size:15px;font-weight:700;margin-bottom:4px;">' + dateStr + '</div>';
-  h += '<div style="font-size:14px;color:#555;">' + time + ' - ' + endTime + '（' + dur + '分）</div>';
+  h += '<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);">';
+  h += '<div style="font-size:15px;font-weight:700;margin-bottom:4px;color:#1e293b;">' + dateStr + '</div>';
+  h += '<div style="font-size:14px;color:#475569;">' + time + ' - ' + endTime + '（' + dur + '分）</div>';
   h += '<span class="bk-status ' + sCls + '" style="margin-top:8px;display:inline-block;">' + statusLabelCust(r.status) + '</span>';
   h += '</div>';
 
@@ -2193,47 +2464,50 @@ async function showHistoryDetail(idx) {
   const matchMemos = matchNotes.filter(n => n.category === 'note');
 
   // Treatment records
-  h += '<div style="margin-bottom:16px;">';
-  h += '<h4 style="font-size:14px;font-weight:700;margin-bottom:8px;">&#128221; 施術記録</h4>';
+  h += '<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);">';
+  h += '<h4 style="font-size:13px;font-weight:700;margin-bottom:8px;color:#475569;"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;color:#ec5b13;">description</span> 施術記録' + (matchRecords.length ? '（' + matchRecords.length + '件）' : '') + '</h4>';
   if (!matchRecords.length) {
-    h += '<p style="font-size:13px;color:#999;padding:8px 0;">この日の施術記録はありません</p>';
+    h += '<p style="font-size:12px;color:#94a3b8;padding:8px 0;">この日の施術記録はありません</p>';
   } else {
     matchRecords.forEach(n => {
-      h += '<div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:8px;">';
-      h += '<div style="font-size:13px;font-weight:700;">' + esc(n.title || '無題') + '</div>';
-      h += '<div id="histNote_' + n.noteId + '" style="display:none;margin-top:8px;font-size:12px;color:#555;white-space:pre-wrap;line-height:1.6;"></div>';
-      h += '<button style="border:none;background:none;color:#06c755;cursor:pointer;font-size:12px;font-weight:600;margin-top:4px;" onclick="toggleHistoryNote(\'' + n.noteId + '\')">内容を表示</button>';
+      h += '<div style="padding:8px 0;border-bottom:1px solid #f8fafc;">';
+      h += '<div style="font-size:13px;font-weight:600;color:#334155;">' + esc(n.title || '無題') + '</div>';
+      h += '<div id="histNote_' + n.noteId + '" style="display:none;margin-top:6px;font-size:12px;color:#64748b;white-space:pre-wrap;line-height:1.6;"></div>';
+      h += '<button style="border:none;background:none;color:#ec5b13;cursor:pointer;font-size:12px;font-weight:600;margin-top:4px;" onclick="toggleHistoryNote(\'' + n.noteId + '\')">内容を表示</button>';
       h += '</div>';
     });
   }
   h += '</div>';
 
   // Memos
-  h += '<div style="margin-bottom:16px;">';
-  h += '<h4 style="font-size:14px;font-weight:700;margin-bottom:8px;">&#128214; メモ</h4>';
+  h += '<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);">';
+  h += '<h4 style="font-size:13px;font-weight:700;margin-bottom:8px;color:#475569;"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;color:#ec5b13;">sticky_note_2</span> メモ' + (matchMemos.length ? '（' + matchMemos.length + '件）' : '') + '</h4>';
   if (!matchMemos.length) {
-    h += '<p style="font-size:13px;color:#999;padding:8px 0;">この日のメモはありません</p>';
+    h += '<p style="font-size:12px;color:#94a3b8;padding:8px 0;">この日のメモはありません</p>';
   } else {
     matchMemos.forEach(n => {
-      h += '<div style="background:#fff;border:1px solid #eee;border-radius:10px;padding:12px;margin-bottom:8px;">';
-      h += '<div style="font-size:13px;font-weight:700;">' + esc(n.title || '無題') + '</div>';
-      h += '<div id="histNote_' + n.noteId + '" style="display:none;margin-top:8px;font-size:12px;color:#555;white-space:pre-wrap;line-height:1.6;"></div>';
-      h += '<button style="border:none;background:none;color:#06c755;cursor:pointer;font-size:12px;font-weight:600;margin-top:4px;" onclick="toggleHistoryNote(\'' + n.noteId + '\')">内容を表示</button>';
+      h += '<div style="padding:8px 0;border-bottom:1px solid #f8fafc;">';
+      h += '<div style="font-size:13px;font-weight:600;color:#334155;">' + esc(n.title || '無題') + '</div>';
+      h += '<div id="histNote_' + n.noteId + '" style="display:none;margin-top:6px;font-size:12px;color:#64748b;white-space:pre-wrap;line-height:1.6;"></div>';
+      h += '<button style="border:none;background:none;color:#ec5b13;cursor:pointer;font-size:12px;font-weight:600;margin-top:4px;" onclick="toggleHistoryNote(\'' + n.noteId + '\')">内容を表示</button>';
       h += '</div>';
     });
   }
   h += '</div>';
 
   // Photos
-  h += '<div style="margin-bottom:16px;">';
-  h += '<h4 style="font-size:14px;font-weight:700;margin-bottom:8px;">&#128247; 写真</h4>';
+  h += '<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);">';
+  h += '<h4 style="font-size:13px;font-weight:700;margin-bottom:8px;color:#475569;"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;color:#ec5b13;">photo_library</span> 写真' + (matchPhotos.length ? '（' + matchPhotos.length + '件）' : '') + '</h4>';
   if (!matchPhotos.length) {
-    h += '<p style="font-size:13px;color:#999;padding:8px 0;">この日の写真はありません</p>';
+    h += '<p style="font-size:12px;color:#94a3b8;padding:8px 0;">この日の写真はありません</p>';
   } else {
-    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">';
+    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">';
     matchPhotos.forEach(a => {
-      h += '<div style="aspect-ratio:1;border-radius:8px;overflow:hidden;background:#f0f0f0;">';
-      h += '<img id="histPhoto_' + a.attachmentId + '" style="width:100%;height:100%;object-fit:cover;" src="" alt="' + esc(a.fileName) + '">';
+      var hpDate = a.createdAt ? new Date(a.createdAt) : null;
+      var hpDateStr = hpDate ? (hpDate.getMonth()+1) + '/' + hpDate.getDate() : '';
+      h += '<div style="border-radius:8px;overflow:hidden;background:#f1f5f9;">';
+      h += '<div style="aspect-ratio:1;"><img id="histPhoto_' + a.attachmentId + '" style="width:100%;height:100%;object-fit:cover;" src="" alt="' + esc(a.fileName) + '"></div>';
+      if (hpDateStr) h += '<div style="padding:3px 0;text-align:center;font-size:10px;color:#94a3b8;background:#fff;">' + hpDateStr + '</div>';
       h += '</div>';
     });
     h += '</div>';
@@ -2268,6 +2542,20 @@ async function toggleHistoryNote(noteId) {
     el.textContent = data.content || '(空)';
   } catch (e) {
     el.innerHTML = '<span style="color:#d32f2f;">取得エラー</span>';
+  }
+}
+
+async function toggleRsvNote(customerId, noteId) {
+  const el = document.getElementById('rsvNote_' + noteId);
+  if (!el) return;
+  if (el.style.display === 'block') { el.style.display = 'none'; return; }
+  el.innerHTML = '<span style="color:#94a3b8;">読み込み中...</span>';
+  el.style.display = 'block';
+  try {
+    const data = await api('GET', '/api/customers/' + customerId + '/notes/' + noteId);
+    el.textContent = data.content || '(空)';
+  } catch (e) {
+    el.innerHTML = '<span style="color:#dc2626;">取得エラー</span>';
   }
 }
 
