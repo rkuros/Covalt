@@ -39,105 +39,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 /* ==================== */
 /* === CUSTOMER SIDE === */
 /* ==================== */
-
-/* Customer-side design variables (matching liff.html) */
-.phone{--c-primary:#ec5b13;--c-primary-dark:#d4510f;--c-bg:#f8f6f6;--c-card:#FFF;--c-text:#1e293b;--c-sub:#64748b;--c-border:#E5E7EB;--c-danger:#dc2626;}
-
-/* LINE header */
-.line-header{background:rgba(255,255,255,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#1e293b;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;border-bottom:1px solid rgba(236,91,19,.1);}
-.line-header .back{font-size:20px;cursor:pointer;color:#64748b;}
-.line-header .title{font-size:15px;font-weight:700;flex:1;color:#1e293b;}
-
-/* Chat area */
-.chat-area{flex:1;overflow-y:auto;padding:12px 16px;background:#f8f6f6;display:flex;flex-direction:column;gap:8px;}
-.msg{max-width:80%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.5;word-break:break-word;}
-.msg-bot{background:#fff;color:#334155;align-self:flex-start;border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
-.msg-user{background:#ec5b13;color:#fff;align-self:flex-end;border-bottom-right-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
-
-/* Rich menu */
-.rich-menu{flex-shrink:0;display:grid;grid-template-columns:1fr 1fr 1fr;background:rgba(255,255,255,.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid rgba(236,91,19,.1);}
-.rich-menu button{padding:18px 8px;border:none;background:transparent;font-size:12px;font-weight:700;color:var(--c-primary);cursor:pointer;border-right:1px solid rgba(236,91,19,.05);display:flex;flex-direction:column;align-items:center;gap:6px;transition:background .2s;}
-.rich-menu button:last-child{border-right:none;}
-.rich-menu button:hover{background:rgba(236,91,19,.06);}
-.rm-icon{font-size:24px;}
-
-/* LIFF overlay */
-.liff-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:var(--c-bg);display:flex;flex-direction:column;z-index:10;}
-.liff-header{background:rgba(255,255,255,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;color:#1e293b;border-bottom:1px solid rgba(236,91,19,.1);}
-.liff-header .close-btn{font-size:22px;cursor:pointer;color:#64748b;background:none;border:none;padding:0 4px;opacity:.85;transition:opacity .2s;}
-.liff-header .close-btn:hover{opacity:1;}
-.liff-header .liff-title{font-size:15px;font-weight:600;flex:1;color:#1e293b;}
-.liff-body{flex:1;overflow-y:auto;padding:12px;background:var(--c-bg);}
-
-/* Calendar */
-.cal-month{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
-.cal-month button{background:none;border:none;font-size:20px;cursor:pointer;padding:4px 12px;color:var(--c-sub);}
-.cal-month span{font-size:16px;font-weight:700;color:var(--c-text);}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;margin-bottom:12px;background:var(--c-card);border-radius:12px;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
-.cal-dow{font-size:11px;color:var(--c-sub);padding:4px 0;font-weight:500;}
-.cal-dow:first-child{color:#EF4444;}
-.cal-dow:last-child{color:#3B82F6;}
-.cal-day{font-size:14px;padding:8px 0;border-radius:50%;cursor:pointer;transition:.15s;aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative;}
-.cal-day:hover{background:rgba(236,91,19,.06);}
-.cal-day.today{font-weight:700;color:var(--c-primary);}
-.cal-day.today::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--c-primary);}
-.cal-day.selected{background:var(--c-primary);color:#fff;font-weight:600;}
-.cal-day.selected::after{background:#fff;}
-.cal-day.disabled{color:var(--c-border);cursor:default;pointer-events:none;}
-.cal-day.disabled:hover{background:none;}
-.cal-day.holiday{color:#d32f2f;text-decoration:line-through;}
-.cal-day.has-slots{position:relative;}
-.cal-day.has-slots::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;background:var(--c-primary);border-radius:50%;}
-.cal-day.no-slots{color:var(--c-border);}
-.cal-day.no-slots:hover{background:none;cursor:default;pointer-events:none;}
-.cal-day.selected.has-slots::after{background:#fff;}
-
-/* Slots */
-.slot-section-title{font-size:14px;font-weight:600;margin-bottom:8px;color:var(--c-text);}
-.slot-list{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-.slot-item{padding:12px 8px;border:1.5px solid var(--c-primary);border-radius:10px;display:flex;justify-content:center;align-items:center;cursor:pointer;font-size:14px;font-weight:500;color:var(--c-primary);background:var(--c-card);text-align:center;transition:.2s;}
-.slot-item:hover,.slot-item:active{background:var(--c-primary);color:#fff;}
-.slot-item.booked{background:var(--c-bg);color:var(--c-sub);cursor:default;border-color:var(--c-border);}
-.slot-item.booked:hover{background:var(--c-bg);border-color:var(--c-border);color:var(--c-sub);}
-.slot-status{font-size:11px;padding:2px 8px;border-radius:10px;display:none;}
-.slot-status.open{background:rgba(236,91,19,.1);color:#ec5b13;}
-.slot-status.taken{background:#f1f5f9;color:#64748b;}
-
-/* Common buttons */
-.confirm-box{background:var(--c-card);border-radius:12px;padding:20px;margin:12px 0;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06);}
-.confirm-box dt{font-size:13px;color:var(--c-sub);margin-top:8px;}
-.confirm-box dd{font-size:15px;font-weight:600;margin-top:2px;color:var(--c-text);}
-.confirm-box .time-label{font-size:22px;font-weight:700;margin:8px 0;color:var(--c-text);}
-.btn{display:block;width:100%;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;text-align:center;margin-top:12px;transition:.2s;}
-.btn-primary{background:var(--c-primary);color:#fff;}
-.btn-primary:hover,.btn-primary:active{background:var(--c-primary-dark);}
-.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
-.btn-danger{background:transparent;color:var(--c-danger);border:1px solid var(--c-danger);padding:10px;font-size:13px;}
-.btn-danger:hover,.btn-danger:active{background:#FEF2F2;}
-.btn-outline{background:#F3F4F6;color:#374151;border:none;}
-.btn-outline:hover{background:#E5E7EB;}
-
-/* Booking cards (customer) */
-.booking-card{background:var(--c-card);border-radius:12px;padding:16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);}
-.booking-card .bk-date{font-size:18px;font-weight:600;color:var(--c-text);}
-.booking-card .bk-status{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;margin-left:8px;}
-.bk-status.confirmed{background:rgba(236,91,19,.1);color:#ec5b13;}
-.bk-status.cancelled{background:rgba(220,38,38,.08);color:#dc2626;}
-.bk-status.done{background:#f1f5f9;color:#64748b;}
-.booking-card .bk-id{font-size:11px;color:var(--c-sub);margin-top:4px;}
-
-/* Customer empty state */
-.liff-body .loading{text-align:center;color:var(--c-sub);padding:40px 0;font-size:14px;}
-.liff-body .cust-empty{text-align:center;color:var(--c-sub);padding:40px 0;font-size:14px;}
-
-/* Customer toast */
-.cust-toast{position:fixed;top:52px;left:50%;transform:translateX(-50%);background:#1F2937;color:#fff;padding:10px 20px;border-radius:8px;font-size:14px;z-index:100;opacity:0;transition:opacity .3s;}
-.cust-toast.show{opacity:1;}
-
-/* Cancel modal (customer) */
-.cust-modal-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:200;}
-.cust-modal-box{background:#fff;border-radius:12px;padding:24px;margin:16px;max-width:320px;width:100%;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);}
-.cust-modal-box h3{font-size:16px;font-weight:700;margin-bottom:12px;color:var(--c-text);}
+/* Customer UI is now rendered via iframe from liff.html */
 
 /* ================== */
 /* === OWNER SIDE === */
@@ -197,17 +99,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 <!-- ========== CUSTOMER (Phone) ========== -->
 <div class="device-wrap hidden" id="customerView">
   <div class="phone">
-    <div class="line-header">
-      <span class="back" id="lineBack" style="display:none;" onclick="liffClose()">&#10094;</span>
-      <span class="title" id="lineTitle">予約サロン</span>
+    <iframe id="customerIframe" style="width:100%;height:100%;border:none;" src=""></iframe>
+    <div id="customerLoginMsg" style="display:none;position:absolute;inset:0;background:#f8f6f6;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-size:14px;color:#64748b;">
+      <span style="font-size:40px;">&#128274;</span>
+      <div>先にオーナー側タブでログインしてください</div>
     </div>
-    <div class="chat-area" id="chatArea"></div>
-    <div class="rich-menu" id="richMenu">
-      <button onclick="openLiff('booking')"><span class="rm-icon">&#128197;</span>予約する</button>
-      <button onclick="openLiff('list')"><span class="rm-icon">&#128203;</span>予約確認</button>
-      <button onclick="openLiff('history')"><span class="rm-icon">&#128214;</span>施術履歴</button>
-    </div>
-    <div class="liff-overlay" id="liffOverlay" style="display:none;"></div>
   </div>
 </div>
 
@@ -345,6 +241,33 @@ function switchView(v) {
   event.target.closest('button').classList.add('active');
   document.getElementById('customerView').classList.toggle('hidden', v !== 'customer');
   document.getElementById('ownerView').classList.toggle('hidden', v !== 'owner');
+
+  if (v === 'customer') {
+    const iframe = document.getElementById('customerIframe');
+    const loginMsg = document.getElementById('customerLoginMsg');
+    if (!authToken || !currentUser) {
+      iframe.style.display = 'none';
+      loginMsg.style.display = 'flex';
+      return;
+    }
+    iframe.style.display = 'block';
+    loginMsg.style.display = 'none';
+    const iframeSrc = 'liff.html?mock=1&ownerId=' + encodeURIComponent(currentUser.ownerId) + '&page=book';
+    if (!iframe.src || !iframe.src.includes('liff.html')) {
+      iframe.src = iframeSrc;
+    }
+    window.addEventListener('message', function handler(event) {
+      if (event.data && event.data.type === 'liff-ready') {
+        window.removeEventListener('message', handler);
+        iframe.contentWindow.postMessage({
+          type: 'mock-auth',
+          token: authToken,
+          ownerId: currentUser.ownerId,
+          displayName: currentUser.email || 'テストユーザー'
+        }, '*');
+      }
+    });
+  }
 }
 
 function showToast(msg, isError) {
@@ -1164,9 +1087,11 @@ async function quickApplyTemplate(dateStr) {
   if (!templateId) { showToast('テンプレートを選択してください', true); return; }
   showLoading();
   try {
-    const res = await api('POST', '/api/schedule/templates/' + templateId + '/apply', { date: dateStr });
+    const res = await api('POST', '/api/schedule/templates/' + templateId + '/apply', { date: dateStr, clearExisting: true });
     hideLoading();
-    showToast(res.totalSlotsAdded + '枠を追加しました');
+    var msg = res.totalSlotsAdded + '枠を追加しました';
+    if (res.totalSkipped > 0) msg += '（' + res.totalSkipped + '枠は既存予約と重複のためスキップ）';
+    showToast(msg);
     renderSchedule(document.getElementById('mainContent'));
     setTimeout(() => { schSelectedDate = dateStr; loadDaySlots(dateStr); }, 100);
   } catch (e) {
@@ -1347,9 +1272,11 @@ async function applyTemplateToDate(templateId) {
   if (!date) { showToast('日付を選択してください', true); return; }
   showLoading();
   try {
-    const res = await api('POST', '/api/schedule/templates/' + templateId + '/apply', { date });
+    const res = await api('POST', '/api/schedule/templates/' + templateId + '/apply', { date, clearExisting: true });
     hideLoading();
-    showToast(res.totalSlotsAdded + '枠を追加しました');
+    var msg = res.totalSlotsAdded + '枠を追加しました';
+    if (res.totalSkipped > 0) msg += '（' + res.totalSkipped + '枠は既存予約と重複のためスキップ）';
+    showToast(msg);
     renderSchedule(document.getElementById('mainContent'));
   } catch (e) {
     hideLoading();
@@ -1363,9 +1290,11 @@ async function applyTemplateToRange(templateId) {
   if (!startDate || !endDate) { showToast('期間を選択してください', true); return; }
   showLoading();
   try {
-    const res = await api('POST', '/api/schedule/templates/' + templateId + '/apply', { startDate, endDate });
+    const res = await api('POST', '/api/schedule/templates/' + templateId + '/apply', { startDate, endDate, clearExisting: true });
     hideLoading();
-    showToast(res.totalDates + '日に' + res.totalSlotsAdded + '枠を追加しました');
+    var msg = res.totalDates + '日に' + res.totalSlotsAdded + '枠を追加しました';
+    if (res.totalSkipped > 0) msg += '（' + res.totalSkipped + '枠スキップ）';
+    showToast(msg);
     renderSchedule(document.getElementById('mainContent'));
   } catch (e) {
     hideLoading();
@@ -1935,619 +1864,7 @@ async function saveLineConfig() {
   }
 }
 
-/* ========================================= */
-/* ===== CUSTOMER SIDE — LIVE API       ===== */
-/* ========================================= */
-let mockCustomerId = localStorage.getItem('covalt_mockCustomerId') || null;
-let mockCustomerName = localStorage.getItem('covalt_mockCustomerName') || 'テスト 花子';
-const mockOwnerId = '4282a4fd-695f-4db4-b0eb-b7915e539537';
-let chatMessages = [], calMonth = MONTH, calYear = YEAR, selectedDate = null;
-let selectedSlot = null; // holds the slot object selected for booking
-let custSlotSummary = {}; // cached slot summary for the visible month on customer calendar
-let custSummaryLoading = false; // flag to avoid duplicate summary fetches
-
-function fmt(d) { return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate(); }
-
-/* --- Mock customer init: create or restore a test customer via API --- */
-async function ensureMockCustomer() {
-  if (mockCustomerId) return mockCustomerId;
-  if (!authToken || !currentUser) return null;
-  try {
-    // Search for existing test customer
-    const data = await api('GET', '/api/customers/search?ownerId=' + currentUser.ownerId + '&q=' + encodeURIComponent(mockCustomerName));
-    const list = Array.isArray(data) ? data : (data.customers || []);
-    const found = list.find(c => (c.customerName || c.name) === mockCustomerName);
-    if (found) {
-      mockCustomerId = found.customerId || found.id;
-    } else {
-      // Create new test customer
-      const created = await api('POST', '/api/customers', { ownerId: currentUser.ownerId, customerName: mockCustomerName });
-      mockCustomerId = created.customerId || created.id;
-    }
-    localStorage.setItem('covalt_mockCustomerId', mockCustomerId);
-    localStorage.setItem('covalt_mockCustomerName', mockCustomerName);
-    return mockCustomerId;
-  } catch (e) {
-    console.error('Mock customer init error:', e);
-    return null;
-  }
-}
-
-function initChat() {
-  chatMessages = [{from:'bot', text:'友だち追加ありがとうございます!\n\n予約サロンの予約システムへようこそ。\n\n下のメニューから操作できます:\n・予約する\n・予約確認\n・施術履歴'}];
-  renderChat();
-}
-
-function renderChat() {
-  const a = document.getElementById('chatArea');
-  a.innerHTML = chatMessages.map(m => '<div class="msg msg-' + (m.from === 'bot' ? 'bot' : 'user') + '">' + m.text.replace(/\n/g,'<br>') + '</div>').join('');
-  a.scrollTop = a.scrollHeight;
-}
-
-function addBotMsg(t) { chatMessages.push({from:'bot', text:t}); renderChat(); }
-
-function openLiff(mode) {
-  if (!authToken || !currentUser) {
-    addBotMsg('オーナー側タブでログインしてください。ログイン後に予約機能が利用できます。');
-    return;
-  }
-  document.getElementById('liffOverlay').style.display = 'flex';
-  document.getElementById('richMenu').style.display = 'none';
-  document.getElementById('lineBack').style.display = 'inline';
-  if (mode === 'booking') renderBookingLiff();
-  else if (mode === 'list') renderListLiff();
-  else if (mode === 'history') renderHistoryLiff();
-}
-
-function liffClose() {
-  document.getElementById('liffOverlay').style.display = 'none';
-  document.getElementById('richMenu').style.display = 'grid';
-  document.getElementById('lineBack').style.display = 'none';
-  document.getElementById('lineTitle').textContent = '予約サロン';
-  selectedDate = null;
-  selectedSlot = null;
-  custSlotSummary = {};
-  custSummaryLoading = false;
-}
-
-function getCustOwnerId() {
-  return (currentUser && currentUser.ownerId) ? currentUser.ownerId : mockOwnerId;
-}
-
-function renderBookingLiff() {
-  document.getElementById('lineTitle').textContent = '予約する';
-  selectedDate = null;
-  selectedSlot = null;
-  custSlotSummary = {};
-  document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約する</span></div><div class="liff-body" id="liffBody"></div>';
-  renderCalendar();
-}
-
-async function fetchMonthSummary(year, month) {
-  const startDate = isoDate(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0).getDate();
-  const endDate = isoDate(year, month, lastDay);
-  try {
-    const data = await api('GET', '/api/slots/summary?ownerId=' + getCustOwnerId() + '&startDate=' + startDate + '&endDate=' + endDate);
-    return data.summary || {};
-  } catch (e) {
-    console.error('Slot summary fetch error:', e);
-    return {};
-  }
-}
-
-function renderCalendar() {
-  const body = document.getElementById('liffBody');
-  if (!body) return;
-  const first = new Date(calYear, calMonth, 1), lastDay = new Date(calYear, calMonth+1, 0).getDate(), startDow = first.getDay();
-  const dows = ['日','月','火','水','木','金','土'];
-  const todayDate = new Date(YEAR, MONTH, DAY);
-
-  let h = '<div class="cal-month">';
-  h += '<button onclick="calMonth--;if(calMonth<0){calMonth=11;calYear--;}custSlotSummary={};renderCalendar()">&#10094;</button>';
-  h += '<span>' + calYear + '年' + (calMonth+1) + '月</span>';
-  h += '<button onclick="calMonth++;if(calMonth>11){calMonth=0;calYear++;}custSlotSummary={};renderCalendar()">&#10095;</button>';
-  h += '<button onclick="custSlotSummary={};renderCalendar()" style="margin-left:8px;background:none;border:1px solid #e2e8f0;border-radius:8px;padding:4px 8px;cursor:pointer;font-size:14px;">&#x21bb;</button>';
-  h += '</div><div class="cal-grid">';
-  dows.forEach(d => h += '<div class="cal-dow">' + d + '</div>');
-  for (let i = 0; i < startDow; i++) h += '<div class="cal-day"></div>';
-
-  const hasSummary = Object.keys(custSlotSummary).length > 0;
-
-  for (let d = 1; d <= lastDay; d++) {
-    const dt = new Date(calYear, calMonth, d);
-    const past = dt < todayDate;
-    const sel = selectedDate && dateKey(dt) === dateKey(selectedDate);
-    const isTd = d === DAY && calMonth === MONTH && calYear === YEAR;
-    const iso = isoDate(calYear, calMonth, d);
-    const dayInfo = custSlotSummary[iso];
-    const availCount = dayInfo ? (dayInfo.availableCount || 0) : 0;
-
-    let c = 'cal-day';
-    if (past) {
-      c += ' disabled';
-    } else if (hasSummary && availCount > 0) {
-      c += ' has-slots';
-      if (sel) c += ' selected';
-      else if (isTd) c += ' today';
-    } else if (hasSummary && availCount === 0) {
-      c += ' no-slots';
-    } else {
-      // No summary loaded yet - default styling
-      if (sel) c += ' selected';
-      else if (isTd) c += ' today';
-    }
-
-    if (past || (hasSummary && availCount === 0 && !past)) {
-      h += '<div class="' + c + '">' + d + '</div>';
-    } else {
-      h += '<div class="' + c + '" onclick="pickDate(' + calYear + ',' + calMonth + ',' + d + ')">' + d + '</div>';
-    }
-  }
-  h += '</div>';
-  if (selectedDate) h += '<div id="slotsContainer"><div class="loading">空き状況を取得中...</div></div>';
-  body.innerHTML = h;
-  if (selectedDate) loadAvailableSlots(selectedDate);
-
-  // Fetch slot summary for the visible month if not yet loaded
-  if (!hasSummary && !custSummaryLoading) {
-    custSummaryLoading = true;
-    fetchMonthSummary(calYear, calMonth).then(summary => {
-      custSlotSummary = summary;
-      custSummaryLoading = false;
-      // Re-render only the calendar grid (preserve selected date and slots)
-      renderCalendarGrid();
-    }).catch(() => { custSummaryLoading = false; });
-  }
-}
-
-function renderCalendarGrid() {
-  // Re-render just the calendar grid with summary data, preserving slots below
-  const body = document.getElementById('liffBody');
-  if (!body) return;
-  const first = new Date(calYear, calMonth, 1), lastDay = new Date(calYear, calMonth+1, 0).getDate(), startDow = first.getDay();
-  const dows = ['日','月','火','水','木','金','土'];
-  const todayDate = new Date(YEAR, MONTH, DAY);
-  const hasSummary = Object.keys(custSlotSummary).length > 0;
-
-  let h = '<div class="cal-month">';
-  h += '<button onclick="calMonth--;if(calMonth<0){calMonth=11;calYear--;}custSlotSummary={};renderCalendar()">&#10094;</button>';
-  h += '<span>' + calYear + '年' + (calMonth+1) + '月</span>';
-  h += '<button onclick="calMonth++;if(calMonth>11){calMonth=0;calYear++;}custSlotSummary={};renderCalendar()">&#10095;</button>';
-  h += '<button onclick="custSlotSummary={};renderCalendar()" style="margin-left:8px;background:none;border:1px solid #e2e8f0;border-radius:8px;padding:4px 8px;cursor:pointer;font-size:14px;">&#x21bb;</button>';
-  h += '</div><div class="cal-grid">';
-  dows.forEach(d => h += '<div class="cal-dow">' + d + '</div>');
-  for (let i = 0; i < startDow; i++) h += '<div class="cal-day"></div>';
-
-  for (let d = 1; d <= lastDay; d++) {
-    const dt = new Date(calYear, calMonth, d);
-    const past = dt < todayDate;
-    const sel = selectedDate && dateKey(dt) === dateKey(selectedDate);
-    const isTd = d === DAY && calMonth === MONTH && calYear === YEAR;
-    const iso = isoDate(calYear, calMonth, d);
-    const dayInfo = custSlotSummary[iso];
-    const availCount = dayInfo ? (dayInfo.availableCount || 0) : 0;
-
-    let c = 'cal-day';
-    if (past) {
-      c += ' disabled';
-    } else if (hasSummary && availCount > 0) {
-      c += ' has-slots';
-      if (sel) c += ' selected';
-      else if (isTd) c += ' today';
-    } else if (hasSummary && availCount === 0) {
-      c += ' no-slots';
-    } else {
-      if (sel) c += ' selected';
-      else if (isTd) c += ' today';
-    }
-
-    if (past || (hasSummary && availCount === 0 && !past)) {
-      h += '<div class="' + c + '">' + d + '</div>';
-    } else {
-      h += '<div class="' + c + '" onclick="pickDate(' + calYear + ',' + calMonth + ',' + d + ')">' + d + '</div>';
-    }
-  }
-  h += '</div>';
-
-  // Preserve slotsContainer if a date is selected
-  const existingSlots = body.querySelector('#slotsContainer');
-  if (selectedDate) {
-    if (existingSlots) {
-      h += existingSlots.outerHTML;
-    } else {
-      h += '<div id="slotsContainer"><div class="loading">空き状況を取得中...</div></div>';
-    }
-  }
-  body.innerHTML = h;
-  // Re-attach stored slots data if it existed
-  if (selectedDate && existingSlots && existingSlots._slots) {
-    const newContainer = document.getElementById('slotsContainer');
-    if (newContainer) newContainer._slots = existingSlots._slots;
-  }
-}
-
-function pickDate(y, m, d) {
-  const dt = new Date(y, m, d);
-  const todayDate = new Date(YEAR, MONTH, DAY);
-  if (dt < todayDate) return;
-  // Check if the date has no available slots (when summary is loaded)
-  const iso = isoDate(y, m, d);
-  const hasSummary = Object.keys(custSlotSummary).length > 0;
-  if (hasSummary) {
-    const dayInfo = custSlotSummary[iso];
-    const availCount = dayInfo ? (dayInfo.availableCount || 0) : 0;
-    if (availCount === 0) return;
-  }
-  selectedDate = dt;
-  renderCalendar();
-}
-
-/* --- Load available slots from API --- */
-async function loadAvailableSlots(dt) {
-  const container = document.getElementById('slotsContainer');
-  if (!container) return;
-  const dateStr = isoDate(dt.getFullYear(), dt.getMonth(), dt.getDate());
-  const ownerId = getCustOwnerId();
-  try {
-    const data = await api('GET', '/api/slots/available?ownerId=' + ownerId + '&date=' + dateStr);
-    const slots = data.slots || [];
-    const dows = ['日','月','火','水','木','金','土'];
-    const dateLabel = (dt.getMonth()+1) + '月' + dt.getDate() + '日 (' + dows[dt.getDay()] + ')';
-    let h = '<div class="slot-section-title">' + dateLabel + ' の空き</div>';
-    if (slots.length === 0) {
-      h += '<div class="cust-empty">この日の空きはありません</div>';
-    } else {
-      h += '<div class="slot-list">';
-      slots.sort((a, b) => a.startTime.localeCompare(b.startTime)).forEach((s, idx) => {
-        h += '<div class="slot-item" onclick="selectSlot(' + idx + ')">';
-        h += s.startTime;
-        h += '</div>';
-      });
-      h += '</div>';
-    }
-    container.innerHTML = h;
-    // Store slots for reference when selecting
-    container._slots = slots;
-  } catch (e) {
-    container.innerHTML = '<div class="cust-empty">読み込みに失敗しました</div>';
-  }
-}
-
-function selectSlot(idx) {
-  const container = document.getElementById('slotsContainer');
-  const slots = container?._slots;
-  if (!slots || !slots[idx]) return;
-  selectedSlot = slots[idx];
-  const durationMinutes = selectedSlot.durationMinutes || 60;
-  const dows = ['日','月','火','水','木','金','土'];
-  const dateLabel = (selectedDate.getMonth()+1) + '月' + selectedDate.getDate() + '日 (' + dows[selectedDate.getDay()] + ')';
-  const body = document.getElementById('liffBody');
-  body.innerHTML = '<div class="confirm-box">'
-    + '<div style="font-size:13px;color:var(--c-sub)">' + dateLabel + '</div>'
-    + '<div class="time-label">' + selectedSlot.startTime + ' - ' + selectedSlot.endTime + '</div>'
-    + '<div style="font-size:13px;color:var(--c-sub);margin-bottom:4px">' + durationMinutes + '分 / ' + mockCustomerName + '</div>'
-    + '<button class="btn btn-primary" onclick="confirmBooking()">この時間で予約する</button>'
-    + '</div>'
-    + '<button class="btn btn-outline" onclick="renderBookingLiff()">戻る</button>';
-}
-
-async function confirmBooking() {
-  if (!selectedSlot || !selectedDate) return;
-  showLoading();
-  try {
-    const custId = await ensureMockCustomer();
-    if (!custId) throw new Error('テスト顧客の準備に失敗しました');
-    const dateStr = isoDate(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-    const dateTime = dateStr + 'T' + selectedSlot.startTime + ':00+09:00';
-    const durationMinutes = selectedSlot.durationMinutes || 60;
-    const res = await api('POST', '/api/owner/reservations', {
-      customerId: custId,
-      slotId: selectedSlot.slotId,
-      dateTime: dateTime,
-      durationMinutes: durationMinutes,
-    });
-    hideLoading();
-    const rsvId = res.reservationId || res.id || '';
-    const shortId = rsvId.substring(0, 8);
-    const dows = ['日','月','火','水','木','金','土'];
-    const bookedDate = (selectedDate.getMonth()+1) + '月' + selectedDate.getDate() + '日 (' + dows[selectedDate.getDay()] + ')';
-    const bookedTime = selectedSlot.startTime + ' - ' + selectedSlot.endTime;
-    document.getElementById('liffBody').innerHTML = '<div class="confirm-box" style="text-align:center">'
-      + '<div style="font-size:48px;margin-bottom:12px;color:var(--c-primary)">&#10003;</div>'
-      + '<div style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--c-text)">予約が完了しました</div>'
-      + '<div style="font-size:13px;color:var(--c-sub)">' + bookedDate + '</div>'
-      + '<div style="font-size:16px;font-weight:600;margin:4px 0;color:var(--c-text)">' + bookedTime + '</div>'
-      + '<div style="font-size:12px;color:var(--c-sub);margin-top:4px">' + shortId + '...</div>'
-      + '<button class="btn btn-primary" style="margin-top:16px;" onclick="liffClose()">OK</button>'
-      + '</div>';
-    addBotMsg('予約が確定しました\n\n日時: ' + fmt(selectedDate) + ' ' + selectedSlot.startTime + ' - ' + selectedSlot.endTime + '\n予約ID: ' + shortId + '...\n\nご来店お待ちしております。');
-  } catch (e) {
-    hideLoading();
-    showToast('予約エラー: ' + e.message, true);
-  }
-}
-
-async function renderListLiff() {
-  document.getElementById('lineTitle').textContent = '予約確認';
-  document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約一覧</span></div><div class="liff-body"><div class="loading">読み込み中...</div></div>';
-  showLoading();
-  try {
-    const custId = await ensureMockCustomer();
-    const todayStr = isoDate(YEAR, MONTH, DAY);
-    const farFuture = isoDate(YEAR + 1, MONTH, DAY);
-    const data = await api('GET', '/api/owner/reservations?startDate=' + todayStr + '&endDate=' + farFuture);
-    const allRsvs = data.reservations || [];
-    // Filter by mock customer
-    const upcoming = allRsvs.filter(r => r.customerId === custId && r.status === 'confirmed')
-      .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
-    hideLoading();
-    let h = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約一覧</span></div><div class="liff-body">';
-    if (!upcoming.length) {
-      h += '<div class="cust-empty">予約はありません</div>';
-    } else {
-      upcoming.forEach(r => {
-        const dt = new Date(r.dateTime);
-        const dows = ['日','月','火','水','木','金','土'];
-        const dateStr = (dt.getMonth()+1) + '/' + dt.getDate() + ' (' + dows[dt.getDay()] + ')';
-        const time = String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
-        const dur = r.durationMinutes || 60;
-        const endMin = dt.getMinutes() + dur;
-        const endH = dt.getHours() + Math.floor(endMin / 60);
-        const endM = endMin % 60;
-        const endTime = String(endH).padStart(2,'0') + ':' + String(endM).padStart(2,'0');
-        h += '<div class="booking-card">';
-        h += '<div style="font-size:13px;color:var(--c-sub)">' + dateStr + '</div>';
-        h += '<div class="bk-date">' + time + ' - ' + endTime + '</div>';
-        h += '<span class="bk-status confirmed">確定</span>';
-        h += '<button class="btn btn-danger" onclick="showCancelConfirm(\'' + r.reservationId + '\')">キャンセル</button>';
-        h += '</div>';
-      });
-    }
-    h += '</div>';
-    document.getElementById('liffOverlay').innerHTML = h;
-  } catch (e) {
-    hideLoading();
-    document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約一覧</span></div><div class="liff-body"><div class="cust-empty">予約はありません</div></div>';
-  }
-}
-
-async function showCancelConfirm(reservationId) {
-  // Fetch cancellation policy and show confirmation screen
-  let policy = '';
-  try {
-    const settings = await api('GET', '/api/schedule/settings');
-    policy = settings.cancellationPolicy || '';
-  } catch (e) { /* no policy */ }
-
-  let h = '<div class="liff-header"><button class="close-btn" onclick="renderListLiff()">&times;</button><span class="liff-title">キャンセル確認</span></div><div class="liff-body">';
-  h += '<div class="cust-modal-box" style="margin:0 auto;">';
-  h += '<h3>予約をキャンセルしますか？</h3>';
-  if (policy) {
-    h += '<div style="font-size:13px;color:var(--c-sub);margin-bottom:16px;white-space:pre-wrap;line-height:1.6;max-height:200px;overflow-y:auto">' + policy.replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</div>';
-  }
-  h += '<div style="display:flex;gap:8px;">';
-  h += '<button class="btn btn-outline" style="flex:1;padding:12px;font-size:14px;" onclick="renderListLiff()">戻る</button>';
-  h += '<button class="btn" style="flex:1;padding:12px;font-size:14px;background:var(--c-danger);color:#fff;" onclick="cancelCustomerReservation(\'' + reservationId + '\')">キャンセルする</button>';
-  h += '</div></div></div>';
-  document.getElementById('liffOverlay').innerHTML = h;
-}
-
-async function cancelCustomerReservation(reservationId) {
-  showLoading();
-  try {
-    await api('PUT', '/api/owner/reservations/' + reservationId + '/cancel');
-    hideLoading();
-    showToast('予約をキャンセルしました');
-    addBotMsg('予約をキャンセルしました\n予約ID: ' + reservationId.substring(0, 8) + '...');
-    renderListLiff();
-  } catch (e) {
-    hideLoading();
-    showToast('キャンセルエラー: ' + e.message, true);
-  }
-}
-
-let _historyData = []; // cached history reservations
-let _historyNotes = []; // cached notes for history
-let _historyAttachments = []; // cached attachments for history
-let _historyCustId = null;
-let _currentHistoryIdx = null;
-
-async function renderHistoryLiff() {
-  document.getElementById('lineTitle').textContent = '施術履歴';
-  document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">施術履歴</span></div><div class="liff-body"><div class="loading">読み込み中...</div></div>';
-  showLoading();
-  try {
-    const custId = await ensureMockCustomer();
-    _historyCustId = custId;
-    const pastStart = isoDate(YEAR - 1, 0, 1);
-    const todayStr = isoDate(YEAR, MONTH, DAY + 1);
-    const farFuture = isoDate(YEAR + 1, MONTH, DAY);
-    const [pastData, futureData, notesData, attachData] = await Promise.all([
-      api('GET', '/api/owner/reservations?startDate=' + pastStart + '&endDate=' + todayStr),
-      api('GET', '/api/owner/reservations?startDate=' + todayStr + '&endDate=' + farFuture),
-      api('GET', '/api/customers/' + custId + '/notes').catch(() => ({ notes: [] })),
-      api('GET', '/api/customers/' + custId + '/attachments').catch(() => ({ attachments: [] })),
-    ]);
-    const allRsvs = [...(pastData.reservations || []), ...(futureData.reservations || [])];
-    _historyNotes = (notesData.notes || []);
-    _historyAttachments = (attachData.attachments || []).filter(a => a.category === 'photo');
-    const todayDate = new Date(YEAR, MONTH, DAY);
-    const history = allRsvs.filter(r => {
-      if (r.customerId !== custId) return false;
-      if (r.status === 'completed') return true;
-      if (r.status === 'confirmed' && new Date(r.dateTime) < todayDate) return true;
-      return false;
-    }).sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
-    const seen = new Set();
-    _historyData = history.filter(r => { if (seen.has(r.reservationId)) return false; seen.add(r.reservationId); return true; });
-    hideLoading();
-    renderHistoryList();
-  } catch (e) {
-    hideLoading();
-    document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">施術履歴</span></div><div class="liff-body"><div class="cust-empty">施術履歴はありません</div></div>';
-  }
-}
-
-function renderHistoryList() {
-  const statusLabelCust = s => s === 'confirmed' ? '確定' : s === 'cancelled' ? 'キャンセル済' : s === 'completed' ? '完了' : s;
-  let h = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">施術履歴</span></div><div class="liff-body">';
-  if (!_historyData.length) {
-    h += '<div class="cust-empty">施術履歴はありません</div>';
-  } else {
-    _historyData.forEach((r, idx) => {
-      const dt = new Date(r.dateTime);
-      const dows = ['日','月','火','水','木','金','土'];
-      const dateStr = (dt.getMonth()+1) + '/' + dt.getDate() + ' (' + dows[dt.getDay()] + ')';
-      const time = String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
-      const dur = r.durationMinutes || 60;
-      const endMin = dt.getMinutes() + dur;
-      const endH = dt.getHours() + Math.floor(endMin / 60);
-      const endM = endMin % 60;
-      const endTime = String(endH).padStart(2,'0') + ':' + String(endM).padStart(2,'0');
-      const sCls = r.status === 'confirmed' ? 'confirmed' : r.status === 'cancelled' ? 'cancelled' : 'done';
-      // Count matching notes/photos for this date
-      const rsvDateKey = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
-      const matchNotes = _historyNotes.filter(n => n.createdAt && n.createdAt.substring(0,10) === rsvDateKey);
-      const matchRecords = matchNotes.filter(n => n.category === 'record');
-      const matchMemos = matchNotes.filter(n => n.category === 'note');
-      const matchPhotos = _historyAttachments.filter(a => a.createdAt && a.createdAt.substring(0,10) === rsvDateKey);
-      const hasExtras = matchNotes.length > 0 || matchPhotos.length > 0;
-      h += '<div class="booking-card" style="cursor:pointer;" onclick="showHistoryDetail(' + idx + ')">';
-      h += '<div style="display:flex;justify-content:space-between;align-items:center;">';
-      h += '<div><div style="font-size:13px;color:var(--c-sub)">' + dateStr + '</div>';
-      h += '<div class="bk-date">' + time + ' - ' + endTime + '</div></div>';
-      h += '<span class="bk-status ' + sCls + '">' + statusLabelCust(r.status) + '</span>';
-      h += '</div>';
-      if (hasExtras) {
-        h += '<div style="display:flex;gap:8px;margin-top:6px;font-size:11px;color:var(--c-sub);">';
-        if (matchRecords.length) h += '<span style="display:flex;align-items:center;gap:2px;">&#128221; 記録 ' + matchRecords.length + '件</span>';
-        if (matchMemos.length) h += '<span style="display:flex;align-items:center;gap:2px;">&#128214; メモ ' + matchMemos.length + '件</span>';
-        if (matchPhotos.length) h += '<span style="display:flex;align-items:center;gap:2px;">&#128247; 写真 ' + matchPhotos.length + '件</span>';
-        h += '</div>';
-      }
-      h += '</div>';
-    });
-  }
-  h += '</div>';
-  document.getElementById('liffOverlay').innerHTML = h;
-}
-
-async function showHistoryDetail(idx) {
-  _currentHistoryIdx = idx;
-  const r = _historyData[idx];
-  if (!r) return;
-  const dt = new Date(r.dateTime);
-  const dows = ['日','月','火','水','木','金','土'];
-  const dateStr = dt.getFullYear() + '/' + (dt.getMonth()+1) + '/' + dt.getDate() + ' (' + dows[dt.getDay()] + ')';
-  const time = String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
-  const dur = r.durationMinutes || 60;
-  const endMin = dt.getMinutes() + dur;
-  const endH = dt.getHours() + Math.floor(endMin / 60);
-  const endM = endMin % 60;
-  const endTime = String(endH).padStart(2,'0') + ':' + String(endM).padStart(2,'0');
-  const statusLabelCust = s => s === 'confirmed' ? '確定' : s === 'cancelled' ? 'キャンセル済' : s === 'completed' ? '完了' : s;
-  const sCls = r.status === 'confirmed' ? 'confirmed' : r.status === 'cancelled' ? 'cancelled' : 'done';
-
-  // Match notes/photos by date
-  const rsvDateKey = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
-  const matchNotes = _historyNotes.filter(n => n.createdAt && n.createdAt.substring(0,10) === rsvDateKey);
-  const matchPhotos = _historyAttachments.filter(a => a.createdAt && a.createdAt.substring(0,10) === rsvDateKey);
-
-  let h = '<div class="liff-header"><button class="close-btn" onclick="renderHistoryList()">&times;</button><span class="liff-title">施術詳細</span></div><div class="liff-body">';
-
-  // Reservation info
-  h += '<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);">';
-  h += '<div style="font-size:15px;font-weight:700;margin-bottom:4px;color:#1e293b;">' + dateStr + '</div>';
-  h += '<div style="font-size:14px;color:#475569;">' + time + ' - ' + endTime + '（' + dur + '分）</div>';
-  h += '<span class="bk-status ' + sCls + '" style="margin-top:8px;display:inline-block;">' + statusLabelCust(r.status) + '</span>';
-  h += '</div>';
-
-  // Separate records and memos
-  const matchRecords = matchNotes.filter(n => n.category === 'record');
-  const matchMemos = matchNotes.filter(n => n.category === 'note');
-
-  // Treatment records
-  h += '<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);">';
-  h += '<h4 style="font-size:13px;font-weight:700;margin-bottom:8px;color:#475569;"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;color:#ec5b13;">description</span> 施術記録' + (matchRecords.length ? '（' + matchRecords.length + '件）' : '') + '</h4>';
-  if (!matchRecords.length) {
-    h += '<p style="font-size:12px;color:#94a3b8;padding:8px 0;">この日の施術記録はありません</p>';
-  } else {
-    matchRecords.forEach(n => {
-      h += '<div style="padding:8px 0;border-bottom:1px solid #f8fafc;">';
-      h += '<div style="font-size:13px;font-weight:600;color:#334155;">' + esc(n.title || '無題') + '</div>';
-      h += '<div id="histNote_' + n.noteId + '" style="display:none;margin-top:6px;font-size:12px;color:#64748b;white-space:pre-wrap;line-height:1.6;"></div>';
-      h += '<button style="border:none;background:none;color:#ec5b13;cursor:pointer;font-size:12px;font-weight:600;margin-top:4px;" onclick="toggleHistoryNote(\'' + n.noteId + '\')">内容を表示</button>';
-      h += '</div>';
-    });
-  }
-  h += '</div>';
-
-  // Memos
-  h += '<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);">';
-  h += '<h4 style="font-size:13px;font-weight:700;margin-bottom:8px;color:#475569;"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;color:#ec5b13;">sticky_note_2</span> メモ' + (matchMemos.length ? '（' + matchMemos.length + '件）' : '') + '</h4>';
-  if (!matchMemos.length) {
-    h += '<p style="font-size:12px;color:#94a3b8;padding:8px 0;">この日のメモはありません</p>';
-  } else {
-    matchMemos.forEach(n => {
-      h += '<div style="padding:8px 0;border-bottom:1px solid #f8fafc;">';
-      h += '<div style="font-size:13px;font-weight:600;color:#334155;">' + esc(n.title || '無題') + '</div>';
-      h += '<div id="histNote_' + n.noteId + '" style="display:none;margin-top:6px;font-size:12px;color:#64748b;white-space:pre-wrap;line-height:1.6;"></div>';
-      h += '<button style="border:none;background:none;color:#ec5b13;cursor:pointer;font-size:12px;font-weight:600;margin-top:4px;" onclick="toggleHistoryNote(\'' + n.noteId + '\')">内容を表示</button>';
-      h += '</div>';
-    });
-  }
-  h += '</div>';
-
-  // Photos
-  h += '<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);">';
-  h += '<h4 style="font-size:13px;font-weight:700;margin-bottom:8px;color:#475569;"><span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;color:#ec5b13;">photo_library</span> 写真' + (matchPhotos.length ? '（' + matchPhotos.length + '件）' : '') + '</h4>';
-  if (!matchPhotos.length) {
-    h += '<p style="font-size:12px;color:#94a3b8;padding:8px 0;">この日の写真はありません</p>';
-  } else {
-    h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">';
-    matchPhotos.forEach(a => {
-      var hpDate = a.createdAt ? new Date(a.createdAt) : null;
-      var hpDateStr = hpDate ? (hpDate.getMonth()+1) + '/' + hpDate.getDate() : '';
-      h += '<div style="border-radius:8px;overflow:hidden;background:#f1f5f9;">';
-      h += '<div style="aspect-ratio:1;"><img id="histPhoto_' + a.attachmentId + '" style="width:100%;height:100%;object-fit:cover;" src="" alt="' + esc(a.fileName) + '"></div>';
-      if (hpDateStr) h += '<div style="padding:3px 0;text-align:center;font-size:10px;color:#94a3b8;background:#fff;">' + hpDateStr + '</div>';
-      h += '</div>';
-    });
-    h += '</div>';
-  }
-  h += '</div>';
-
-  h += '<button class="btn btn-outline" style="width:100%;margin-top:8px;" onclick="renderHistoryList()">一覧に戻る</button>';
-  h += '</div>';
-  document.getElementById('liffOverlay').innerHTML = h;
-
-  // Load photo presigned URLs
-  if (matchPhotos.length && _historyCustId) {
-    matchPhotos.forEach(a => {
-      api('GET', '/api/customers/' + _historyCustId + '/attachments/' + a.attachmentId + '/url')
-        .then(res => {
-          const img = document.getElementById('histPhoto_' + a.attachmentId);
-          if (img) img.src = res.presignedUrl;
-        }).catch(() => {});
-    });
-  }
-}
-
-async function toggleHistoryNote(noteId) {
-  const el = document.getElementById('histNote_' + noteId);
-  if (!el) return;
-  if (el.style.display === 'block') { el.style.display = 'none'; return; }
-  if (!_historyCustId) return;
-  el.innerHTML = '<span style="color:#999;">読み込み中...</span>';
-  el.style.display = 'block';
-  try {
-    const data = await api('GET', '/api/customers/' + _historyCustId + '/notes/' + noteId);
-    el.textContent = data.content || '(空)';
-  } catch (e) {
-    el.innerHTML = '<span style="color:#d32f2f;">取得エラー</span>';
-  }
-}
+/* Customer-side JS removed — now rendered via iframe from liff.html */
 
 async function toggleRsvNote(customerId, noteId) {
   const el = document.getElementById('rsvNote_' + noteId);
@@ -2586,7 +1903,6 @@ async function toggleRsvNote(customerId, noteId) {
     });
   }
 })();
-initChat();
 </script>
 </body>
 </html>

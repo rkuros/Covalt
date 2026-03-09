@@ -627,14 +627,17 @@ export class ScheduleController {
   /**
    * POST /api/schedule/templates/:templateId/apply
    * Applies a template to a single date or to all business days in a date range.
-   * Body: { date?: string, startDate?: string, endDate?: string }
+   * Body: { date?: string, startDate?: string, endDate?: string, clearExisting?: boolean }
+   *
+   * When clearExisting is true, all available (non-booked) slots are removed
+   * before applying the template, ensuring all template entries are applied.
    */
   @Post('templates/:templateId/apply')
   @HttpCode(200)
   async applyTemplate(
     @Req() req: AuthenticatedRequest,
     @Param('templateId') templateIdParam: string,
-    @Body() body: { date?: string; startDate?: string; endDate?: string },
+    @Body() body: { date?: string; startDate?: string; endDate?: string; clearExisting?: boolean },
   ) {
     const ownerId = OwnerId.create(req.user.ownerId);
     const templateId = SlotTemplateId.create(templateIdParam);
@@ -645,6 +648,8 @@ export class ScheduleController {
         message: 'テンプレートが見つかりません',
       });
     }
+
+    const clearExisting = body.clearExisting === true;
 
     // Collect target dates
     const targetDates: SlotDate[] = [];
@@ -689,7 +694,8 @@ export class ScheduleController {
 
     // Apply template to each target date
     let totalAdded = 0;
-    const results: { date: string; added: number }[] = [];
+    let totalSkipped = 0;
+    const results: { date: string; added: number; skipped: number }[] = [];
 
     for (const date of targetDates) {
       let dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(ownerId, date);
@@ -697,7 +703,18 @@ export class ScheduleController {
         dailySlotList = DailySlotList.create({ ownerId, date });
       }
 
+      // Remove available (non-booked) slots before applying if requested
+      if (clearExisting) {
+        const availableSlotIds = dailySlotList.slots
+          .filter((s) => s.isAvailable())
+          .map((s) => s.slotId);
+        for (const slotId of availableSlotIds) {
+          dailySlotList.removeSlot(slotId);
+        }
+      }
+
       let added = 0;
+      let skipped = 0;
       for (const entry of template.entries) {
         const timeRange = TimeRange.create(entry.startTime, entry.endTime);
         const duration = Duration.create(timeRange.durationInMinutes());
@@ -713,21 +730,26 @@ export class ScheduleController {
           dailySlotList.addSlot(newSlot);
           added++;
         } catch (e) {
-          if (e instanceof SlotOverlapError) continue;
+          if (e instanceof SlotOverlapError) {
+            skipped++;
+            continue;
+          }
           throw e;
         }
       }
 
-      if (added > 0) {
+      if (added > 0 || clearExisting) {
         await this.dailySlotListRepo.save(dailySlotList);
         totalAdded += added;
       }
-      results.push({ date: date.value, added });
+      totalSkipped += skipped;
+      results.push({ date: date.value, added, skipped });
     }
 
     return {
       totalDates: targetDates.length,
       totalSlotsAdded: totalAdded,
+      totalSkipped,
       results,
     };
   }

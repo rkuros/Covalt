@@ -183,6 +183,7 @@ Resources:
           - Content-Type
           - Authorization
           - x-owner-id
+          - x-mock-auth
 
 Outputs:
   ApiUrl:

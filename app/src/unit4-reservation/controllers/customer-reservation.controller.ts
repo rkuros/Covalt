@@ -77,9 +77,10 @@ export class CustomerReservationController {
   @Post()
   async create(
     @Headers('authorization') authHeader: string | undefined,
+    @Headers('x-mock-auth') mockAuthHeader: string | undefined,
     @Body() body: CreateReservationBody,
   ) {
-    const liffResult = await this.verifyLiffToken(authHeader);
+    const liffResult = await this.verifyLiffToken(authHeader, mockAuthHeader);
 
     if (!body.ownerId || !body.slotId) {
       throw new BadRequestException({
@@ -112,8 +113,9 @@ export class CustomerReservationController {
   async getUpcoming(
     @Headers('authorization') authHeader: string | undefined,
     @Headers('x-owner-id') ownerIdHeader: string | undefined,
+    @Headers('x-mock-auth') mockAuthHeader: string | undefined,
   ) {
-    const liffResult = await this.verifyLiffToken(authHeader);
+    const liffResult = await this.verifyLiffToken(authHeader, mockAuthHeader);
 
     if (!ownerIdHeader) {
       throw new BadRequestException({
@@ -163,8 +165,9 @@ export class CustomerReservationController {
   async getHistory(
     @Headers('authorization') authHeader: string | undefined,
     @Headers('x-owner-id') ownerIdHeader: string | undefined,
+    @Headers('x-mock-auth') mockAuthHeader: string | undefined,
   ) {
-    const liffResult = await this.verifyLiffToken(authHeader);
+    const liffResult = await this.verifyLiffToken(authHeader, mockAuthHeader);
 
     if (!ownerIdHeader) {
       throw new BadRequestException({
@@ -213,10 +216,11 @@ export class CustomerReservationController {
   @Put(':id/modify')
   async modify(
     @Headers('authorization') authHeader: string | undefined,
+    @Headers('x-mock-auth') mockAuthHeader: string | undefined,
     @Param('id') id: string,
     @Body() body: ModifyReservationBody,
   ) {
-    await this.verifyLiffToken(authHeader);
+    await this.verifyLiffToken(authHeader, mockAuthHeader);
 
     if (!body.newSlotId || !body.newDateTime || !body.newDurationMinutes) {
       throw new BadRequestException({
@@ -247,9 +251,10 @@ export class CustomerReservationController {
   @Put(':id/cancel')
   async cancel(
     @Headers('authorization') authHeader: string | undefined,
+    @Headers('x-mock-auth') mockAuthHeader: string | undefined,
     @Param('id') id: string,
   ) {
-    await this.verifyLiffToken(authHeader);
+    await this.verifyLiffToken(authHeader, mockAuthHeader);
 
     try {
       const reservation = await this.commandService.cancelReservation({
@@ -267,12 +272,18 @@ export class CustomerReservationController {
 
   private async verifyLiffToken(
     authHeader: string | undefined,
+    mockAuthHeader?: string,
   ): Promise<{ lineUserId: string; displayName: string }> {
     if (!authHeader?.startsWith('Bearer ')) {
       throw new UnauthorizedException({
         error: 'UNAUTHORIZED',
         message: 'LIFF access token is required',
       });
+    }
+
+    // Mock mode: skip LIFF verification and return a mock identity
+    if (mockAuthHeader === 'true') {
+      return { lineUserId: 'U00000000000000000000000000000000', displayName: 'テストユーザー' };
     }
 
     const token = authHeader.slice(7);

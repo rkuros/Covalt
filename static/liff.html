@@ -153,6 +153,7 @@ const API = 'https://4n1y1vgmbl.execute-api.ap-southeast-1.amazonaws.com';
 let accessToken = null;
 let ownerId = null;
 let displayName = '';
+let isMockMode = false;
 let selectedDate = new Date();
 let calViewYear = selectedDate.getFullYear();
 let calViewMonth = selectedDate.getMonth();
@@ -175,6 +176,34 @@ function parseLiffParams() {
 
 // ── Init ──
 async function init() {
+  const urlParams = new URLSearchParams(location.search);
+
+  if (urlParams.get('mock') === '1') {
+    // Mock mode: skip LIFF SDK, wait for auth from parent via postMessage
+    isMockMode = true;
+    ownerId = urlParams.get('ownerId') || null;
+    const page = urlParams.get('page') || 'book';
+
+    window.addEventListener('message', function handler(event) {
+      if (event.data && event.data.type === 'mock-auth') {
+        window.removeEventListener('message', handler);
+        accessToken = event.data.token;
+        ownerId = event.data.ownerId || ownerId;
+        displayName = event.data.displayName || 'テストユーザー';
+        document.getElementById('user-name').textContent = displayName;
+        document.getElementById('loading').style.display = 'none';
+        switchTab(page);
+      }
+    });
+
+    // Notify parent that we're ready to receive auth
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'liff-ready' }, '*');
+    }
+    return;
+  }
+
+  // Normal LIFF mode
   try {
     await liff.init({ liffId: LIFF_ID });
 
@@ -205,6 +234,7 @@ async function init() {
 async function api(method, path, body, headers) {
   const opts = { method, headers: { 'Content-Type': 'application/json', ...headers } };
   if (accessToken) opts.headers['Authorization'] = 'Bearer ' + accessToken;
+  if (isMockMode) opts.headers['x-mock-auth'] = 'true';
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(API + path, opts);
   const data = await res.json().catch(() => null);
