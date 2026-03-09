@@ -65,9 +65,13 @@ export class DailySlotList {
     return this._slots.find((s) => s.slotId.equals(slotId)) ?? null;
   }
 
-  /** Get all available slots. */
+  /** Get all available slots, excluding those that overlap with booked slots. */
   getAvailableSlots(): Slot[] {
-    return this._slots.filter((s) => s.isAvailable());
+    const bookedSlots = this._slots.filter((s) => s.isBooked());
+    return this._slots.filter((s) => {
+      if (!s.isAvailable()) return false;
+      return !bookedSlots.some((booked) => s.overlapsWith(booked));
+    });
   }
 
   /**

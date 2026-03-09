@@ -291,6 +291,7 @@ model CustomerNote {
   ownerId    String   @map("owner_id")
   category   String
   title      String   @default("")
+  noteDate   String?  @map("note_date")
   s3Key      String   @map("s3_key")
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")

@@ -12,8 +12,8 @@ import { PrismaReservationRepository } from './repositories/prisma-reservation.r
 // Gateways (direct in-process calls instead of HTTP)
 import { DirectSlotGateway } from './gateways/direct-slot.gateway';
 import { DirectCustomerGateway } from './gateways/direct-customer.gateway';
+import { DirectLiffGateway } from './gateways/direct-liff.gateway';
 import { HttpAuthGateway } from './gateways/http-auth.gateway';
-import { HttpLiffGateway } from './gateways/http-liff.gateway';
 import { NestjsEventPublisher } from './gateways/nestjs-event.publisher';
 
 // Domain
@@ -25,9 +25,10 @@ import { AuthGuard } from '../common/guards/auth.guard';
 // Cross-module imports
 import { Unit3ScheduleModule } from '../unit3-schedule/unit3-schedule.module';
 import { Unit6CustomerModule } from '../unit6-customer/customer.module';
+import { Unit2LineModule } from '../unit2-line/unit2-line.module';
 
 @Module({
-  imports: [ConfigModule, EventEmitterModule, Unit3ScheduleModule, Unit6CustomerModule],
+  imports: [ConfigModule, EventEmitterModule, Unit3ScheduleModule, Unit6CustomerModule, Unit2LineModule],
   controllers: [
     CustomerReservationController,
     OwnerReservationController,
@@ -57,7 +58,7 @@ import { Unit6CustomerModule } from '../unit6-customer/customer.module';
     },
     {
       provide: 'LiffGateway',
-      useClass: HttpLiffGateway,
+      useClass: DirectLiffGateway,
     },
     {
       provide: 'EventPublisher',

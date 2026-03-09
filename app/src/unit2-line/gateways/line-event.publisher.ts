@@ -13,6 +13,6 @@ export class LineEventPublisher implements EventPublisher {
 
   async publishFriendAdded(event: LineFriendAddedEvent): Promise<void> {
     console.log('[EventPublisher] publishing line.friend_added', event.toPayload());
-    this.eventEmitter.emit('line.friend_added', event.toPayload());
+    await this.eventEmitter.emitAsync('line.friend_added', event.toPayload());
   }
 }

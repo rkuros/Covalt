@@ -1,0 +1,2077 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LINE予約システム - APIテストUI</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#e8e8e8;color:#333;}
+
+/* === Top Tab === */
+.top-tab{display:flex;justify-content:center;gap:0;padding:16px 16px 0;background:#e8e8e8;}
+.top-tab button{padding:10px 32px;border:none;font-size:14px;font-weight:700;cursor:pointer;background:#ccc;color:#666;border-radius:8px 8px 0 0;}
+.top-tab button.active{background:#fff;color:#333;}
+
+/* === Device frames === */
+.device-wrap{display:flex;justify-content:center;padding:0 16px 32px;background:#e8e8e8;}
+.device-wrap.hidden{display:none;}
+.phone{width:375px;height:740px;background:#fff;border-radius:0 0 24px 24px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.12);position:relative;}
+.tablet{width:620px;height:820px;background:#fff;border-radius:0 0 24px 24px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.12);position:relative;}
+
+/* ==================== */
+/* === CUSTOMER SIDE === */
+/* ==================== */
+
+/* LINE header */
+.line-header{background:#06c755;color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.line-header .back{font-size:20px;cursor:pointer;}
+.line-header .title{font-size:15px;font-weight:700;flex:1;}
+
+/* Chat area */
+.chat-area{flex:1;overflow-y:auto;padding:12px 16px;background:#7baabd;display:flex;flex-direction:column;gap:8px;}
+.msg{max-width:80%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.5;word-break:break-word;}
+.msg-bot{background:#fff;color:#333;align-self:flex-start;border-bottom-left-radius:4px;}
+.msg-user{background:#06c755;color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
+
+/* Rich menu */
+.rich-menu{flex-shrink:0;display:grid;grid-template-columns:1fr 1fr 1fr;background:#fff;border-top:1px solid #e0e0e0;}
+.rich-menu button{padding:18px 8px;border:none;background:#fff;font-size:12px;font-weight:700;color:#06c755;cursor:pointer;border-right:1px solid #f0f0f0;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.rich-menu button:last-child{border-right:none;}
+.rich-menu button:hover{background:#f0faf0;}
+.rm-icon{font-size:24px;}
+
+/* LIFF overlay */
+.liff-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:#fff;display:flex;flex-direction:column;z-index:10;}
+.liff-header{background:#fff;padding:12px 16px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.liff-header .close-btn{font-size:22px;cursor:pointer;color:#999;background:none;border:none;padding:0 4px;}
+.liff-header .liff-title{font-size:15px;font-weight:700;flex:1;}
+.liff-body{flex:1;overflow-y:auto;padding:16px;}
+
+/* Calendar */
+.cal-month{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.cal-month button{background:none;border:none;font-size:18px;cursor:pointer;padding:4px 8px;}
+.cal-month span{font-size:15px;font-weight:700;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;margin-bottom:16px;}
+.cal-dow{font-size:11px;color:#999;padding:4px 0;}
+.cal-day{font-size:13px;padding:8px 0;border-radius:8px;cursor:pointer;}
+.cal-day:hover{background:#e8f5e9;}
+.cal-day.today{font-weight:700;color:#06c755;}
+.cal-day.selected{background:#06c755;color:#fff;}
+.cal-day.disabled{color:#ccc;cursor:default;}
+.cal-day.disabled:hover{background:none;}
+.cal-day.holiday{color:#d32f2f;text-decoration:line-through;}
+.cal-day.has-slots{position:relative;}
+.cal-day.has-slots::after{content:'';display:block;width:6px;height:6px;background:#06c755;border-radius:50%;margin:2px auto 0;}
+.cal-day.no-slots{color:#ccc;}
+.cal-day.no-slots:hover{background:none;cursor:default;}
+.cal-day.selected.has-slots::after{background:#fff;}
+
+/* Slots */
+.slot-list{display:flex;flex-direction:column;gap:6px;}
+.slot-item{padding:12px;border:1px solid #e0e0e0;border-radius:8px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:14px;}
+.slot-item:hover{border-color:#06c755;background:#f0faf0;}
+.slot-item.booked{background:#f5f5f5;color:#999;cursor:default;border-color:#eee;}
+.slot-item.booked:hover{background:#f5f5f5;border-color:#eee;}
+.slot-status{font-size:11px;padding:2px 8px;border-radius:10px;}
+.slot-status.open{background:#e8f5e9;color:#2e7d32;}
+.slot-status.taken{background:#eee;color:#999;}
+
+/* Common buttons */
+.confirm-box{background:#f9f9f9;border-radius:12px;padding:20px;margin:12px 0;}
+.confirm-box dt{font-size:12px;color:#999;margin-top:8px;}
+.confirm-box dd{font-size:15px;font-weight:600;margin-top:2px;}
+.btn{display:block;width:100%;padding:14px;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;text-align:center;margin-top:12px;}
+.btn-primary{background:#06c755;color:#fff;}
+.btn-primary:hover{background:#05b34c;}
+.btn-danger{background:#d32f2f;color:#fff;}
+.btn-danger:hover{background:#b71c1c;}
+.btn-outline{background:#fff;color:#333;border:1px solid #ccc;}
+.btn-outline:hover{background:#f5f5f5;}
+
+/* Booking cards (customer) */
+.booking-card{border:1px solid #e0e0e0;border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;}
+.booking-card:hover{border-color:#06c755;}
+.booking-card .bk-date{font-size:15px;font-weight:700;}
+.booking-card .bk-status{font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px;}
+.bk-status.confirmed{background:#e8f5e9;color:#2e7d32;}
+.bk-status.cancelled{background:#fce4ec;color:#c62828;}
+.bk-status.done{background:#e3f2fd;color:#1565c0;}
+.booking-card .bk-id{font-size:11px;color:#999;margin-top:4px;}
+
+/* ================== */
+/* === OWNER SIDE === */
+/* ================== */
+
+/* Tablet top bar */
+.tab-topbar{background:#2d3436;color:#fff;padding:14px 20px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;}
+.tab-topbar .tab-logo{font-size:15px;font-weight:700;}
+.tab-topbar .tab-user{font-size:11px;color:#b2bec3;margin-right:12px;}
+.tab-topbar .tab-logout{background:none;border:1px solid #636e72;color:#b2bec3;padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;}
+.tab-topbar .tab-logout:hover{color:#fff;border-color:#fff;}
+
+/* Tablet body */
+.tab-body{flex:1;overflow-y:auto;background:#f5f6fa;}
+.tab-inner{padding:20px;}
+
+/* Tablet bottom nav */
+.tab-nav{flex-shrink:0;display:grid;grid-template-columns:repeat(4,1fr);background:#fff;border-top:1px solid #e0e0e0;}
+.tab-nav button{padding:10px 4px 12px;border:none;background:#fff;font-size:10px;font-weight:600;color:#999;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.tab-nav button .nav-icon{font-size:20px;}
+.tab-nav button:hover{color:#0984e3;}
+.tab-nav button.active{color:#0984e3;}
+
+/* Login inside tablet */
+.tab-login{display:flex;justify-content:center;align-items:center;height:100%;background:#f5f6fa;}
+.login-box{background:#fff;padding:32px;border-radius:12px;width:340px;box-shadow:0 2px 12px rgba(0,0,0,.06);}
+.login-box h2{font-size:18px;margin-bottom:20px;text-align:center;}
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:#555;}
+.form-input{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;}
+.form-input:focus{outline:none;border-color:#0984e3;}
+.login-error{color:#d32f2f;font-size:12px;margin-bottom:12px;display:none;}
+
+/* Page title */
+.page-title{font-size:18px;font-weight:700;margin-bottom:16px;}
+
+/* Cards */
+.o-card{background:#fff;border-radius:8px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px;}
+
+/* Table */
+.o-table{width:100%;border-collapse:collapse;font-size:12px;}
+.o-table th{text-align:left;padding:8px 10px;border-bottom:2px solid #e0e0e0;font-weight:600;color:#555;}
+.o-table td{padding:8px 10px;border-bottom:1px solid #f0f0f0;}
+.o-table tr:hover{background:#f9f9f9;}
+.o-table tr{cursor:pointer;}
+.status-badge{font-size:11px;padding:2px 8px;border-radius:10px;}
+.status-badge.s-confirmed{background:#e8f5e9;color:#2e7d32;}
+.status-badge.s-cancelled{background:#fce4ec;color:#c62828;}
+.status-badge.s-completed{background:#e3f2fd;color:#1565c0;}
+
+/* View toggle */
+.view-toggle{display:flex;gap:4px;margin-bottom:12px;}
+.view-toggle button{padding:5px 14px;border:1px solid #ddd;background:#fff;border-radius:6px;font-size:12px;cursor:pointer;}
+.view-toggle button.active{background:#0984e3;color:#fff;border-color:#0984e3;}
+
+/* Owner calendar */
+.oc-month{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.oc-month button{background:none;border:none;font-size:16px;cursor:pointer;padding:4px 8px;color:#0984e3;}
+.oc-month span{font-size:14px;font-weight:700;}
+.oc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:#e0e0e0;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;}
+.oc-dow{background:#f5f6fa;font-size:10px;font-weight:600;color:#999;text-align:center;padding:6px 0;}
+.oc-cell{background:#fff;min-height:80px;padding:4px 6px;font-size:11px;cursor:pointer;position:relative;}
+.oc-cell:hover{background:#f0f7ff;}
+.oc-cell.oc-other{background:#fafafa;color:#ccc;}
+.oc-cell.oc-today{background:#e8f4fd;}
+.oc-cell.oc-holiday{background:#fff5f5;}
+.oc-cell .oc-num{font-weight:600;font-size:12px;margin-bottom:2px;}
+.oc-cell.oc-today .oc-num{color:#0984e3;}
+.oc-cell.oc-holiday .oc-num{color:#d32f2f;text-decoration:line-through;}
+.oc-evt{padding:2px 4px;border-radius:3px;margin-top:1px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+.oc-evt.oc-available{background:#e8f5e9;color:#2e7d32;}
+.oc-evt.oc-confirmed{background:#e3f2fd;color:#1565c0;}
+.oc-evt.oc-cancelled{background:#fce4ec;color:#c62828;}
+.oc-evt.oc-completed{background:#f5f5f5;color:#757575;}
+
+/* Detail */
+.detail-panel{background:#fff;border-radius:8px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.detail-row{display:flex;margin-bottom:10px;}
+.detail-row dt{width:120px;font-size:12px;color:#999;flex-shrink:0;}
+.detail-row dd{font-size:13px;font-weight:500;}
+.detail-actions{display:flex;gap:8px;margin-top:16px;}
+.detail-actions .btn{width:auto;padding:10px 20px;font-size:13px;}
+
+/* Schedule */
+.hours-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:12px;flex-wrap:wrap;}
+.hours-row label{width:40px;font-weight:600;}
+.hours-row select,.hours-row input[type="time"]{padding:5px;border:1px solid #ddd;border-radius:4px;font-size:12px;}
+.slot-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;}
+.slot-chip{padding:8px;border:1px solid #e0e0e0;border-radius:8px;font-size:12px;text-align:center;cursor:pointer;}
+.slot-chip:hover{border-color:#0984e3;}
+.slot-chip.has-booking{background:#e3f2fd;border-color:#90caf9;}
+
+/* Toast */
+.toast{position:fixed;top:60px;right:20px;background:#2d3436;color:#fff;padding:14px 20px;border-radius:8px;font-size:13px;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none;max-width:320px;}
+.toast.show{opacity:1;}
+.toast.error{background:#d32f2f;}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;justify-content:center;align-items:center;z-index:100;display:none;}
+.modal{background:#fff;border-radius:12px;padding:24px;width:380px;max-width:90vw;}
+.modal h3{font-size:16px;margin-bottom:16px;}
+
+/* Loading */
+.loading{text-align:center;padding:40px;color:#999;font-size:13px;}
+.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.loading-overlay .spinner{width:32px;height:32px;border:3px solid #e0e0e0;border-top-color:#0984e3;border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.btn.is-loading{opacity:0.6;pointer-events:none;}
+
+/* API indicator */
+.api-badge{display:inline-block;font-size:9px;padding:2px 6px;border-radius:4px;margin-left:8px;vertical-align:middle;}
+.api-badge.live{background:#e8f5e9;color:#2e7d32;}
+.api-badge.mock{background:#fff3e0;color:#e65100;}
+</style>
+</head>
+<body>
+
+<div class="top-tab">
+  <button onclick="switchView('customer')">顧客側（LINE / スマホ）<span class="api-badge live">LIVE API</span></button>
+  <button class="active" onclick="switchView('owner')">オーナー側（iPad / タブレット）<span class="api-badge live">LIVE API</span></button>
+</div>
+
+<!-- ========== CUSTOMER (Phone) ========== -->
+<div class="device-wrap hidden" id="customerView">
+  <div class="phone">
+    <div class="line-header">
+      <span class="back" id="lineBack" style="display:none;" onclick="liffClose()">&#10094;</span>
+      <span class="title" id="lineTitle">予約サロン</span>
+    </div>
+    <div class="chat-area" id="chatArea"></div>
+    <div class="rich-menu" id="richMenu">
+      <button onclick="openLiff('booking')"><span class="rm-icon">&#128197;</span>予約する</button>
+      <button onclick="openLiff('list')"><span class="rm-icon">&#128203;</span>予約確認</button>
+      <button onclick="openLiff('history')"><span class="rm-icon">&#128214;</span>施術履歴</button>
+    </div>
+    <div class="liff-overlay" id="liffOverlay" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- ========== OWNER (Tablet) ========== -->
+<div class="device-wrap" id="ownerView">
+  <div class="tablet" id="tabletDevice">
+    <!-- Login -->
+    <div id="tabletLogin" style="display:flex;flex-direction:column;height:100%;">
+      <div class="tab-topbar">
+        <span class="tab-logo">予約管理システム <span class="api-badge live">LIVE API</span></span>
+      </div>
+      <div class="tab-body">
+        <div class="tab-login">
+          <div class="login-box">
+            <h2>ログイン</h2>
+            <div class="login-error" id="loginError"></div>
+            <div class="form-group">
+              <label>メールアドレス</label>
+              <input class="form-input" id="loginEmail" type="email" placeholder="メールアドレス">
+            </div>
+            <div class="form-group">
+              <label>パスワード</label>
+              <input class="form-input" id="loginPass" type="password" placeholder="パスワード">
+            </div>
+            <button class="btn btn-primary" style="background:#0984e3;" onclick="doLogin()" id="loginBtn">ログイン</button>
+            <p style="text-align:center;margin-top:12px;font-size:11px;color:#999;">API: ap-southeast-1</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Main app -->
+    <div id="tabletApp" style="display:none;flex-direction:column;height:100%;">
+      <div class="tab-topbar">
+        <span class="tab-logo">予約管理システム</span>
+        <div>
+          <span class="tab-user" id="userEmail"></span>
+          <button class="tab-logout" onclick="doLogout()">ログアウト</button>
+        </div>
+      </div>
+      <div class="tab-body" id="tabBody"><div class="tab-inner" id="mainContent"></div></div>
+      <div class="tab-nav" id="tabNav">
+        <button class="active" data-page="dashboard" onclick="showPage('dashboard')"><span class="nav-icon">&#128203;</span>予約一覧</button>
+        <button data-page="schedule" onclick="showPage('schedule')"><span class="nav-icon">&#128197;</span>スケジュール</button>
+        <button data-page="customers" onclick="showPage('customers')"><span class="nav-icon">&#128101;</span>顧客</button>
+        <button data-page="settings" onclick="showPage('settings')"><span class="nav-icon">&#9881;</span>設定</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+<!-- Modal -->
+<div class="modal-bg" id="modalBg"><div class="modal" id="modalContent"></div></div>
+
+<script>
+/* ===== CONFIG ===== */
+const API_BASE = 'https://4n1y1vgmbl.execute-api.ap-southeast-1.amazonaws.com';
+
+/* ===== STATE ===== */
+let authToken = null;
+let currentUser = null; // {ownerId, email}
+let cachedReservations = [];
+let cachedCustomers = [];
+let cachedBusinessHours = [];
+let cachedClosedDays = [];
+
+/* ===== API HELPER ===== */
+async function api(method, path, body) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (authToken) opts.headers['Authorization'] = 'Bearer ' + authToken;
+  if (body) opts.body = JSON.stringify(body);
+
+  const res = await fetch(API_BASE + path, opts);
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    const msg = data?.message || data?.error || 'API Error ' + res.status;
+    throw new Error(msg);
+  }
+  return data;
+}
+
+/* ===== UTILS ===== */
+const TODAY = new Date();
+const YEAR = TODAY.getFullYear(), MONTH = TODAY.getMonth(), DAY = TODAY.getDate();
+
+function fmtDate(iso) {
+  const d = new Date(iso);
+  return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate();
+}
+function fmtTime(iso) {
+  const d = new Date(iso);
+  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+function fmtDateTime(iso) { return fmtDate(iso) + ' ' + fmtTime(iso); }
+function isoDate(y, m, d) {
+  const dt = new Date(y, m, d);
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+}
+function dateKey(d) { return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate(); }
+function statusLabel(s) {
+  return s === 'confirmed' ? '確定' : s === 'cancelled' ? 'キャンセル済' : s === 'completed' ? '完了' : s;
+}
+const DAY_MAP = { MONDAY:'月', TUESDAY:'火', WEDNESDAY:'水', THURSDAY:'木', FRIDAY:'金', SATURDAY:'土', SUNDAY:'日' };
+const DAY_KEYS = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
+
+function switchView(v) {
+  document.querySelectorAll('.top-tab button').forEach(b => b.classList.remove('active'));
+  event.target.closest('button').classList.add('active');
+  document.getElementById('customerView').classList.toggle('hidden', v !== 'customer');
+  document.getElementById('ownerView').classList.toggle('hidden', v !== 'owner');
+}
+
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+let _loadingEl = null;
+function showLoading() {
+  if (_loadingEl) return;
+  _loadingEl = document.createElement('div');
+  _loadingEl.className = 'loading-overlay';
+  _loadingEl.innerHTML = '<div class="spinner"></div>';
+  document.body.appendChild(_loadingEl);
+}
+function hideLoading() {
+  if (_loadingEl) { _loadingEl.remove(); _loadingEl = null; }
+}
+
+function showModal(html) {
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalBg').style.display = 'flex';
+}
+function closeModal() { document.getElementById('modalBg').style.display = 'none'; }
+document.getElementById('modalBg').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+/* ========================================= */
+/* ===== OWNER SIDE — LIVE API          ===== */
+/* ========================================= */
+
+/* --- Login --- */
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+  errEl.style.display = 'none';
+  btn.textContent = 'ログイン中...';
+  btn.disabled = true;
+
+  try {
+    const res = await api('POST', '/api/auth/login', { email, password });
+    authToken = res.token;
+    // Decode user info via verify
+    const user = await api('POST', '/api/auth/verify');
+    currentUser = { ownerId: user.ownerId, email: user.email || email };
+  } catch (e) {
+    // If verify fails, still proceed with login token
+    if (!authToken) {
+      errEl.textContent = e.message;
+      errEl.style.display = 'block';
+      btn.textContent = 'ログイン';
+      btn.disabled = false;
+      return;
+    }
+    currentUser = { ownerId: '', email };
+  }
+
+  localStorage.setItem('covalt_token', authToken);
+  localStorage.setItem('covalt_user', JSON.stringify(currentUser));
+  document.getElementById('tabletLogin').style.display = 'none';
+  document.getElementById('tabletApp').style.display = 'flex';
+  document.getElementById('userEmail').textContent = currentUser.email;
+  btn.textContent = 'ログイン';
+  btn.disabled = false;
+  showPage('dashboard');
+}
+
+async function doLogout() {
+  try { await api('POST', '/api/auth/logout'); } catch(e) {}
+  authToken = null;
+  currentUser = null;
+  localStorage.removeItem('covalt_token');
+  localStorage.removeItem('covalt_user');
+  document.getElementById('tabletApp').style.display = 'none';
+  document.getElementById('tabletLogin').style.display = 'flex';
+  showToast('ログアウトしました');
+}
+
+/* --- Navigation --- */
+function showPage(page) {
+  document.querySelectorAll('#tabNav button').forEach(b => b.classList.toggle('active', b.dataset.page === page));
+  document.getElementById('tabBody').scrollTop = 0;
+  const mc = document.getElementById('mainContent');
+  if (page === 'dashboard') renderDashboard(mc);
+  else if (page === 'schedule') renderSchedule(mc);
+  else if (page === 'customers') renderCustomers(mc);
+  else if (page === 'settings') renderSettings(mc);
+}
+
+/* --- Dashboard --- */
+let viewMode = 'month';
+let ocMonth = MONTH, ocYear = YEAR;
+
+async function renderDashboard(mc) {
+  mc.innerHTML = '<div class="loading">読み込み中...</div>';
+
+  // Determine date range based on view
+  let startDate, endDate;
+  if (viewMode === 'day') {
+    startDate = isoDate(YEAR, MONTH, DAY);
+    endDate = isoDate(YEAR, MONTH, DAY + 1);
+  } else if (viewMode === 'week') {
+    const dow = TODAY.getDay();
+    const ws = new Date(YEAR, MONTH, DAY - dow);
+    const we = new Date(YEAR, MONTH, DAY + (6 - dow));
+    startDate = isoDate(ws.getFullYear(), ws.getMonth(), ws.getDate());
+    endDate = isoDate(we.getFullYear(), we.getMonth(), we.getDate() + 1);
+  } else {
+    startDate = isoDate(ocYear, ocMonth, 1);
+    const lastDay = new Date(ocYear, ocMonth + 1, 0).getDate();
+    endDate = isoDate(ocYear, ocMonth, lastDay + 1);
+  }
+
+  try {
+    const data = await api('GET', '/api/owner/reservations?startDate=' + startDate + '&endDate=' + endDate);
+    cachedReservations = data.reservations || [];
+  } catch (e) {
+    cachedReservations = [];
+    showToast('予約取得エラー: ' + e.message, true);
+  }
+
+  let h = '<h1 class="page-title">予約一覧 <span style="font-size:12px;color:#999;">(' + cachedReservations.length + '件)</span></h1>';
+  h += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">';
+  h += '<div class="view-toggle">';
+  ['day','week','month','calendar'].forEach(v => {
+    const label = {day:'日', week:'週', month:'月', calendar:'カレンダー'}[v];
+    h += '<button class="' + (viewMode === v ? 'active' : '') + '" onclick="viewMode=\'' + v + '\';renderDashboard(document.getElementById(\'mainContent\'))">' + label + '</button>';
+  });
+  h += '</div></div>';
+
+  if (viewMode === 'calendar') {
+    h += renderOwnerCalendar();
+  } else {
+    const sorted = [...cachedReservations].sort((a,b) => new Date(a.dateTime) - new Date(b.dateTime));
+    h += '<div class="o-card"><table class="o-table"><thead><tr><th>予約ID</th><th>日時</th><th>顧客名</th><th>ステータス</th></tr></thead><tbody>';
+    if (!sorted.length) {
+      h += '<tr><td colspan="4" style="text-align:center;color:#999;padding:20px;">予約はありません</td></tr>';
+    } else {
+      sorted.forEach(r => {
+        const shortId = r.reservationId.substring(0, 8);
+        h += '<tr onclick="showReservationDetail(\'' + r.reservationId + '\')">';
+        h += '<td>' + shortId + '...</td>';
+        h += '<td>' + fmtDateTime(r.dateTime) + '</td>';
+        h += '<td>' + (r.customerName || '-') + '</td>';
+        h += '<td><span class="status-badge s-' + r.status + '">' + statusLabel(r.status) + '</span></td>';
+        h += '</tr>';
+      });
+    }
+    h += '</tbody></table></div>';
+  }
+  mc.innerHTML = h;
+}
+
+function renderOwnerCalendar() {
+  const first = new Date(ocYear, ocMonth, 1);
+  const lastDay = new Date(ocYear, ocMonth + 1, 0).getDate();
+  const startDow = first.getDay();
+  const prevLast = new Date(ocYear, ocMonth, 0).getDate();
+  const dows = ['日','月','火','水','木','金','土'];
+
+  let h = '<div class="o-card" style="padding:12px;">';
+  h += '<div class="oc-month"><button onclick="ocMonth--;if(ocMonth<0){ocMonth=11;ocYear--;}renderDashboard(document.getElementById(\'mainContent\'))">&#10094;</button><span>' + ocYear + '年' + (ocMonth+1) + '月</span><button onclick="ocMonth++;if(ocMonth>11){ocMonth=0;ocYear++;}renderDashboard(document.getElementById(\'mainContent\'))">&#10095;</button></div>';
+  h += '<div class="oc-grid">';
+  dows.forEach(d => h += '<div class="oc-dow">' + d + '</div>');
+
+  for (let i = 0; i < startDow; i++) {
+    h += '<div class="oc-cell oc-other"><div class="oc-num">' + (prevLast - startDow + 1 + i) + '</div></div>';
+  }
+
+  for (let d = 1; d <= lastDay; d++) {
+    const dt = new Date(ocYear, ocMonth, d);
+    const isToday = d === DAY && ocMonth === MONTH && ocYear === YEAR;
+    let cls = 'oc-cell';
+    if (isToday) cls += ' oc-today';
+    h += '<div class="' + cls + '"><div class="oc-num">' + d + '</div>';
+
+    // Find reservations for this day
+    const dayRsvs = cachedReservations.filter(r => {
+      const rd = new Date(r.dateTime);
+      return rd.getFullYear() === ocYear && rd.getMonth() === ocMonth && rd.getDate() === d;
+    }).sort((a,b) => new Date(a.dateTime) - new Date(b.dateTime));
+
+    dayRsvs.forEach(r => {
+      h += '<div class="oc-evt oc-' + r.status + '" onclick="event.stopPropagation();showReservationDetail(\'' + r.reservationId + '\')" title="' + fmtTime(r.dateTime) + ' ' + (r.customerName || '') + '">';
+      h += fmtTime(r.dateTime) + ' ' + (r.customerName || '').substring(0, 4);
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+
+  const totalCells = startDow + lastDay;
+  const remaining = (7 - totalCells % 7) % 7;
+  for (let i = 1; i <= remaining; i++) {
+    h += '<div class="oc-cell oc-other"><div class="oc-num">' + i + '</div></div>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+/* --- Reservation Detail --- */
+async function showReservationDetail(id) {
+  const mc = document.getElementById('mainContent');
+  mc.innerHTML = '<div class="loading">読み込み中...</div>';
+
+  let r;
+  try {
+    r = await api('GET', '/api/owner/reservations/' + id);
+  } catch (e) {
+    showToast('予約取得エラー: ' + e.message, true);
+    showPage('dashboard');
+    return;
+  }
+
+  const canCancel = r.status === 'confirmed';
+  const canComplete = r.status === 'confirmed';
+
+  let h = '<h1 class="page-title">予約詳細</h1><div class="detail-panel">';
+  h += '<div class="detail-row"><dt>予約ID</dt><dd style="font-size:11px;word-break:break-all;">' + r.reservationId + '</dd></div>';
+  h += '<div class="detail-row"><dt>日時</dt><dd>' + fmtDateTime(r.dateTime) + '</dd></div>';
+  h += '<div class="detail-row"><dt>所要時間</dt><dd>' + r.durationMinutes + '分</dd></div>';
+  h += '<div class="detail-row"><dt>顧客名</dt><dd>' + (r.customerName || '-') + '</dd></div>';
+  h += '<div class="detail-row"><dt>ステータス</dt><dd><span class="status-badge s-' + r.status + '">' + statusLabel(r.status) + '</span></dd></div>';
+  h += '<div class="detail-row"><dt>作成者</dt><dd>' + r.createdBy + '</dd></div>';
+  h += '<div class="detail-row"><dt>作成日時</dt><dd>' + fmtDateTime(r.createdAt) + '</dd></div>';
+
+  if (r.histories && r.histories.length) {
+    h += '<h3 style="font-size:13px;margin-top:16px;margin-bottom:8px;">変更履歴</h3>';
+    h += '<table class="o-table"><thead><tr><th>種別</th><th>日時</th><th>操作者</th></tr></thead><tbody>';
+    r.histories.forEach(hi => {
+      h += '<tr><td>' + hi.changeType + '</td><td>' + fmtDateTime(hi.changedAt) + '</td><td>' + hi.changedBy + '</td></tr>';
+    });
+    h += '</tbody></table>';
+  }
+
+  if (canCancel || canComplete) {
+    h += '<div class="detail-actions">';
+    if (canComplete) h += '<button class="btn btn-primary" style="background:#0984e3;" onclick="completeReservation(\'' + r.reservationId + '\')">完了にする</button>';
+    if (canCancel) h += '<button class="btn btn-danger" onclick="confirmCancelReservation(\'' + r.reservationId + '\')">キャンセル</button>';
+    h += '</div>';
+  }
+  h += '<button class="btn btn-outline" style="margin-top:12px;" onclick="showPage(\'dashboard\')">一覧に戻る</button></div>';
+  mc.innerHTML = h;
+}
+
+function confirmCancelReservation(id) {
+  showModal('<h3>予約をキャンセルしますか？</h3><p style="font-size:13px;color:#666;margin-bottom:16px;">この操作は元に戻せません。</p><div style="display:flex;gap:8px;"><button class="btn btn-danger" style="flex:1;" onclick="cancelReservation(\'' + id + '\')">キャンセル実行</button><button class="btn btn-outline" style="flex:1;" onclick="closeModal()">戻る</button></div>');
+}
+
+async function cancelReservation(id) {
+  closeModal();
+  showLoading();
+  try {
+    await api('PUT', '/api/owner/reservations/' + id + '/cancel');
+    hideLoading();
+    showToast('予約をキャンセルしました');
+    showPage('dashboard');
+  } catch (e) {
+    hideLoading();
+    showToast('キャンセルエラー: ' + e.message, true);
+  }
+}
+
+async function completeReservation(id) {
+  showLoading();
+  try {
+    await api('PUT', '/api/owner/reservations/' + id + '/complete');
+    hideLoading();
+    showToast('予約を完了にしました');
+    showReservationDetail(id);
+  } catch (e) {
+    hideLoading();
+    showToast('完了エラー: ' + e.message, true);
+  }
+}
+
+/* --- Schedule --- */
+let schMonth = MONTH, schYear = YEAR;
+let schSelectedDate = null;
+let schReservations = [];
+let schSlotSummary = {};
+let cachedTemplates = [];
+
+async function renderSchedule(mc) {
+  mc.innerHTML = '<div class="loading">読み込み中...</div>';
+
+  try {
+    const startD = isoDate(schYear, schMonth, 1);
+    const endD = isoDate(schYear, schMonth + 1, 0);
+    const [bhRes, cdRes, rsvRes, slotRes, tplRes] = await Promise.all([
+      api('GET', '/api/schedule/business-hours'),
+      api('GET', '/api/schedule/closed-days'),
+      api('GET', '/api/owner/reservations?startDate=' + startD + '&endDate=' + isoDate(schYear, schMonth + 1, 1)),
+      api('GET', '/api/schedule/slots/summary?startDate=' + startD + '&endDate=' + endD),
+      api('GET', '/api/schedule/templates'),
+    ]);
+    cachedBusinessHours = bhRes.businessHours || [];
+    cachedClosedDays = cdRes.closedDays || [];
+    schReservations = rsvRes.reservations || [];
+    schSlotSummary = slotRes.days || {};
+    cachedTemplates = tplRes.templates || [];
+  } catch (e) {
+    showToast('スケジュール取得エラー: ' + e.message, true);
+  }
+
+  let h = '<h1 class="page-title">スケジュール設定</h1>';
+
+  // --- Calendar ---
+  h += renderScheduleCalendar();
+
+  // --- Day detail (slots + reservations) ---
+  h += '<div id="schDayDetail"></div>';
+
+  // --- Business hours ---
+  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:10px;">営業時間</h3>';
+  DAY_KEYS.forEach(dk => {
+    const bh = cachedBusinessHours.find(b => b.dayOfWeek === dk);
+    const isOpen = bh ? bh.isBusinessDay : true;
+    const start = bh?.startTime || '10:00';
+    const end = bh?.endTime || '18:00';
+    h += '<div class="hours-row" id="bh-' + dk + '">';
+    h += '<label>' + DAY_MAP[dk] + '曜</label>';
+    h += '<select data-day="' + dk + '" data-field="open"><option value="1"' + (isOpen ? ' selected' : '') + '>営業</option><option value="0"' + (!isOpen ? ' selected' : '') + '>定休</option></select>';
+    h += '<input type="time" value="' + start + '" data-day="' + dk + '" data-field="start">';
+    h += '<span>〜</span>';
+    h += '<input type="time" value="' + end + '" data-day="' + dk + '" data-field="end">';
+    h += '</div>';
+  });
+  h += '<button class="btn btn-primary" style="background:#0984e3;width:auto;padding:6px 20px;margin-top:10px;font-size:12px;" onclick="saveBusinessHours()">保存</button></div>';
+
+  // --- Closed days ---
+  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">休業日</h3>';
+  h += '<div style="display:flex;gap:6px;align-items:center;"><input class="form-input" type="date" id="holidayInput" style="width:180px;font-size:12px;"><input class="form-input" id="holidayReason" placeholder="理由（任意）" style="width:140px;font-size:12px;"><button class="btn btn-outline" style="width:auto;padding:6px 14px;font-size:12px;margin:0;" onclick="addClosedDay()">追加</button></div>';
+  h += '<div style="margin-top:8px;">';
+  cachedClosedDays.forEach(cd => {
+    h += '<span style="display:inline-block;background:#fce4ec;padding:3px 10px;border-radius:12px;font-size:11px;margin:3px;">' + cd.date + (cd.reason ? ' (' + cd.reason + ')' : '') + ' <span style="cursor:pointer;margin-left:4px;" onclick="removeClosedDay(\'' + cd.closedDayId + '\')">&times;</span></span>';
+  });
+  h += '</div></div>';
+
+  // --- Slot generation (bulk + single in one card) ---
+  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">スロット生成</h3>';
+  h += '<p style="font-size:12px;color:#666;margin-bottom:6px;">一括生成</p>';
+  h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">';
+  h += '<input class="form-input" type="date" id="slotGenDate" style="width:160px;font-size:12px;">';
+  h += '<select class="form-input" id="slotGenDuration" style="width:90px;font-size:12px;"><option value="30">30分</option><option value="60" selected>60分</option><option value="90">90分</option><option value="120">120分</option></select>';
+  h += '<select class="form-input" id="slotGenBuffer" style="width:120px;font-size:12px;"><option value="0">バッファなし</option><option value="5">5分</option><option value="10">10分</option><option value="15">15分</option><option value="30">30分</option><option value="60">60分</option></select>';
+  h += '<button class="btn btn-primary" style="background:#0984e3;width:auto;padding:6px 14px;font-size:12px;margin:0;" onclick="generateSlots()">一括生成</button>';
+  h += '</div><div id="slotGenResult" style="margin-top:4px;"></div>';
+  h += '<hr style="border:none;border-top:1px solid #eee;margin:10px 0;">';
+  h += '<p style="font-size:12px;color:#666;margin-bottom:6px;">個別追加</p>';
+  h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">';
+  h += '<input class="form-input" type="date" id="singleSlotDate" style="width:160px;font-size:12px;">';
+  h += '<input class="form-input" type="time" id="singleSlotStart" value="09:00" style="width:100px;font-size:12px;">';
+  h += '<span style="font-size:12px;">〜</span>';
+  h += '<input class="form-input" type="time" id="singleSlotEnd" value="10:00" style="width:100px;font-size:12px;">';
+  h += '<button class="btn btn-primary" style="background:#00b894;width:auto;padding:6px 14px;font-size:12px;margin:0;" onclick="createSingleSlot()">追加</button>';
+  h += '</div><div id="singleSlotResult" style="margin-top:4px;"></div></div>';
+
+  // --- Templates ---
+  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">テンプレート</h3>';
+  h += '<p style="font-size:12px;color:#666;margin-bottom:6px;">1日の空き枠構成を保存し、日付や営業日に一括適用できます。</p>';
+
+  // Save template from a date
+  h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">';
+  h += '<input class="form-input" type="date" id="tplFromDate" style="width:160px;font-size:12px;">';
+  h += '<input class="form-input" id="tplName" placeholder="テンプレート名" style="width:160px;font-size:12px;">';
+  h += '<button class="btn btn-outline" style="width:auto;padding:6px 14px;font-size:12px;margin:0;" onclick="saveTemplate()">保存</button>';
+  h += '</div>';
+
+  // Template list
+  if (cachedTemplates.length === 0) {
+    h += '<p style="font-size:11px;color:#999;">テンプレートがありません。日付を選択してスロット構成を保存してください。</p>';
+  } else {
+    h += '<div style="display:flex;flex-direction:column;gap:6px;">';
+    cachedTemplates.forEach(tpl => {
+      h += '<div style="border:1px solid #e0e0e0;border-radius:6px;padding:8px 10px;font-size:12px;">';
+      h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">';
+      h += '<strong style="flex:1;">' + tpl.name + '</strong>';
+      h += '<span style="font-size:10px;color:#999;">' + tpl.entries.length + '枠</span>';
+      h += '<button style="background:none;border:1px solid #e57373;color:#e57373;border-radius:4px;padding:1px 6px;font-size:10px;cursor:pointer;" onclick="deleteTemplate(\'' + tpl.templateId + '\')">&times;</button>';
+      h += '</div>';
+      h += '<div style="font-size:10px;color:#666;margin-bottom:6px;">' + tpl.entries.map(e => e.startTime + '-' + e.endTime).join(', ') + '</div>';
+
+      // Apply controls
+      h += '<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">';
+      h += '<input type="date" id="tplApplyDate-' + tpl.templateId + '" style="padding:3px;border:1px solid #ddd;border-radius:4px;font-size:11px;width:140px;">';
+      h += '<button class="btn btn-primary" style="background:#0984e3;width:auto;padding:4px 10px;font-size:11px;margin:0;" onclick="applyTemplateToDate(\'' + tpl.templateId + '\')">この日に適用</button>';
+      h += '</div>';
+      h += '<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-top:4px;">';
+      h += '<input type="date" id="tplRangeStart-' + tpl.templateId + '" style="padding:3px;border:1px solid #ddd;border-radius:4px;font-size:11px;width:130px;">';
+      h += '<span style="font-size:11px;">〜</span>';
+      h += '<input type="date" id="tplRangeEnd-' + tpl.templateId + '" style="padding:3px;border:1px solid #ddd;border-radius:4px;font-size:11px;width:130px;">';
+      h += '<button class="btn btn-primary" style="background:#00b894;width:auto;padding:4px 10px;font-size:11px;margin:0;" onclick="applyTemplateToRange(\'' + tpl.templateId + '\')">営業日に適用</button>';
+      h += '</div>';
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+
+  mc.innerHTML = h;
+
+  // Auto-select today if in current month
+  if (schYear === YEAR && schMonth === MONTH) {
+    schSelectedDate = isoDate(YEAR, MONTH, DAY);
+    loadDaySlots(schSelectedDate);
+  }
+}
+
+function renderScheduleCalendar() {
+  const first = new Date(schYear, schMonth, 1);
+  const lastDay = new Date(schYear, schMonth + 1, 0).getDate();
+  const startDow = first.getDay();
+  const prevLast = new Date(schYear, schMonth, 0).getDate();
+  const dows = ['日','月','火','水','木','金','土'];
+  const closedSet = new Set(cachedClosedDays.map(cd => cd.date));
+
+  let h = '<div class="o-card" style="padding:12px;">';
+  h += '<div class="oc-month"><button onclick="schMonth--;if(schMonth<0){schMonth=11;schYear--;}renderSchedule(document.getElementById(\'mainContent\'))">&#10094;</button><span>' + schYear + '年' + (schMonth+1) + '月</span><button onclick="schMonth++;if(schMonth>11){schMonth=0;schYear++;}renderSchedule(document.getElementById(\'mainContent\'))">&#10095;</button></div>';
+  h += '<div class="oc-grid">';
+  dows.forEach(d => h += '<div class="oc-dow">' + d + '</div>');
+
+  for (let i = 0; i < startDow; i++) {
+    h += '<div class="oc-cell oc-other"><div class="oc-num">' + (prevLast - startDow + 1 + i) + '</div></div>';
+  }
+
+  for (let d = 1; d <= lastDay; d++) {
+    const dt = new Date(schYear, schMonth, d);
+    const iso = isoDate(schYear, schMonth, d);
+    const isToday = d === DAY && schMonth === MONTH && schYear === YEAR;
+    const isClosed = closedSet.has(iso);
+    const isSel = schSelectedDate === iso;
+    // Check day-of-week closed
+    const jsDay = dt.getDay(); // 0=Sun
+    const dayKeyMap = [null,'MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
+    const dayEnum = dayKeyMap[jsDay === 0 ? 7 : jsDay];
+    const bh = cachedBusinessHours.find(b => b.dayOfWeek === dayEnum);
+    const isRegularClosed = bh && !bh.isBusinessDay;
+
+    let cls = 'oc-cell';
+    if (isToday) cls += ' oc-today';
+    if (isClosed || isRegularClosed) cls += ' oc-holiday';
+    const selStyle = isSel ? ' style="outline:2px solid #0984e3;outline-offset:-2px;"' : '';
+
+    h += '<div class="' + cls + '"' + selStyle + ' onclick="selectSchDay(\'' + iso + '\')">';
+    h += '<div class="oc-num">' + d + '</div>';
+
+    // Show individual slots (available + booked) on calendar, same style as dashboard
+    const slotInfo = schSlotSummary[iso];
+    const availSlots = slotInfo ? (slotInfo.availableSlots || []) : [];
+
+    // Build reservation lookup for this day (exclude cancelled)
+    const dayRsvs = schReservations.filter(r => {
+      if (r.status === 'cancelled') return false;
+      const rd = new Date(r.dateTime);
+      return rd.getFullYear() === schYear && rd.getMonth() === schMonth && rd.getDate() === d;
+    }).sort((a,b) => new Date(a.dateTime) - new Date(b.dateTime));
+
+    // Merge available slots and reservations into a single timeline sorted by time
+    const events = [];
+    availSlots.forEach(s => {
+      events.push({ time: s.startTime, type: 'available', label: s.startTime + ' 空き' });
+    });
+    dayRsvs.forEach(r => {
+      events.push({ time: fmtTime(r.dateTime), type: r.status, label: fmtTime(r.dateTime) + ' ' + (r.customerName || '').substring(0, 4), rsvId: r.reservationId });
+    });
+    events.sort((a, b) => a.time.localeCompare(b.time));
+
+    events.forEach(ev => {
+      if (ev.type === 'available') {
+        h += '<div class="oc-evt oc-available" title="' + ev.label + '">' + ev.label + '</div>';
+      } else {
+        h += '<div class="oc-evt oc-' + ev.type + '" onclick="event.stopPropagation();showReservationDetail(\'' + ev.rsvId + '\')" title="' + ev.label + '">' + ev.label + '</div>';
+      }
+    });
+    h += '</div>';
+  }
+
+  const totalCells = startDow + lastDay;
+  const remaining = (7 - totalCells % 7) % 7;
+  for (let i = 1; i <= remaining; i++) {
+    h += '<div class="oc-cell oc-other"><div class="oc-num">' + i + '</div></div>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+function selectSchDay(iso) {
+  schSelectedDate = iso;
+  // Re-highlight selected day (update outline via re-render would be heavy, just load slots)
+  loadDaySlots(iso);
+}
+
+async function loadDaySlots(dateStr) {
+  const el = document.getElementById('schDayDetail');
+  if (!el) return;
+  el.innerHTML = '<div class="o-card"><div class="loading">スロット読み込み中...</div></div>';
+
+  let slots = [];
+  let dayRsvs = [];
+  let isHoliday = false;
+  try {
+    // Fetch slots and reservations for this day in parallel
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const nextDateStr = isoDate(y, m - 1, d + 1);
+    const [slotRes, rsvRes] = await Promise.all([
+      api('GET', '/api/schedule/slots/date/' + dateStr),
+      api('GET', '/api/owner/reservations?startDate=' + dateStr + '&endDate=' + nextDateStr),
+    ]);
+    slots = slotRes.slots || [];
+    dayRsvs = (rsvRes.reservations || []).sort((a,b) => new Date(a.dateTime) - new Date(b.dateTime));
+  } catch (e) {
+    // fallback
+  }
+  // Check holiday via closed days cache
+  const closedSet = new Set(cachedClosedDays.map(cd => cd.date));
+  isHoliday = closedSet.has(dateStr);
+
+  const d = new Date(dateStr + 'T00:00:00');
+  const dayLabel = d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate();
+  const dowNames = ['日','月','火','水','木','金','土'];
+
+  let h = '<div class="o-card">';
+  h += '<h3 style="font-size:14px;margin-bottom:8px;">' + dayLabel + '（' + dowNames[d.getDay()] + '）のスロット・予約</h3>';
+
+  if (isHoliday) {
+    h += '<p style="color:#d32f2f;font-size:12px;">休業日</p>';
+  } else if (slots.length === 0) {
+    h += '<p style="color:#999;font-size:12px;">スロットがありません。「スロット生成」で作成してください。</p>';
+  } else {
+    // Build reservation lookup by reservationId
+    const rsvByRsvId = {};
+    dayRsvs.forEach(r => { rsvByRsvId[r.reservationId] = r; });
+
+    h += '<div style="display:flex;flex-direction:column;gap:4px;">';
+    slots.sort((a, b) => a.startTime.localeCompare(b.startTime)).forEach(s => {
+      // Primary: slot status determines display
+      const isBooked = s.status === 'booked';
+      // Secondary: find linked reservation for customer info
+      const r = s.reservationId ? rsvByRsvId[s.reservationId] : null;
+
+      h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e0e0e0;border-radius:6px;font-size:12px;';
+      if (isBooked && r && r.status === 'confirmed') h += 'background:#f0f7ff;border-color:#90caf9;';
+      else if (isBooked && r && r.status === 'completed') h += 'background:#f5f5f5;border-color:#ccc;';
+      else if (isBooked) h += 'background:#fff8e1;border-color:#ffe082;';
+      else h += 'background:#f9fff9;';
+      h += '">';
+
+      // Time
+      h += '<span style="font-weight:700;width:90px;">' + s.startTime + ' - ' + s.endTime + '</span>';
+
+      // Status: slot.status is the source of truth
+      if (isBooked) {
+        var label = '予約済';
+        var badgeCls = 'background:#e3f2fd;color:#1565c0;';
+        if (r && r.status === 'completed') { label = '完了'; badgeCls = 'background:#f5f5f5;color:#888;'; }
+        h += '<span style="font-size:11px;padding:2px 8px;border-radius:10px;' + badgeCls + '">' + label + '</span>';
+        h += '<span style="flex:1;">' + (r ? r.customerName || '' : '') + '</span>';
+        if (r) h += '<span style="font-size:10px;color:#999;cursor:pointer;" onclick="showReservationDetail(\'' + r.reservationId + '\')">' + r.reservationId.substring(0,8) + '...</span>';
+      } else {
+        h += '<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#e8f5e9;color:#2e7d32;">空き</span>';
+        h += '<span style="flex:1;"></span>';
+        h += '<button style="background:none;border:1px solid #e57373;color:#e57373;border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;" onclick="event.stopPropagation();deleteSlot(\'' + s.slotId + '\',\'' + dateStr + '\')">&times; 削除</button>';
+      }
+
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+
+  // Quick generate button for this date
+  h += '<div style="margin-top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">';
+  h += '<button class="btn btn-outline" style="width:auto;padding:5px 12px;font-size:11px;margin:0;" onclick="quickGenSlots(\'' + dateStr + '\')">一括生成</button>';
+  h += '<select id="quickGenDur" style="padding:4px;border:1px solid #ddd;border-radius:4px;font-size:11px;"><option value="30">30分</option><option value="60" selected>60分</option><option value="90">90分</option></select>';
+  h += '<select id="quickGenBuf" style="padding:4px;border:1px solid #ddd;border-radius:4px;font-size:11px;"><option value="0">バッファなし</option><option value="5">5分</option><option value="10">10分</option><option value="15">15分</option><option value="30">30分</option></select>';
+  h += '</div>';
+  h += '<div style="margin-top:6px;display:flex;gap:6px;align-items:center;">';
+  h += '<input type="time" id="quickSingleStart" value="09:00" style="padding:4px;border:1px solid #ddd;border-radius:4px;font-size:11px;width:90px;">';
+  h += '<span style="font-size:11px;">〜</span>';
+  h += '<input type="time" id="quickSingleEnd" value="10:00" style="padding:4px;border:1px solid #ddd;border-radius:4px;font-size:11px;width:90px;">';
+  h += '<button class="btn btn-outline" style="width:auto;padding:5px 12px;font-size:11px;margin:0;border-color:#00b894;color:#00b894;" onclick="quickAddSlot(\'' + dateStr + '\')">1枠追加</button>';
+  h += '</div>';
+
+  // Template apply for this date
+  if (cachedTemplates.length > 0) {
+    h += '<div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">';
+    h += '<select id="quickTpl" style="padding:4px;border:1px solid #ddd;border-radius:4px;font-size:11px;">';
+    cachedTemplates.forEach(tpl => {
+      h += '<option value="' + tpl.templateId + '">' + tpl.name + ' (' + tpl.entries.length + '枠)</option>';
+    });
+    h += '</select>';
+    h += '<button class="btn btn-outline" style="width:auto;padding:5px 12px;font-size:11px;margin:0;border-color:#6c5ce7;color:#6c5ce7;" onclick="quickApplyTemplate(\'' + dateStr + '\')">テンプレ適用</button>';
+    h += '</div>';
+  }
+
+  h += '</div>';
+  el.innerHTML = h;
+}
+
+async function quickGenSlots(dateStr) {
+  const dur = +document.getElementById('quickGenDur').value;
+  const buf = +document.getElementById('quickGenBuf').value;
+  showLoading();
+  try {
+    const res = await api('POST', '/api/schedule/slots/generate', { date: dateStr, durationMinutes: dur, bufferMinutes: buf });
+    showToast(res.generatedCount + '件のスロットを生成しました');
+    loadDaySlots(dateStr);
+  } catch (e) {
+    showToast('生成エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+async function quickApplyTemplate(dateStr) {
+  const templateId = document.getElementById('quickTpl').value;
+  if (!templateId) { showToast('テンプレートを選択してください', true); return; }
+  showLoading();
+  try {
+    const res = await api('POST', '/api/schedule/templates/' + templateId + '/apply', { date: dateStr });
+    hideLoading();
+    showToast(res.totalSlotsAdded + '枠を追加しました');
+    renderSchedule(document.getElementById('mainContent'));
+    setTimeout(() => { schSelectedDate = dateStr; loadDaySlots(dateStr); }, 100);
+  } catch (e) {
+    hideLoading();
+    showToast('適用エラー: ' + e.message, true);
+  }
+}
+
+async function quickAddSlot(dateStr) {
+  const startTime = document.getElementById('quickSingleStart').value;
+  const endTime = document.getElementById('quickSingleEnd').value;
+  if (!startTime || !endTime) { showToast('時間を指定してください', true); return; }
+  showLoading();
+  try {
+    await api('POST', '/api/schedule/slots', { date: dateStr, startTime, endTime });
+    showToast('スロットを追加しました');
+    loadDaySlots(dateStr);
+  } catch (e) {
+    showToast('追加エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+async function saveTemplate() {
+  const fromDate = document.getElementById('tplFromDate').value;
+  const name = document.getElementById('tplName').value.trim();
+  if (!name) { showToast('テンプレート名を入力してください', true); return; }
+  if (!fromDate) { showToast('日付を選択してください', true); return; }
+  showLoading();
+  try {
+    await api('POST', '/api/schedule/templates', { name, fromDate });
+    hideLoading();
+    showToast('テンプレートを保存しました');
+    renderSchedule(document.getElementById('mainContent'));
+  } catch (e) {
+    hideLoading();
+    showToast('保存エラー: ' + e.message, true);
+  }
+}
+
+async function deleteTemplate(templateId) {
+  showLoading();
+  try {
+    await api('DELETE', '/api/schedule/templates/' + templateId);
+    hideLoading();
+    showToast('テンプレートを削除しました');
+    renderSchedule(document.getElementById('mainContent'));
+  } catch (e) {
+    hideLoading();
+    showToast('削除エラー: ' + e.message, true);
+  }
+}
+
+async function applyTemplateToDate(templateId) {
+  const date = document.getElementById('tplApplyDate-' + templateId).value;
+  if (!date) { showToast('日付を選択してください', true); return; }
+  showLoading();
+  try {
+    const res = await api('POST', '/api/schedule/templates/' + templateId + '/apply', { date });
+    hideLoading();
+    showToast(res.totalSlotsAdded + '枠を追加しました');
+    renderSchedule(document.getElementById('mainContent'));
+  } catch (e) {
+    hideLoading();
+    showToast('適用エラー: ' + e.message, true);
+  }
+}
+
+async function applyTemplateToRange(templateId) {
+  const startDate = document.getElementById('tplRangeStart-' + templateId).value;
+  const endDate = document.getElementById('tplRangeEnd-' + templateId).value;
+  if (!startDate || !endDate) { showToast('期間を選択してください', true); return; }
+  showLoading();
+  try {
+    const res = await api('POST', '/api/schedule/templates/' + templateId + '/apply', { startDate, endDate });
+    hideLoading();
+    showToast(res.totalDates + '日に' + res.totalSlotsAdded + '枠を追加しました');
+    renderSchedule(document.getElementById('mainContent'));
+  } catch (e) {
+    hideLoading();
+    showToast('適用エラー: ' + e.message, true);
+  }
+}
+
+async function saveBusinessHours() {
+  showLoading();
+  try {
+    for (const dk of DAY_KEYS) {
+      const row = document.getElementById('bh-' + dk);
+      const isOpen = row.querySelector('[data-field="open"]').value === '1';
+      const start = row.querySelector('[data-field="start"]').value;
+      const end = row.querySelector('[data-field="end"]').value;
+      await api('PUT', '/api/schedule/business-hours/' + dk, {
+        isBusinessDay: isOpen,
+        startTime: start,
+        endTime: end,
+      });
+    }
+    showToast('営業時間を保存しました');
+  } catch (e) {
+    showToast('保存エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+async function addClosedDay() {
+  const date = document.getElementById('holidayInput').value;
+  const reason = document.getElementById('holidayReason').value;
+  if (!date) return;
+  showLoading();
+  try {
+    await api('POST', '/api/schedule/closed-days', { date, reason: reason || undefined });
+    hideLoading();
+    showToast(date + ' を休業日に設定しました');
+    renderSchedule(document.getElementById('mainContent'));
+  } catch (e) {
+    hideLoading();
+    showToast('エラー: ' + e.message, true);
+  }
+}
+
+async function removeClosedDay(id) {
+  showLoading();
+  try {
+    await api('DELETE', '/api/schedule/closed-days/' + id);
+    hideLoading();
+    showToast('休業日を解除しました');
+    renderSchedule(document.getElementById('mainContent'));
+  } catch (e) {
+    hideLoading();
+    showToast('エラー: ' + e.message, true);
+  }
+}
+
+async function generateSlots() {
+  const date = document.getElementById('slotGenDate').value;
+  const dur = +document.getElementById('slotGenDuration').value;
+  const buf = +document.getElementById('slotGenBuffer').value;
+  if (!date) { showToast('日付を選択してください', true); return; }
+  const el = document.getElementById('slotGenResult');
+  el.innerHTML = '<span style="color:#999;font-size:12px;">生成中...</span>';
+  showLoading();
+  try {
+    const res = await api('POST', '/api/schedule/slots/generate', { date, durationMinutes: dur, bufferMinutes: buf });
+    let h = '<p style="font-size:12px;color:#2e7d32;margin-bottom:6px;">' + res.generatedCount + '件のスロットを生成しました</p>';
+    if (res.slots && res.slots.length) {
+      h += '<div class="slot-grid">';
+      res.slots.forEach(s => {
+        h += '<div class="slot-chip">' + s.startTime + ' - ' + s.endTime + '</div>';
+      });
+      h += '</div>';
+    }
+    el.innerHTML = h;
+  } catch (e) {
+    el.innerHTML = '<span style="font-size:12px;color:#d32f2f;">' + e.message + '</span>';
+  } finally { hideLoading(); }
+}
+
+async function deleteSlot(slotId, dateStr) {
+  showLoading();
+  try {
+    await api('DELETE', '/api/schedule/slots/' + slotId);
+    showToast('スロットを削除しました');
+    loadDaySlots(dateStr);
+  } catch (e) {
+    showToast('削除エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+async function createSingleSlot() {
+  const date = document.getElementById('singleSlotDate').value;
+  const startTime = document.getElementById('singleSlotStart').value;
+  const endTime = document.getElementById('singleSlotEnd').value;
+  if (!date) { showToast('日付を選択してください', true); return; }
+  if (!startTime || !endTime) { showToast('開始・終了時間を指定してください', true); return; }
+  const el = document.getElementById('singleSlotResult');
+  el.innerHTML = '<span style="color:#999;font-size:12px;">追加中...</span>';
+  showLoading();
+  try {
+    const res = await api('POST', '/api/schedule/slots', { date, startTime, endTime });
+    el.innerHTML = '<p style="font-size:12px;color:#2e7d32;">' + res.startTime + ' - ' + res.endTime + ' (' + res.durationMinutes + '分) を追加しました</p>';
+    if (schSelectedDate === date) loadDaySlots(date);
+  } catch (e) {
+    el.innerHTML = '<span style="font-size:12px;color:#d32f2f;">' + e.message + '</span>';
+  } finally { hideLoading(); }
+}
+
+/* --- Customers --- */
+async function renderCustomers(mc) {
+  mc.innerHTML = '<div class="loading">読み込み中...</div>';
+
+  try {
+    const data = await api('GET', '/api/customers/search?ownerId=' + currentUser.ownerId + '&q=');
+    cachedCustomers = Array.isArray(data) ? data : (data.customers || []);
+  } catch (e) {
+    cachedCustomers = [];
+    showToast('顧客取得エラー: ' + e.message, true);
+  }
+
+  let h = '<h1 class="page-title">顧客管理 <span style="font-size:12px;color:#999;">(' + cachedCustomers.length + '件)</span></h1>';
+  h += '<div style="display:flex;gap:6px;margin-bottom:12px;">';
+  h += '<input class="form-input" style="max-width:220px;font-size:12px;" placeholder="顧客名で検索..." id="custSearch" oninput="filterCust()">';
+  h += '<button class="btn btn-outline" style="width:auto;padding:6px 14px;font-size:12px;margin:0;" onclick="openNewCustomer()">+ 新規登録</button></div>';
+
+  h += '<div class="o-card"><table class="o-table" id="custTable"><thead><tr><th>顧客名</th><th>顧客ID</th></tr></thead><tbody>';
+  if (!cachedCustomers.length) {
+    h += '<tr><td colspan="2" style="text-align:center;color:#999;padding:20px;">顧客はまだ登録されていません</td></tr>';
+  } else {
+    cachedCustomers.forEach(c => {
+      const id = c.customerId || c.id;
+      const name = c.customerName || c.name || '-';
+      const lineBadge = c.isLineLinked ? '<span style="display:inline-block;background:#06c755;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:6px;">LINE</span>' : '';
+      h += '<tr style="cursor:pointer;" onclick="showCustomerDetail(\'' + id + '\')">'
+        + '<td>' + esc(name) + lineBadge + '</td>'
+        + '<td style="font-size:11px;color:#999;">' + (id || '').substring(0, 8) + '...</td></tr>';
+    });
+  }
+  h += '</tbody></table></div>';
+  mc.innerHTML = h;
+}
+
+function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+let _custDetailTab = 'notes';
+
+async function showCustomerDetail(customerId) {
+  const mc = document.getElementById('mainContent');
+  mc.innerHTML = '<div class="loading">読み込み中...</div>';
+  showLoading();
+  try {
+    const [cust, rsvData, notesData, attachData] = await Promise.all([
+      api('GET', '/api/customers/' + customerId),
+      api('GET', '/api/owner/reservations?startDate=2020-01-01&endDate=2099-12-31&customerId=' + customerId).catch(() => ({ reservations: [] })),
+      api('GET', '/api/customers/' + customerId + '/notes').catch(() => ({ notes: [] })),
+      api('GET', '/api/customers/' + customerId + '/attachments').catch(() => ({ attachments: [] })),
+    ]);
+    hideLoading();
+    const reservations = (rsvData.reservations || []).filter(r => r.customerId === customerId);
+    reservations.sort((a, b) => b.dateTime.localeCompare(a.dateTime));
+    const notes = notesData.notes || [];
+    const attachments = (attachData.attachments || []).filter(a => a.category === 'photo');
+
+    let h = '<div style="margin-bottom:12px;"><button class="btn btn-outline" style="width:auto;padding:6px 14px;font-size:12px;margin:0;" onclick="renderCustomers(document.getElementById(\'mainContent\'))">&#8592; 顧客一覧に戻る</button></div>';
+
+    // --- Profile Section ---
+    h += '<div class="o-card" style="margin-bottom:12px;">';
+    h += '<h2 style="font-size:16px;margin-bottom:12px;">' + esc(cust.customerName || cust.name || '-') + '</h2>';
+    h += '<dl style="display:grid;grid-template-columns:100px 1fr;gap:4px 8px;font-size:13px;">';
+    h += '<dt style="color:#666;">顧客ID</dt><dd style="font-size:11px;word-break:break-all;">' + (cust.customerId || cust.id || '-') + '</dd>';
+    if (cust.displayName) h += '<dt style="color:#666;">表示名</dt><dd>' + esc(cust.displayName) + '</dd>';
+    h += '<dt style="color:#666;">LINE連携</dt><dd>' + (cust.isLineLinked ? '<span style="color:#06c755;font-weight:700;">連携済み</span>' : '<span style="color:#999;">未連携</span>') + '</dd>';
+    if (cust.lineUserId) h += '<dt style="color:#666;">LINE ID</dt><dd style="font-size:11px;word-break:break-all;">' + esc(cust.lineUserId) + '</dd>';
+    h += '<dt style="color:#666;">登録日</dt><dd>' + (cust.registeredAt ? fmtDate(cust.registeredAt) : '-') + '</dd>';
+
+    const genderLabels = { male: '男性', female: '女性', other: 'その他' };
+    h += '<dt style="color:#666;">生年月日</dt><dd id="cdBirthDate">' + (cust.birthDate ? esc(cust.birthDate) : '<span style="color:#999;">未設定</span>') + ' <button style="border:none;background:none;color:#0984e3;cursor:pointer;font-size:11px;" onclick="editProfileField(\'' + customerId + '\',\'birthDate\',\'' + esc(cust.birthDate || '') + '\')">編集</button></dd>';
+    h += '<dt style="color:#666;">性別</dt><dd id="cdGender">' + (cust.gender ? (genderLabels[cust.gender] || esc(cust.gender)) : '<span style="color:#999;">未設定</span>') + ' <button style="border:none;background:none;color:#0984e3;cursor:pointer;font-size:11px;" onclick="editProfileField(\'' + customerId + '\',\'gender\',\'' + esc(cust.gender || '') + '\')">編集</button></dd>';
+    h += '</dl></div>';
+
+    // --- Tabs ---
+    h += '<div style="display:flex;gap:0;margin-bottom:0;">';
+    h += '<button id="cdTabNotes" style="padding:8px 16px;border:1px solid #ddd;border-bottom:' + (_custDetailTab === 'notes' ? '2px solid #0984e3' : 'none') + ';background:' + (_custDetailTab === 'notes' ? '#fff' : '#f5f5f5') + ';font-size:12px;font-weight:600;cursor:pointer;border-radius:6px 6px 0 0;" onclick="_custDetailTab=\'notes\';showCustomerDetail(\'' + customerId + '\')">メモ・施術記録</button>';
+    h += '<button id="cdTabPhotos" style="padding:8px 16px;border:1px solid #ddd;border-bottom:' + (_custDetailTab === 'photos' ? '2px solid #0984e3' : 'none') + ';background:' + (_custDetailTab === 'photos' ? '#fff' : '#f5f5f5') + ';font-size:12px;font-weight:600;cursor:pointer;border-radius:6px 6px 0 0;" onclick="_custDetailTab=\'photos\';showCustomerDetail(\'' + customerId + '\')">写真</button>';
+    h += '<button id="cdTabHistory" style="padding:8px 16px;border:1px solid #ddd;border-bottom:' + (_custDetailTab === 'history' ? '2px solid #0984e3' : 'none') + ';background:' + (_custDetailTab === 'history' ? '#fff' : '#f5f5f5') + ';font-size:12px;font-weight:600;cursor:pointer;border-radius:6px 6px 0 0;" onclick="_custDetailTab=\'history\';showCustomerDetail(\'' + customerId + '\')">施術履歴</button>';
+    h += '</div>';
+
+    // --- Notes/Records Tab ---
+    if (_custDetailTab === 'notes') {
+      h += '<div class="o-card" style="border-radius:0 8px 8px 8px;">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
+      h += '<h3 style="font-size:14px;">メモ・施術記録 <span style="font-size:11px;color:#999;">(' + notes.length + '件)</span></h3>';
+      h += '<div style="display:flex;gap:6px;">';
+      h += '<button class="btn btn-outline" style="width:auto;padding:4px 10px;font-size:11px;margin:0;" onclick="openNewNote(\'' + customerId + '\',\'note\')">+ 新規メモ</button>';
+      h += '<button class="btn btn-outline" style="width:auto;padding:4px 10px;font-size:11px;margin:0;" onclick="openNewNote(\'' + customerId + '\',\'record\')">+ 新規施術記録</button>';
+      h += '</div></div>';
+      if (!notes.length) {
+        h += '<p style="text-align:center;color:#999;padding:16px 0;font-size:13px;">メモ・施術記録はありません</p>';
+      } else {
+        notes.forEach(n => {
+          const catLabel = n.category === 'record' ? '施術記録' : 'メモ';
+          const catColor = n.category === 'record' ? '#e3f2fd' : '#f3e5f5';
+          const catText = n.category === 'record' ? '#1565c0' : '#7b1fa2';
+          h += '<div style="border:1px solid #e0e0e0;border-radius:8px;padding:10px;margin-bottom:8px;">';
+          h += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+          h += '<div><span style="background:' + catColor + ';color:' + catText + ';font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;">' + catLabel + '</span> ';
+          h += '<span style="font-size:13px;font-weight:600;margin-left:4px;">' + esc(n.title || '無題') + '</span></div>';
+          h += '<span style="font-size:10px;color:#999;">' + fmtDate(n.createdAt) + '</span></div>';
+          h += '<div id="noteBody_' + n.noteId + '" style="display:none;margin-top:8px;padding:8px;background:#fafafa;border-radius:4px;font-size:12px;white-space:pre-wrap;"></div>';
+          h += '<div style="margin-top:6px;display:flex;gap:6px;">';
+          h += '<button style="border:none;background:none;color:#0984e3;cursor:pointer;font-size:11px;" onclick="toggleNoteContent(\'' + customerId + '\',\'' + n.noteId + '\')">内容を表示</button>';
+          h += '<button style="border:none;background:none;color:#0984e3;cursor:pointer;font-size:11px;" onclick="openEditNote(\'' + customerId + '\',\'' + n.noteId + '\',\'' + esc(n.title || '') + '\')">編集</button>';
+          h += '<button style="border:none;background:none;color:#d32f2f;cursor:pointer;font-size:11px;" onclick="confirmDeleteNote(\'' + customerId + '\',\'' + n.noteId + '\')">削除</button>';
+          h += '</div></div>';
+        });
+      }
+      h += '</div>';
+    }
+
+    // --- Photos Tab ---
+    if (_custDetailTab === 'photos') {
+      h += '<div class="o-card" style="border-radius:0 8px 8px 8px;">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
+      h += '<h3 style="font-size:14px;">写真 <span style="font-size:11px;color:#999;">(' + attachments.length + '件)</span></h3>';
+      h += '<label class="btn btn-outline" style="width:auto;padding:4px 10px;font-size:11px;margin:0;cursor:pointer;">+ 写真アップロード<input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(\'' + customerId + '\', this)"></label>';
+      h += '</div>';
+      if (!attachments.length) {
+        h += '<p style="text-align:center;color:#999;padding:16px 0;font-size:13px;">写真はありません</p>';
+      } else {
+        h += '<div id="photoGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">';
+        attachments.forEach(a => {
+          h += '<div style="position:relative;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;aspect-ratio:1;background:#f5f5f5;" id="photoWrap_' + a.attachmentId + '">';
+          h += '<img id="photoImg_' + a.attachmentId + '" style="width:100%;height:100%;object-fit:cover;" src="" alt="' + esc(a.fileName) + '">';
+          h += '<button onclick="confirmDeleteAttachment(\'' + customerId + '\',\'' + a.attachmentId + '\')" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;line-height:20px;text-align:center;">&#10005;</button>';
+          h += '</div>';
+        });
+        h += '</div>';
+      }
+      h += '</div>';
+    }
+
+    // --- Reservation History Tab ---
+    if (_custDetailTab === 'history') {
+      h += '<div class="o-card" style="border-radius:0 8px 8px 8px;">';
+      h += '<h3 style="font-size:14px;margin-bottom:8px;">施術履歴 <span style="font-size:11px;color:#999;">(' + reservations.length + '件)</span></h3>';
+      if (!reservations.length) {
+        h += '<p style="text-align:center;color:#999;padding:16px 0;font-size:13px;">施術履歴はありません</p>';
+      } else {
+        h += '<table class="o-table"><thead><tr><th>日時</th><th>ステータス</th></tr></thead><tbody>';
+        reservations.forEach(r => {
+          const statusColors = { confirmed: '#0984e3', completed: '#636e72', cancelled: '#d63031' };
+          const statusLabels = { confirmed: '確定', completed: '完了', cancelled: 'キャンセル' };
+          const col = statusColors[r.status] || '#333';
+          const label = statusLabels[r.status] || r.status;
+          h += '<tr onclick="showReservationDetail(\'' + (r.reservationId || r.id) + '\')" style="cursor:pointer;">'
+            + '<td>' + fmtDateTime(r.dateTime) + '</td>'
+            + '<td><span style="color:' + col + ';font-weight:600;font-size:12px;">' + label + '</span></td></tr>';
+        });
+        h += '</tbody></table>';
+      }
+      h += '</div>';
+    }
+
+    mc.innerHTML = h;
+
+    // Load photo thumbnails via presigned URLs
+    if (_custDetailTab === 'photos' && attachments.length) {
+      attachments.forEach(a => {
+        api('GET', '/api/customers/' + customerId + '/attachments/' + a.attachmentId + '/url')
+          .then(res => {
+            const img = document.getElementById('photoImg_' + a.attachmentId);
+            if (img) img.src = res.presignedUrl;
+          }).catch(() => {});
+      });
+    }
+  } catch (e) {
+    hideLoading();
+    showToast('顧客詳細の取得に失敗しました: ' + e.message, true);
+    renderCustomers(mc);
+  }
+}
+
+// --- Profile Edit ---
+function editProfileField(customerId, field, currentValue) {
+  let html = '';
+  if (field === 'birthDate') {
+    html = '<h3>生年月日の編集</h3>'
+      + '<div class="form-group"><label>生年月日</label><input class="form-input" id="editProfileVal" type="date" value="' + (currentValue || '') + '"></div>'
+      + '<div style="display:flex;gap:8px;"><button class="btn btn-primary" style="flex:1;background:#0984e3;" onclick="saveProfileField(\'' + customerId + '\',\'birthDate\')">保存</button><button class="btn btn-outline" style="flex:1;" onclick="closeModal()">キャンセル</button></div>';
+  } else if (field === 'gender') {
+    html = '<h3>性別の編集</h3>'
+      + '<div class="form-group"><label>性別</label><select class="form-input" id="editProfileVal">'
+      + '<option value="">未設定</option>'
+      + '<option value="male"' + (currentValue === 'male' ? ' selected' : '') + '>男性</option>'
+      + '<option value="female"' + (currentValue === 'female' ? ' selected' : '') + '>女性</option>'
+      + '<option value="other"' + (currentValue === 'other' ? ' selected' : '') + '>その他</option>'
+      + '</select></div>'
+      + '<div style="display:flex;gap:8px;"><button class="btn btn-primary" style="flex:1;background:#0984e3;" onclick="saveProfileField(\'' + customerId + '\',\'gender\')">保存</button><button class="btn btn-outline" style="flex:1;" onclick="closeModal()">キャンセル</button></div>';
+  }
+  showModal(html);
+}
+
+async function saveProfileField(customerId, field) {
+  const val = document.getElementById('editProfileVal').value;
+  showLoading();
+  try {
+    const body = {};
+    body[field] = val || null;
+    await api('PUT', '/api/customers/' + customerId + '/profile', body);
+    closeModal();
+    showToast('プロフィールを更新しました');
+    showCustomerDetail(customerId);
+  } catch (e) {
+    showToast('更新エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+// --- Notes ---
+function openNewNote(customerId, category) {
+  const catLabel = category === 'record' ? '施術記録' : 'メモ';
+  const html = '<h3>新規' + catLabel + '</h3>'
+    + '<div class="form-group"><label>タイトル</label><input class="form-input" id="newNoteTitle" placeholder="タイトル"></div>'
+    + '<div class="form-group"><label>内容</label><textarea class="form-input" id="newNoteContent" rows="6" style="resize:vertical;" placeholder="内容を入力..."></textarea></div>'
+    + '<div style="display:flex;gap:8px;"><button class="btn btn-primary" style="flex:1;background:#0984e3;" onclick="doCreateNote(\'' + customerId + '\',\'' + category + '\')">保存</button><button class="btn btn-outline" style="flex:1;" onclick="closeModal()">キャンセル</button></div>';
+  showModal(html);
+}
+
+async function doCreateNote(customerId, category) {
+  const title = document.getElementById('newNoteTitle').value;
+  const content = document.getElementById('newNoteContent').value;
+  if (!content) { showToast('内容を入力してください', true); return; }
+  showLoading();
+  try {
+    await api('POST', '/api/customers/' + customerId + '/notes', { category: category, title: title, content: content });
+    closeModal();
+    showToast('保存しました');
+    _custDetailTab = 'notes';
+    showCustomerDetail(customerId);
+  } catch (e) {
+    showToast('保存エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+async function toggleNoteContent(customerId, noteId) {
+  const el = document.getElementById('noteBody_' + noteId);
+  if (!el) return;
+  if (el.style.display === 'block') {
+    el.style.display = 'none';
+    return;
+  }
+  el.innerHTML = '<span style="color:#999;">読み込み中...</span>';
+  el.style.display = 'block';
+  try {
+    const data = await api('GET', '/api/customers/' + customerId + '/notes/' + noteId);
+    el.textContent = data.content || '(空)';
+  } catch (e) {
+    el.innerHTML = '<span style="color:#d32f2f;">取得エラー: ' + esc(e.message) + '</span>';
+  }
+}
+
+function openEditNote(customerId, noteId, currentTitle) {
+  // First fetch current content
+  showLoading();
+  api('GET', '/api/customers/' + customerId + '/notes/' + noteId).then(data => {
+    hideLoading();
+    const html = '<h3>メモ編集</h3>'
+      + '<div class="form-group"><label>タイトル</label><input class="form-input" id="editNoteTitle" value="' + esc(data.title || '') + '"></div>'
+      + '<div class="form-group"><label>内容</label><textarea class="form-input" id="editNoteContent" rows="6" style="resize:vertical;">' + esc(data.content || '') + '</textarea></div>'
+      + '<div style="display:flex;gap:8px;"><button class="btn btn-primary" style="flex:1;background:#0984e3;" onclick="doUpdateNote(\'' + customerId + '\',\'' + noteId + '\')">更新</button><button class="btn btn-outline" style="flex:1;" onclick="closeModal()">キャンセル</button></div>';
+    showModal(html);
+  }).catch(e => {
+    hideLoading();
+    showToast('取得エラー: ' + e.message, true);
+  });
+}
+
+async function doUpdateNote(customerId, noteId) {
+  const title = document.getElementById('editNoteTitle').value;
+  const content = document.getElementById('editNoteContent').value;
+  showLoading();
+  try {
+    await api('PUT', '/api/customers/' + customerId + '/notes/' + noteId, { title: title, content: content });
+    closeModal();
+    showToast('更新しました');
+    _custDetailTab = 'notes';
+    showCustomerDetail(customerId);
+  } catch (e) {
+    showToast('更新エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+function confirmDeleteNote(customerId, noteId) {
+  showModal('<h3>メモを削除しますか？</h3><p style="font-size:13px;color:#666;margin-bottom:16px;">この操作は元に戻せません。</p><div style="display:flex;gap:8px;"><button class="btn btn-danger" style="flex:1;" onclick="doDeleteNote(\'' + customerId + '\',\'' + noteId + '\')">削除</button><button class="btn btn-outline" style="flex:1;" onclick="closeModal()">キャンセル</button></div>');
+}
+
+async function doDeleteNote(customerId, noteId) {
+  showLoading();
+  try {
+    await api('DELETE', '/api/customers/' + customerId + '/notes/' + noteId);
+    closeModal();
+    showToast('削除しました');
+    _custDetailTab = 'notes';
+    showCustomerDetail(customerId);
+  } catch (e) {
+    showToast('削除エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+// --- Photos ---
+async function uploadPhoto(customerId, input) {
+  const file = input.files[0];
+  if (!file) return;
+  showLoading();
+  try {
+    // 1. Get presigned URL
+    const res = await api('POST', '/api/customers/' + customerId + '/attachments/presigned-url', {
+      fileName: file.name,
+      fileType: file.type,
+      category: 'photo'
+    });
+    // 2. Upload directly to S3
+    await fetch(res.presignedUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type },
+      body: file
+    });
+    showToast('写真をアップロードしました');
+    _custDetailTab = 'photos';
+    showCustomerDetail(customerId);
+  } catch (e) {
+    showToast('アップロードエラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+function confirmDeleteAttachment(customerId, attachmentId) {
+  showModal('<h3>写真を削除しますか？</h3><p style="font-size:13px;color:#666;margin-bottom:16px;">この操作は元に戻せません。</p><div style="display:flex;gap:8px;"><button class="btn btn-danger" style="flex:1;" onclick="doDeleteAttachment(\'' + customerId + '\',\'' + attachmentId + '\')">削除</button><button class="btn btn-outline" style="flex:1;" onclick="closeModal()">キャンセル</button></div>');
+}
+
+async function doDeleteAttachment(customerId, attachmentId) {
+  showLoading();
+  try {
+    await api('DELETE', '/api/customers/' + customerId + '/attachments/' + attachmentId);
+    closeModal();
+    showToast('削除しました');
+    _custDetailTab = 'photos';
+    showCustomerDetail(customerId);
+  } catch (e) {
+    showToast('削除エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+function filterCust() {
+  const q = document.getElementById('custSearch').value.toLowerCase();
+  document.querySelectorAll('#custTable tbody tr').forEach(r => {
+    r.style.display = r.children[0].textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function openNewCustomer() {
+  showModal('<h3>新規顧客登録</h3><div class="form-group"><label>顧客名</label><input class="form-input" id="newCustName" placeholder="氏名"></div><div style="display:flex;gap:8px;"><button class="btn btn-primary" style="flex:1;background:#0984e3;" onclick="doNewCustomer()">登録</button><button class="btn btn-outline" style="flex:1;" onclick="closeModal()">キャンセル</button></div>');
+}
+
+async function doNewCustomer() {
+  const name = document.getElementById('newCustName').value;
+  if (!name) { showToast('顧客名を入力してください', true); return; }
+  try {
+    await api('POST', '/api/customers', { ownerId: currentUser.ownerId, customerName: name });
+    closeModal();
+    showToast('顧客を登録しました');
+    renderCustomers(document.getElementById('mainContent'));
+  } catch (e) {
+    showToast('登録エラー: ' + e.message, true);
+  }
+}
+
+/* --- Settings --- */
+async function renderSettings(mc) {
+  mc.innerHTML = '<div class="loading">読み込み中...</div>';
+  let cancellationPolicy = '';
+  try {
+    const settings = await api('GET', '/api/schedule/settings');
+    cancellationPolicy = settings.cancellationPolicy || '';
+  } catch (e) { /* default empty */ }
+
+  let h = '<h1 class="page-title">設定</h1>';
+  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:10px;">アカウント情報</h3>';
+  h += '<div class="detail-row"><dt style="width:120px;">メール</dt><dd>' + (currentUser?.email || '-') + '</dd></div>';
+  h += '<div class="detail-row"><dt style="width:120px;">オーナーID</dt><dd style="font-size:11px;word-break:break-all;">' + (currentUser?.ownerId || '-') + '</dd></div>';
+  h += '</div>';
+
+  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">キャンセルポリシー</h3>';
+  h += '<p style="font-size:12px;color:#666;margin-bottom:8px;">顧客がキャンセルする際に表示されるポリシーを設定します。</p>';
+  h += '<textarea class="form-input" id="cfgCancelPolicy" rows="5" style="font-size:12px;resize:vertical;" placeholder="例: 予約日の前日までにキャンセルしてください。当日キャンセルはキャンセル料が発生します。">' + cancellationPolicy.replace(/</g,'&lt;') + '</textarea>';
+  h += '<button class="btn btn-primary" style="background:#0984e3;width:auto;padding:6px 20px;font-size:12px;margin-top:8px;" onclick="saveCancellationPolicy()">保存</button></div>';
+
+  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">LINE接続設定</h3>';
+  h += '<p style="font-size:12px;color:#666;margin-bottom:10px;">LINE Developers Console から取得した情報を設定します。</p>';
+  h += '<div class="form-group"><label>チャネルアクセストークン</label><input class="form-input" id="cfgToken" placeholder="Channel Access Token" style="font-size:12px;"></div>';
+  h += '<div class="form-group"><label>チャネルシークレット</label><input class="form-input" id="cfgSecret" placeholder="Channel Secret" style="font-size:12px;"></div>';
+  h += '<div class="form-group"><label>LIFF ID</label><input class="form-input" id="cfgLiff" placeholder="LIFF ID" style="font-size:12px;"></div>';
+  h += '<div class="form-group"><label>Webhook URL</label><input class="form-input" value="' + API_BASE + '/api/line/webhook" readonly style="font-size:12px;background:#f5f5f5;"></div>';
+  h += '<button class="btn btn-primary" style="background:#0984e3;width:auto;padding:6px 20px;font-size:12px;" onclick="saveLineConfig()">保存</button></div>';
+
+  h += '<div class="o-card"><h3 style="font-size:14px;margin-bottom:8px;">API情報</h3>';
+  h += '<div class="detail-row"><dt style="width:120px;">エンドポイント</dt><dd style="font-size:11px;word-break:break-all;">' + API_BASE + '</dd></div>';
+  h += '<div class="detail-row"><dt style="width:120px;">リージョン</dt><dd>ap-southeast-1 (Singapore)</dd></div>';
+  h += '</div>';
+  mc.innerHTML = h;
+}
+
+async function saveCancellationPolicy() {
+  const policy = document.getElementById('cfgCancelPolicy').value;
+  showLoading();
+  try {
+    await api('PUT', '/api/schedule/settings', { cancellationPolicy: policy });
+    showToast('キャンセルポリシーを保存しました');
+  } catch (e) {
+    showToast('保存エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+async function saveLineConfig() {
+  const token = document.getElementById('cfgToken').value;
+  const secret = document.getElementById('cfgSecret').value;
+  const liffId = document.getElementById('cfgLiff').value;
+  if (!token || !secret || !liffId) { showToast('全項目を入力してください', true); return; }
+  try {
+    await api('POST', '/api/line/channel-config', {
+      channelAccessToken: token,
+      channelSecret: secret,
+      liffId: liffId,
+      webhookUrl: API_BASE + '/api/line/webhook',
+    });
+    showToast('LINE設定を保存しました');
+  } catch (e) {
+    // If already exists, try update
+    try {
+      await api('PUT', '/api/line/channel-config', {
+        channelAccessToken: token,
+        channelSecret: secret,
+        liffId: liffId,
+      });
+      showToast('LINE設定を更新しました');
+    } catch (e2) {
+      showToast('保存エラー: ' + e2.message, true);
+    }
+  }
+}
+
+/* ========================================= */
+/* ===== CUSTOMER SIDE — LIVE API       ===== */
+/* ========================================= */
+let mockCustomerId = localStorage.getItem('covalt_mockCustomerId') || null;
+let mockCustomerName = localStorage.getItem('covalt_mockCustomerName') || 'テスト 花子';
+const mockOwnerId = '4282a4fd-695f-4db4-b0eb-b7915e539537';
+let chatMessages = [], calMonth = MONTH, calYear = YEAR, selectedDate = null;
+let selectedSlot = null; // holds the slot object selected for booking
+let custSlotSummary = {}; // cached slot summary for the visible month on customer calendar
+let custSummaryLoading = false; // flag to avoid duplicate summary fetches
+
+function fmt(d) { return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate(); }
+
+/* --- Mock customer init: create or restore a test customer via API --- */
+async function ensureMockCustomer() {
+  if (mockCustomerId) return mockCustomerId;
+  if (!authToken || !currentUser) return null;
+  try {
+    // Search for existing test customer
+    const data = await api('GET', '/api/customers/search?ownerId=' + currentUser.ownerId + '&q=' + encodeURIComponent(mockCustomerName));
+    const list = Array.isArray(data) ? data : (data.customers || []);
+    const found = list.find(c => (c.customerName || c.name) === mockCustomerName);
+    if (found) {
+      mockCustomerId = found.customerId || found.id;
+    } else {
+      // Create new test customer
+      const created = await api('POST', '/api/customers', { ownerId: currentUser.ownerId, customerName: mockCustomerName });
+      mockCustomerId = created.customerId || created.id;
+    }
+    localStorage.setItem('covalt_mockCustomerId', mockCustomerId);
+    localStorage.setItem('covalt_mockCustomerName', mockCustomerName);
+    return mockCustomerId;
+  } catch (e) {
+    console.error('Mock customer init error:', e);
+    return null;
+  }
+}
+
+function initChat() {
+  chatMessages = [{from:'bot', text:'友だち追加ありがとうございます!\n\n予約サロンの予約システムへようこそ。\n\n下のメニューから操作できます:\n・予約する\n・予約確認\n・施術履歴'}];
+  renderChat();
+}
+
+function renderChat() {
+  const a = document.getElementById('chatArea');
+  a.innerHTML = chatMessages.map(m => '<div class="msg msg-' + (m.from === 'bot' ? 'bot' : 'user') + '">' + m.text.replace(/\n/g,'<br>') + '</div>').join('');
+  a.scrollTop = a.scrollHeight;
+}
+
+function addBotMsg(t) { chatMessages.push({from:'bot', text:t}); renderChat(); }
+
+function openLiff(mode) {
+  if (!authToken || !currentUser) {
+    addBotMsg('オーナー側タブでログインしてください。ログイン後に予約機能が利用できます。');
+    return;
+  }
+  document.getElementById('liffOverlay').style.display = 'flex';
+  document.getElementById('richMenu').style.display = 'none';
+  document.getElementById('lineBack').style.display = 'inline';
+  if (mode === 'booking') renderBookingLiff();
+  else if (mode === 'list') renderListLiff();
+  else if (mode === 'history') renderHistoryLiff();
+}
+
+function liffClose() {
+  document.getElementById('liffOverlay').style.display = 'none';
+  document.getElementById('richMenu').style.display = 'grid';
+  document.getElementById('lineBack').style.display = 'none';
+  document.getElementById('lineTitle').textContent = '予約サロン';
+  selectedDate = null;
+  selectedSlot = null;
+  custSlotSummary = {};
+  custSummaryLoading = false;
+}
+
+function getCustOwnerId() {
+  return (currentUser && currentUser.ownerId) ? currentUser.ownerId : mockOwnerId;
+}
+
+function renderBookingLiff() {
+  document.getElementById('lineTitle').textContent = '予約する';
+  selectedDate = null;
+  selectedSlot = null;
+  custSlotSummary = {};
+  document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">日時を選択</span></div><div class="liff-body" id="liffBody"></div>';
+  renderCalendar();
+}
+
+async function fetchMonthSummary(year, month) {
+  const startDate = isoDate(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const endDate = isoDate(year, month, lastDay);
+  try {
+    const data = await api('GET', '/api/slots/summary?ownerId=' + getCustOwnerId() + '&startDate=' + startDate + '&endDate=' + endDate);
+    return data.summary || {};
+  } catch (e) {
+    console.error('Slot summary fetch error:', e);
+    return {};
+  }
+}
+
+function renderCalendar() {
+  const body = document.getElementById('liffBody');
+  if (!body) return;
+  const first = new Date(calYear, calMonth, 1), lastDay = new Date(calYear, calMonth+1, 0).getDate(), startDow = first.getDay();
+  const dows = ['日','月','火','水','木','金','土'];
+  const todayDate = new Date(YEAR, MONTH, DAY);
+
+  let h = '<div class="cal-month">';
+  h += '<button onclick="calMonth--;if(calMonth<0){calMonth=11;calYear--;}custSlotSummary={};renderCalendar()">&#10094;</button>';
+  h += '<span>' + calYear + '年' + (calMonth+1) + '月</span>';
+  h += '<button onclick="calMonth++;if(calMonth>11){calMonth=0;calYear++;}custSlotSummary={};renderCalendar()">&#10095;</button>';
+  h += '</div><div class="cal-grid">';
+  dows.forEach(d => h += '<div class="cal-dow">' + d + '</div>');
+  for (let i = 0; i < startDow; i++) h += '<div class="cal-day"></div>';
+
+  const hasSummary = Object.keys(custSlotSummary).length > 0;
+
+  for (let d = 1; d <= lastDay; d++) {
+    const dt = new Date(calYear, calMonth, d);
+    const past = dt < todayDate;
+    const sel = selectedDate && dateKey(dt) === dateKey(selectedDate);
+    const isTd = d === DAY && calMonth === MONTH && calYear === YEAR;
+    const iso = isoDate(calYear, calMonth, d);
+    const dayInfo = custSlotSummary[iso];
+    const availCount = dayInfo ? (dayInfo.availableCount || 0) : 0;
+
+    let c = 'cal-day';
+    if (past) {
+      c += ' disabled';
+    } else if (hasSummary && availCount > 0) {
+      c += ' has-slots';
+      if (sel) c += ' selected';
+      else if (isTd) c += ' today';
+    } else if (hasSummary && availCount === 0) {
+      c += ' no-slots';
+    } else {
+      // No summary loaded yet - default styling
+      if (sel) c += ' selected';
+      else if (isTd) c += ' today';
+    }
+
+    if (past || (hasSummary && availCount === 0 && !past)) {
+      h += '<div class="' + c + '">' + d + '</div>';
+    } else {
+      h += '<div class="' + c + '" onclick="pickDate(' + calYear + ',' + calMonth + ',' + d + ')">' + d + '</div>';
+    }
+  }
+  h += '</div>';
+  if (selectedDate) h += '<div id="slotsContainer"><div class="loading">空き状況を取得中...</div></div>';
+  body.innerHTML = h;
+  if (selectedDate) loadAvailableSlots(selectedDate);
+
+  // Fetch slot summary for the visible month if not yet loaded
+  if (!hasSummary && !custSummaryLoading) {
+    custSummaryLoading = true;
+    fetchMonthSummary(calYear, calMonth).then(summary => {
+      custSlotSummary = summary;
+      custSummaryLoading = false;
+      // Re-render only the calendar grid (preserve selected date and slots)
+      renderCalendarGrid();
+    }).catch(() => { custSummaryLoading = false; });
+  }
+}
+
+function renderCalendarGrid() {
+  // Re-render just the calendar grid with summary data, preserving slots below
+  const body = document.getElementById('liffBody');
+  if (!body) return;
+  const first = new Date(calYear, calMonth, 1), lastDay = new Date(calYear, calMonth+1, 0).getDate(), startDow = first.getDay();
+  const dows = ['日','月','火','水','木','金','土'];
+  const todayDate = new Date(YEAR, MONTH, DAY);
+  const hasSummary = Object.keys(custSlotSummary).length > 0;
+
+  let h = '<div class="cal-month">';
+  h += '<button onclick="calMonth--;if(calMonth<0){calMonth=11;calYear--;}custSlotSummary={};renderCalendar()">&#10094;</button>';
+  h += '<span>' + calYear + '年' + (calMonth+1) + '月</span>';
+  h += '<button onclick="calMonth++;if(calMonth>11){calMonth=0;calYear++;}custSlotSummary={};renderCalendar()">&#10095;</button>';
+  h += '</div><div class="cal-grid">';
+  dows.forEach(d => h += '<div class="cal-dow">' + d + '</div>');
+  for (let i = 0; i < startDow; i++) h += '<div class="cal-day"></div>';
+
+  for (let d = 1; d <= lastDay; d++) {
+    const dt = new Date(calYear, calMonth, d);
+    const past = dt < todayDate;
+    const sel = selectedDate && dateKey(dt) === dateKey(selectedDate);
+    const isTd = d === DAY && calMonth === MONTH && calYear === YEAR;
+    const iso = isoDate(calYear, calMonth, d);
+    const dayInfo = custSlotSummary[iso];
+    const availCount = dayInfo ? (dayInfo.availableCount || 0) : 0;
+
+    let c = 'cal-day';
+    if (past) {
+      c += ' disabled';
+    } else if (hasSummary && availCount > 0) {
+      c += ' has-slots';
+      if (sel) c += ' selected';
+      else if (isTd) c += ' today';
+    } else if (hasSummary && availCount === 0) {
+      c += ' no-slots';
+    } else {
+      if (sel) c += ' selected';
+      else if (isTd) c += ' today';
+    }
+
+    if (past || (hasSummary && availCount === 0 && !past)) {
+      h += '<div class="' + c + '">' + d + '</div>';
+    } else {
+      h += '<div class="' + c + '" onclick="pickDate(' + calYear + ',' + calMonth + ',' + d + ')">' + d + '</div>';
+    }
+  }
+  h += '</div>';
+
+  // Preserve slotsContainer if a date is selected
+  const existingSlots = body.querySelector('#slotsContainer');
+  if (selectedDate) {
+    if (existingSlots) {
+      h += existingSlots.outerHTML;
+    } else {
+      h += '<div id="slotsContainer"><div class="loading">空き状況を取得中...</div></div>';
+    }
+  }
+  body.innerHTML = h;
+  // Re-attach stored slots data if it existed
+  if (selectedDate && existingSlots && existingSlots._slots) {
+    const newContainer = document.getElementById('slotsContainer');
+    if (newContainer) newContainer._slots = existingSlots._slots;
+  }
+}
+
+function pickDate(y, m, d) {
+  const dt = new Date(y, m, d);
+  const todayDate = new Date(YEAR, MONTH, DAY);
+  if (dt < todayDate) return;
+  // Check if the date has no available slots (when summary is loaded)
+  const iso = isoDate(y, m, d);
+  const hasSummary = Object.keys(custSlotSummary).length > 0;
+  if (hasSummary) {
+    const dayInfo = custSlotSummary[iso];
+    const availCount = dayInfo ? (dayInfo.availableCount || 0) : 0;
+    if (availCount === 0) return;
+  }
+  selectedDate = dt;
+  renderCalendar();
+}
+
+/* --- Load available slots from API --- */
+async function loadAvailableSlots(dt) {
+  const container = document.getElementById('slotsContainer');
+  if (!container) return;
+  const dateStr = isoDate(dt.getFullYear(), dt.getMonth(), dt.getDate());
+  const ownerId = getCustOwnerId();
+  try {
+    const data = await api('GET', '/api/slots/available?ownerId=' + ownerId + '&date=' + dateStr);
+    const slots = data.slots || [];
+    let h = '<h4 style="font-size:14px;margin-bottom:8px;">' + fmt(dt) + ' の空き状況</h4>';
+    if (slots.length === 0) {
+      h += '<p style="color:#999;font-size:13px;padding:12px 0;">この日の空きスロットはありません</p>';
+    } else {
+      h += '<div class="slot-list">';
+      slots.sort((a, b) => a.startTime.localeCompare(b.startTime)).forEach((s, idx) => {
+        h += '<div class="slot-item" onclick="selectSlot(' + idx + ')">';
+        h += '<span>' + s.startTime + ' - ' + s.endTime + '</span>';
+        h += '<span class="slot-status open">予約可</span>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+    container.innerHTML = h;
+    // Store slots for reference when selecting
+    container._slots = slots;
+  } catch (e) {
+    container.innerHTML = '<p style="color:#d32f2f;font-size:13px;">空き状況の取得に失敗しました: ' + e.message + '</p>';
+  }
+}
+
+function selectSlot(idx) {
+  const container = document.getElementById('slotsContainer');
+  const slots = container?._slots;
+  if (!slots || !slots[idx]) return;
+  selectedSlot = slots[idx];
+  const durationMinutes = selectedSlot.durationMinutes || 60;
+  const body = document.getElementById('liffBody');
+  body.innerHTML = '<h4 style="font-size:15px;margin-bottom:8px;">予約内容の確認</h4>'
+    + '<div class="confirm-box">'
+    + '<dt>日付</dt><dd>' + fmt(selectedDate) + '</dd>'
+    + '<dt>時間</dt><dd>' + selectedSlot.startTime + ' - ' + selectedSlot.endTime + '</dd>'
+    + '<dt>所要時間</dt><dd>' + durationMinutes + '分</dd>'
+    + '<dt>お名前</dt><dd>' + mockCustomerName + '</dd>'
+    + '</div>'
+    + '<button class="btn btn-primary" onclick="confirmBooking()">予約を確定する</button>'
+    + '<button class="btn btn-outline" onclick="renderBookingLiff()">戻る</button>';
+}
+
+async function confirmBooking() {
+  if (!selectedSlot || !selectedDate) return;
+  showLoading();
+  try {
+    const custId = await ensureMockCustomer();
+    if (!custId) throw new Error('テスト顧客の準備に失敗しました');
+    const dateStr = isoDate(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+    const dateTime = dateStr + 'T' + selectedSlot.startTime + ':00+09:00';
+    const durationMinutes = selectedSlot.durationMinutes || 60;
+    const res = await api('POST', '/api/owner/reservations', {
+      customerId: custId,
+      slotId: selectedSlot.slotId,
+      dateTime: dateTime,
+      durationMinutes: durationMinutes,
+    });
+    hideLoading();
+    const rsvId = res.reservationId || res.id || '';
+    const shortId = rsvId.substring(0, 8);
+    document.getElementById('liffBody').innerHTML = '<div style="text-align:center;padding:40px 0;">'
+      + '<div style="font-size:48px;margin-bottom:16px;">&#10004;</div>'
+      + '<h3 style="font-size:18px;margin-bottom:8px;">予約が確定しました</h3>'
+      + '<p style="font-size:13px;color:#666;">' + fmt(selectedDate) + ' ' + selectedSlot.startTime + ' - ' + selectedSlot.endTime + '</p>'
+      + '<p style="font-size:12px;color:#999;margin-top:4px;">' + shortId + '...</p>'
+      + '<button class="btn btn-outline" style="margin-top:24px;" onclick="liffClose()">閉じる</button>'
+      + '</div>';
+    addBotMsg('予約が確定しました\n\n日時: ' + fmt(selectedDate) + ' ' + selectedSlot.startTime + ' - ' + selectedSlot.endTime + '\n予約ID: ' + shortId + '...\n\nご来店お待ちしております。');
+  } catch (e) {
+    hideLoading();
+    showToast('予約エラー: ' + e.message, true);
+  }
+}
+
+async function renderListLiff() {
+  document.getElementById('lineTitle').textContent = '予約確認';
+  document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約一覧</span></div><div class="liff-body"><div class="loading">読み込み中...</div></div>';
+  showLoading();
+  try {
+    const custId = await ensureMockCustomer();
+    const todayStr = isoDate(YEAR, MONTH, DAY);
+    const farFuture = isoDate(YEAR + 1, MONTH, DAY);
+    const data = await api('GET', '/api/owner/reservations?startDate=' + todayStr + '&endDate=' + farFuture);
+    const allRsvs = data.reservations || [];
+    // Filter by mock customer
+    const upcoming = allRsvs.filter(r => r.customerId === custId && r.status === 'confirmed')
+      .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+    hideLoading();
+    let h = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約一覧</span></div><div class="liff-body">';
+    if (!upcoming.length) {
+      h += '<p style="color:#999;text-align:center;padding:40px 0;">今後の予約はありません</p>';
+    } else {
+      upcoming.forEach(r => {
+        const shortId = r.reservationId.substring(0, 8);
+        h += '<div class="booking-card">';
+        h += '<span class="bk-date">' + fmtDateTime(r.dateTime) + '</span>';
+        h += '<span class="bk-status confirmed">確定</span>';
+        h += '<div class="bk-id">' + shortId + '...</div>';
+        h += '<button class="btn btn-danger" style="margin-top:8px;padding:8px;font-size:12px;" onclick="showCancelConfirm(\'' + r.reservationId + '\')">キャンセル</button>';
+        h += '</div>';
+      });
+    }
+    h += '</div>';
+    document.getElementById('liffOverlay').innerHTML = h;
+  } catch (e) {
+    hideLoading();
+    document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">予約一覧</span></div><div class="liff-body"><p style="color:#d32f2f;text-align:center;padding:40px 0;">予約取得エラー: ' + e.message + '</p></div>';
+  }
+}
+
+async function showCancelConfirm(reservationId) {
+  // Fetch cancellation policy and show confirmation screen
+  let policy = '';
+  try {
+    const settings = await api('GET', '/api/schedule/settings');
+    policy = settings.cancellationPolicy || '';
+  } catch (e) { /* no policy */ }
+
+  let h = '<div class="liff-header"><button class="close-btn" onclick="renderListLiff()">&times;</button><span class="liff-title">キャンセル確認</span></div><div class="liff-body">';
+  h += '<div style="text-align:center;padding:16px 0;">';
+  h += '<div style="font-size:36px;margin-bottom:12px;">&#9888;</div>';
+  h += '<h3 style="font-size:16px;margin-bottom:12px;">この予約をキャンセルしますか？</h3>';
+  if (policy) {
+    h += '<div style="background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:12px;margin:12px 0;text-align:left;">';
+    h += '<div style="font-size:12px;font-weight:700;color:#f57f17;margin-bottom:6px;">キャンセルポリシー</div>';
+    h += '<div style="font-size:12px;color:#333;white-space:pre-wrap;">' + policy.replace(/</g,'&lt;') + '</div>';
+    h += '</div>';
+  }
+  h += '<div style="display:flex;gap:8px;margin-top:16px;">';
+  h += '<button class="btn btn-danger" style="flex:1;padding:12px;font-size:14px;" onclick="cancelCustomerReservation(\'' + reservationId + '\')">キャンセルする</button>';
+  h += '<button class="btn btn-outline" style="flex:1;padding:12px;font-size:14px;" onclick="renderListLiff()">戻る</button>';
+  h += '</div></div></div>';
+  document.getElementById('liffOverlay').innerHTML = h;
+}
+
+async function cancelCustomerReservation(reservationId) {
+  showLoading();
+  try {
+    await api('PUT', '/api/owner/reservations/' + reservationId + '/cancel');
+    hideLoading();
+    showToast('予約をキャンセルしました');
+    addBotMsg('予約をキャンセルしました\n予約ID: ' + reservationId.substring(0, 8) + '...');
+    renderListLiff();
+  } catch (e) {
+    hideLoading();
+    showToast('キャンセルエラー: ' + e.message, true);
+  }
+}
+
+async function renderHistoryLiff() {
+  document.getElementById('lineTitle').textContent = '施術履歴';
+  document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">施術履歴</span></div><div class="liff-body"><div class="loading">読み込み中...</div></div>';
+  showLoading();
+  try {
+    const custId = await ensureMockCustomer();
+    // Fetch a broad range to cover past reservations
+    const pastStart = isoDate(YEAR - 1, 0, 1);
+    const todayStr = isoDate(YEAR, MONTH, DAY + 1);
+    const farFuture = isoDate(YEAR + 1, MONTH, DAY);
+    // Get both past and future to find completed/cancelled
+    const [pastData, futureData] = await Promise.all([
+      api('GET', '/api/owner/reservations?startDate=' + pastStart + '&endDate=' + todayStr),
+      api('GET', '/api/owner/reservations?startDate=' + todayStr + '&endDate=' + farFuture),
+    ]);
+    const allRsvs = [...(pastData.reservations || []), ...(futureData.reservations || [])];
+    // Filter: mock customer + completed/cancelled, or past confirmed
+    const todayDate = new Date(YEAR, MONTH, DAY);
+    const history = allRsvs.filter(r => {
+      if (r.customerId !== custId) return false;
+      if (r.status === 'completed' || r.status === 'cancelled') return true;
+      if (r.status === 'confirmed' && new Date(r.dateTime) < todayDate) return true;
+      return false;
+    }).sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
+    // Deduplicate by reservationId
+    const seen = new Set();
+    const unique = history.filter(r => { if (seen.has(r.reservationId)) return false; seen.add(r.reservationId); return true; });
+    hideLoading();
+    const statusLabelCust = s => s === 'confirmed' ? '確定' : s === 'cancelled' ? 'キャンセル済' : s === 'completed' ? '完了' : s;
+    let h = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">施術履歴</span></div><div class="liff-body">';
+    if (!unique.length) {
+      h += '<p style="color:#999;text-align:center;padding:40px 0;">履歴はありません</p>';
+    } else {
+      unique.forEach(r => {
+        const shortId = r.reservationId.substring(0, 8);
+        const sCls = r.status === 'confirmed' ? 'confirmed' : r.status === 'cancelled' ? 'cancelled' : 'done';
+        h += '<div class="booking-card">';
+        h += '<span class="bk-date">' + fmtDateTime(r.dateTime) + '</span>';
+        h += '<span class="bk-status ' + sCls + '">' + statusLabelCust(r.status) + '</span>';
+        h += '<div class="bk-id">' + shortId + '...</div>';
+        h += '</div>';
+      });
+    }
+    h += '</div>';
+    document.getElementById('liffOverlay').innerHTML = h;
+  } catch (e) {
+    hideLoading();
+    document.getElementById('liffOverlay').innerHTML = '<div class="liff-header"><button class="close-btn" onclick="liffClose()">&times;</button><span class="liff-title">施術履歴</span></div><div class="liff-body"><p style="color:#d32f2f;text-align:center;padding:40px 0;">履歴取得エラー: ' + e.message + '</p></div>';
+  }
+}
+
+/* INIT */
+(function restoreSession() {
+  const savedToken = localStorage.getItem('covalt_token');
+  const savedUser = localStorage.getItem('covalt_user');
+  if (savedToken && savedUser) {
+    authToken = savedToken;
+    try { currentUser = JSON.parse(savedUser); } catch(e) { return; }
+    // Verify token is still valid
+    api('POST', '/api/auth/verify').then(user => {
+      currentUser = { ownerId: user.ownerId, email: user.email || currentUser.email };
+      localStorage.setItem('covalt_user', JSON.stringify(currentUser));
+      document.getElementById('tabletLogin').style.display = 'none';
+      document.getElementById('tabletApp').style.display = 'flex';
+      document.getElementById('userEmail').textContent = currentUser.email;
+      showPage('dashboard');
+    }).catch(() => {
+      authToken = null;
+      currentUser = null;
+      localStorage.removeItem('covalt_token');
+      localStorage.removeItem('covalt_user');
+    });
+  }
+})();
+initChat();
+</script>
+</body>
+</html>

@@ -37,7 +37,6 @@ export class NotificationTemplateResolver {
           return [
             "予約が確定しました。",
             `日時: ${dateTimeFormatted}`,
-            `予約ID: ${event.reservationId}`,
           ].join("\n");
 
         case NotificationType.Modification: {
@@ -46,7 +45,6 @@ export class NotificationTemplateResolver {
             "予約内容が変更されました。",
             `変更前の日時: ${this.formatDateTime(modified.previousDateTime)}`,
             `変更後の日時: ${dateTimeFormatted}`,
-            `予約ID: ${event.reservationId}`,
           ].join("\n");
         }
 
@@ -54,14 +52,12 @@ export class NotificationTemplateResolver {
           return [
             "予約がキャンセルされました。",
             `日時: ${dateTimeFormatted}`,
-            `予約ID: ${event.reservationId}`,
           ].join("\n");
 
         case NotificationType.Reminder:
           return [
             "明日のご予約のリマインドです。",
             `日時: ${dateTimeFormatted}`,
-            `予約ID: ${event.reservationId}`,
           ].join("\n");
       }
     }
@@ -119,6 +115,7 @@ export class NotificationTemplateResolver {
     const day = String(date.getDate()).padStart(2, "0");
     const hours = String(date.getHours()).padStart(2, "0");
     const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
+    const dow = ["日", "月", "火", "水", "木", "金", "土"][date.getDay()];
+    return `${year}-${month}-${day}(${dow}) ${hours}:${minutes}`;
   }
 }

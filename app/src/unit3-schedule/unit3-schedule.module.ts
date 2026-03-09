@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SlotController } from './controllers/slot.controller';
 import { ScheduleController } from './controllers/schedule.controller';
+import { SchedulePublicController } from './controllers/schedule-public.controller';
 import { PrismaBusinessHourRepository } from './repositories/prisma-business-hour.repository';
 import { PrismaClosedDayRepository } from './repositories/prisma-closed-day.repository';
 import { PrismaDailySlotListRepository } from './repositories/prisma-daily-slot-list.repository';
@@ -16,7 +17,7 @@ import {
 } from './di-tokens';
 
 @Module({
-  controllers: [SlotController, ScheduleController],
+  controllers: [SlotController, ScheduleController, SchedulePublicController],
   providers: [
     // Repository implementations
     {

@@ -111,6 +111,7 @@ export class CustomerDataController {
         customerId: n.customerId,
         category: n.category,
         title: n.title,
+        noteDate: n.noteDate,
         createdAt: n.createdAt,
         updatedAt: n.updatedAt,
       })),
@@ -125,7 +126,7 @@ export class CustomerDataController {
   @HttpCode(HttpStatus.CREATED)
   async createNote(
     @Param('customerId') customerId: string,
-    @Body() body: { category: string; title: string; content: string },
+    @Body() body: { category: string; title: string; content: string; noteDate?: string },
     @Req() req: any,
   ) {
     const ownerId = req.user.ownerId;
@@ -153,6 +154,7 @@ export class CustomerDataController {
         ownerId,
         category: body.category,
         title: body.title || '',
+        noteDate: body.noteDate || null,
         s3Key,
       },
     });
@@ -162,6 +164,7 @@ export class CustomerDataController {
       customerId: note.customerId,
       category: note.category,
       title: note.title,
+      noteDate: note.noteDate,
       s3Key: note.s3Key,
       createdAt: note.createdAt,
       updatedAt: note.updatedAt,
@@ -205,6 +208,7 @@ export class CustomerDataController {
       customerId: note.customerId,
       category: note.category,
       title: note.title,
+      noteDate: note.noteDate,
       content: content || '',
       createdAt: note.createdAt,
       updatedAt: note.updatedAt,
@@ -219,7 +223,7 @@ export class CustomerDataController {
   async updateNote(
     @Param('customerId') customerId: string,
     @Param('noteId') noteId: string,
-    @Body() body: { title?: string; content?: string },
+    @Body() body: { title?: string; content?: string; noteDate?: string },
     @Req() req: any,
   ) {
     const ownerId = req.user.ownerId;
@@ -247,11 +251,12 @@ export class CustomerDataController {
       );
     }
 
-    // Update DB metadata if title changed
+    // Update DB metadata
     const updated = await this.prisma.customerNote.update({
       where: { id: noteId },
       data: {
         title: body.title ?? undefined,
+        noteDate: body.noteDate !== undefined ? (body.noteDate || null) : undefined,
       },
     });
 
@@ -260,6 +265,7 @@ export class CustomerDataController {
       customerId: updated.customerId,
       category: updated.category,
       title: updated.title,
+      noteDate: updated.noteDate,
       createdAt: updated.createdAt,
       updatedAt: updated.updatedAt,
     };

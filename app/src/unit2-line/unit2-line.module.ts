@@ -1,6 +1,4 @@
 import { Module, OnModuleInit } from '@nestjs/common';
-import { EventEmitterModule } from '@nestjs/event-emitter';
-import { PrismaService } from '../common/prisma/prisma.service';
 
 // Repositories
 import { PrismaLineChannelConfigRepository } from './repositories/prisma-line-channel-config.repository';
@@ -24,7 +22,7 @@ import { RichMenuService } from './domain/RichMenuService';
 import { LineController } from './controllers/line.controller';
 
 @Module({
-  imports: [EventEmitterModule.forRoot()],
+  imports: [],
   controllers: [LineController],
   providers: [
     // Infrastructure: Repositories

@@ -20,6 +20,8 @@ import { LiffTokenVerificationService } from '../domain/LiffTokenVerificationSer
 import { MessagePushService } from '../domain/MessagePushService';
 import { WebhookReceiveService } from '../domain/WebhookReceiveService';
 import { ChannelConfigService } from '../domain/ChannelConfigService';
+import { RichMenuService } from '../domain/RichMenuService';
+import { RichMenuGatewayImpl } from '../gateways/rich-menu.gateway';
 import { LiffAccessToken } from '../domain/LiffAccessToken';
 import { LineUserId } from '../domain/LineUserId';
 import { PushMessage } from '../domain/PushMessage';
@@ -80,6 +82,8 @@ export class LineController {
     private readonly messagePushService: MessagePushService,
     private readonly webhookReceiveService: WebhookReceiveService,
     private readonly channelConfigService: ChannelConfigService,
+    private readonly richMenuService: RichMenuService,
+    private readonly richMenuGateway: RichMenuGatewayImpl,
   ) {}
 
   // ==========================================
@@ -323,6 +327,34 @@ export class LineController {
   async deleteChannelConfig(@Req() req: AuthenticatedRequest) {
     try {
       await this.channelConfigService.deleteConfig(req.user.ownerId);
+    } catch (error) {
+      if (error instanceof ChannelConfigNotFoundError) {
+        throw new NotFoundException({
+          error: 'CHANNEL_CONFIG_NOT_FOUND',
+          message: error.message,
+        });
+      }
+      throw error;
+    }
+  }
+
+  // ==========================================
+  // POST /api/line/rich-menu/setup
+  // ==========================================
+  @Post('rich-menu/setup')
+  @UseGuards(AuthGuard)
+  async setupRichMenu(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { menuName?: string },
+  ) {
+    try {
+      const imagePng = this.richMenuGateway.generateDefaultImage();
+      const richMenuId = await this.richMenuService.setupDefaultRichMenu(
+        req.user.ownerId,
+        body.menuName || '予約メニュー',
+        imagePng,
+      );
+      return { richMenuId };
     } catch (error) {
       if (error instanceof ChannelConfigNotFoundError) {
         throw new NotFoundException({

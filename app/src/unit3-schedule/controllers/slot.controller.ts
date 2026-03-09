@@ -24,7 +24,6 @@ import { SlotAlreadyBookedError, SlotNotFoundError } from '../domain/DomainError
 import { DAILY_SLOT_LIST_REPOSITORY } from '../di-tokens';
 
 @Controller('api/slots')
-@UseGuards(AuthGuard)
 export class SlotController {
   constructor(
     private readonly slotAvailabilityService: SlotAvailabilityService,
@@ -140,6 +139,7 @@ export class SlotController {
    * Reserves a slot for a reservation.
    */
   @Put(':slotId/reserve')
+  @UseGuards(AuthGuard)
   @HttpCode(200)
   async reserveSlot(
     @Param('slotId') slotIdParam: string,
@@ -185,6 +185,7 @@ export class SlotController {
    * Releases a slot from a reservation.
    */
   @Put(':slotId/release')
+  @UseGuards(AuthGuard)
   @HttpCode(200)
   async releaseSlot(
     @Param('slotId') slotIdParam: string,
