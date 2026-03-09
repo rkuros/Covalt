@@ -34,7 +34,9 @@ export class CalendarController {
   @HttpCode(HttpStatus.OK)
   async connect(@Req() req: AuthenticatedRequest) {
     try {
-      const result = await this.integrationService.startOAuthFlow(req.user.ownerId);
+      const result = await this.integrationService.startOAuthFlow(
+        req.user.ownerId,
+      );
       return {
         authorizationUrl: result.authorizationUrl,
         integrationId: result.integrationId,
@@ -55,9 +57,7 @@ export class CalendarController {
   // ==========================================
   @Post('callback')
   @HttpCode(HttpStatus.OK)
-  async callback(
-    @Body() body: { integrationId: string; code: string },
-  ) {
+  async callback(@Body() body: { integrationId: string; code: string }) {
     try {
       await this.integrationService.completeOAuthFlow(
         body.integrationId,
@@ -83,7 +83,9 @@ export class CalendarController {
     try {
       // CalendarIntegrationService does not expose getStatus directly, so we use listCalendars
       // as a proxy for checking connectivity; if it throws, integration is not set up
-      const calendars = await this.integrationService.listCalendars(req.user.ownerId);
+      const calendars = await this.integrationService.listCalendars(
+        req.user.ownerId,
+      );
       return {
         connected: true,
         calendarCount: calendars.length,
@@ -121,7 +123,9 @@ export class CalendarController {
   @Get('calendars')
   async listCalendars(@Req() req: AuthenticatedRequest) {
     try {
-      const calendars = await this.integrationService.listCalendars(req.user.ownerId);
+      const calendars = await this.integrationService.listCalendars(
+        req.user.ownerId,
+      );
       return { calendars };
     } catch (error) {
       if (error instanceof Error && error.message.includes('見つかりません')) {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EventPublisher } from '../domain/EventPublisher';
 import { LineFriendAddedEvent } from '../domain/LineFriendAddedEvent';
@@ -9,10 +9,15 @@ import { LineFriendAddedEvent } from '../domain/LineFriendAddedEvent';
  */
 @Injectable()
 export class LineEventPublisher implements EventPublisher {
+  private readonly logger = new Logger(LineEventPublisher.name);
+
   constructor(private readonly eventEmitter: EventEmitter2) {}
 
   async publishFriendAdded(event: LineFriendAddedEvent): Promise<void> {
-    console.log('[EventPublisher] publishing line.friend_added', event.toPayload());
+    this.logger.log(
+      '[EventPublisher] publishing line.friend_added',
+      event.toPayload(),
+    );
     await this.eventEmitter.emitAsync('line.friend_added', event.toPayload());
   }
 }

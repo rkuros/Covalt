@@ -53,10 +53,13 @@ export class CustomerController {
    * GET /api/customers/search?ownerId=xxx&q=yyy
    */
   @Get('search')
-  async search(
-    @Query('ownerId') ownerId: string,
-    @Query('q') query: string,
-  ) {
+  async search(@Query('ownerId') ownerId: string, @Query('q') query: string) {
+    if (!ownerId) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: 'ownerId query parameter is required',
+      });
+    }
     return this.queryService.searchByName(ownerId, query ?? '');
   }
 

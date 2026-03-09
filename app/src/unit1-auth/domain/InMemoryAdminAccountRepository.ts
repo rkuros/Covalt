@@ -1,6 +1,6 @@
-import { AdminAccount } from "./AdminAccount";
-import { AdminAccountRepository } from "./AdminAccountRepository";
-import { EmailAddress } from "./EmailAddress";
+import { AdminAccount } from './AdminAccount';
+import { AdminAccountRepository } from './AdminAccountRepository';
+import { EmailAddress } from './EmailAddress';
 
 /**
  * InMemory 実装: AdminAccountRepository

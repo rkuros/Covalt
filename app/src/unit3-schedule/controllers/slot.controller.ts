@@ -13,6 +13,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { PrismaService } from '../../common/prisma/prisma.service';
 import { SlotAvailabilityService } from '../domain/SlotAvailabilityService';
 import { SlotReservationService } from '../domain/SlotReservationService';
 import type { DailySlotListRepository } from '../domain/DailySlotListRepository';
@@ -20,8 +21,12 @@ import { OwnerId } from '../domain/OwnerId';
 import { SlotDate } from '../domain/SlotDate';
 import { SlotId } from '../domain/SlotId';
 import { ReservationId } from '../domain/ReservationId';
-import { SlotAlreadyBookedError, SlotNotFoundError } from '../domain/DomainErrors';
+import {
+  SlotAlreadyBookedError,
+  SlotNotFoundError,
+} from '../domain/DomainErrors';
 import { DAILY_SLOT_LIST_REPOSITORY } from '../di-tokens';
+import { buildSlotSummary } from './slot-summary.helper';
 
 @Controller('api/slots')
 export class SlotController {
@@ -30,6 +35,7 @@ export class SlotController {
     private readonly slotReservationService: SlotReservationService,
     @Inject(DAILY_SLOT_LIST_REPOSITORY)
     private readonly dailySlotListRepo: DailySlotListRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -40,6 +46,7 @@ export class SlotController {
   async getAvailableSlots(
     @Query('ownerId') ownerIdParam: string,
     @Query('date') dateParam: string,
+    @Query('treatmentDuration') treatmentDurationParam?: string,
   ) {
     if (!ownerIdParam || !dateParam) {
       throw new BadRequestException({
@@ -59,14 +66,30 @@ export class SlotController {
       });
     }
 
+    // Resolve treatment duration: explicit param > owner setting > slot's own duration
+    let treatmentDuration = treatmentDurationParam
+      ? parseInt(treatmentDurationParam, 10)
+      : undefined;
+
+    if (!treatmentDuration) {
+      const settings = await this.prisma.ownerSettings.findUnique({
+        where: { ownerId: ownerIdParam },
+      });
+      if (settings && settings.defaultTreatmentMinutes > 0) {
+        treatmentDuration = settings.defaultTreatmentMinutes;
+      }
+    }
+
     const result = await this.slotAvailabilityService.getAvailability(
       ownerId,
       date,
+      treatmentDuration,
     );
 
     return {
       date: result.date.value,
       isHoliday: result.isHoliday,
+      defaultTreatmentMinutes: treatmentDuration ?? 0,
       slots: result.availableSlots.map((slot) => ({
         slotId: slot.slotId.value,
         startTime: slot.startTime.toString(),
@@ -90,7 +113,8 @@ export class SlotController {
     if (!ownerIdParam || !startDateParam || !endDateParam) {
       throw new BadRequestException({
         error: 'VALIDATION_ERROR',
-        message: 'ownerId, startDate, and endDate query parameters are required',
+        message:
+          'ownerId, startDate, and endDate query parameters are required',
       });
     }
     let ownerId: OwnerId;
@@ -107,29 +131,22 @@ export class SlotController {
       });
     }
 
-    const dailySlotLists = await this.dailySlotListRepo.findAllByOwnerIdAndDateRange(
-      ownerId,
-      startDate,
-      endDate,
-    );
+    const dailySlotLists =
+      await this.dailySlotListRepo.findAllByOwnerIdAndDateRange(
+        ownerId,
+        startDate,
+        endDate,
+      );
 
-    const summary: Record<string, {
-      totalSlots: number;
-      availableCount: number;
-      bookedCount: number;
-      availableSlots: { startTime: string; endTime: string }[];
-    }> = {};
-    for (const dsl of dailySlotLists) {
-      const slots = dsl.slots;
-      summary[dsl.date.value] = {
-        totalSlots: slots.length,
-        availableCount: slots.filter((s) => s.isAvailable()).length,
-        bookedCount: slots.filter((s) => s.isBooked()).length,
-        availableSlots: slots
-          .filter((s) => s.isAvailable())
-          .map((s) => ({ startTime: s.startTime.toString(), endTime: s.endTime.toString() })),
-      };
+    let treatmentDuration: number | undefined;
+    const settings = await this.prisma.ownerSettings.findUnique({
+      where: { ownerId: ownerIdParam },
+    });
+    if (settings && settings.defaultTreatmentMinutes > 0) {
+      treatmentDuration = settings.defaultTreatmentMinutes;
     }
+
+    const summary = buildSlotSummary(dailySlotLists, treatmentDuration);
 
     return { summary };
   }

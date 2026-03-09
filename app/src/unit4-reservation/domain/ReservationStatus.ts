@@ -15,7 +15,10 @@ export type ReservationStatus =
   (typeof ReservationStatus)[keyof typeof ReservationStatus];
 
 /** confirmed からの遷移のみ許可。cancelled / completed は終端状態。 */
-const ALLOWED_TRANSITIONS: Record<ReservationStatus, readonly ReservationStatus[]> = {
+const ALLOWED_TRANSITIONS: Record<
+  ReservationStatus,
+  readonly ReservationStatus[]
+> = {
   [ReservationStatus.Confirmed]: [
     ReservationStatus.Cancelled,
     ReservationStatus.Completed,

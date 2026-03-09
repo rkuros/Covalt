@@ -30,7 +30,9 @@ export class CalendarSyncService {
    * BR-2.1: 連携が有効なオーナーの対象カレンダーに予定が自動追加される。
    * 冪等性: 同一 reservationId に対するマッピングが既に存在する場合はスキップする。
    */
-  async handleReservationCreated(event: ReservationCreatedEvent): Promise<void> {
+  async handleReservationCreated(
+    event: ReservationCreatedEvent,
+  ): Promise<void> {
     const integration = await this.getActiveIntegration(event.ownerId);
     if (!integration) {
       console.log(`連携が無効のためスキップ: ownerId=${event.ownerId}`);
@@ -38,9 +40,13 @@ export class CalendarSyncService {
     }
 
     // 冪等性チェック: 既にマッピングが存在する場合はスキップ
-    const existingMapping = await this.mappingRepository.findByReservationId(event.reservationId);
+    const existingMapping = await this.mappingRepository.findByReservationId(
+      event.reservationId,
+    );
     if (existingMapping) {
-      console.log(`既にマッピングが存在するためスキップ: reservationId=${event.reservationId}`);
+      console.log(
+        `既にマッピングが存在するためスキップ: reservationId=${event.reservationId}`,
+      );
       return;
     }
 
@@ -70,16 +76,22 @@ export class CalendarSyncService {
    * 予約変更イベントを処理する。
    * BR-2.2: 予約変更時、対応するカレンダー予定の日時が自動更新される。
    */
-  async handleReservationModified(event: ReservationModifiedEvent): Promise<void> {
+  async handleReservationModified(
+    event: ReservationModifiedEvent,
+  ): Promise<void> {
     const integration = await this.getActiveIntegration(event.ownerId);
     if (!integration) {
       console.log(`連携が無効のためスキップ: ownerId=${event.ownerId}`);
       return;
     }
 
-    const mapping = await this.mappingRepository.findByReservationId(event.reservationId);
+    const mapping = await this.mappingRepository.findByReservationId(
+      event.reservationId,
+    );
     if (!mapping) {
-      console.log(`マッピングが見つからないためスキップ: reservationId=${event.reservationId}`);
+      console.log(
+        `マッピングが見つからないためスキップ: reservationId=${event.reservationId}`,
+      );
       return;
     }
 
@@ -90,9 +102,11 @@ export class CalendarSyncService {
       event.durationMinutes,
     );
 
+    // Use integration.calendarId rather than mapping.calendarId because
+    // calendarId is not persisted in the calendar_event_mappings table.
     await this.calendarApiClient.updateEvent(
       accessToken,
-      mapping.calendarId,
+      integration.calendarId!.value,
       mapping.googleEventId,
       eventDetail,
     );
@@ -102,24 +116,32 @@ export class CalendarSyncService {
    * 予約キャンセルイベントを処理する。
    * BR-2.3: 予約キャンセル時、対応するカレンダー予定が自動削除される。
    */
-  async handleReservationCancelled(event: ReservationCancelledEvent): Promise<void> {
+  async handleReservationCancelled(
+    event: ReservationCancelledEvent,
+  ): Promise<void> {
     const integration = await this.getActiveIntegration(event.ownerId);
     if (!integration) {
       console.log(`連携が無効のためスキップ: ownerId=${event.ownerId}`);
       return;
     }
 
-    const mapping = await this.mappingRepository.findByReservationId(event.reservationId);
+    const mapping = await this.mappingRepository.findByReservationId(
+      event.reservationId,
+    );
     if (!mapping) {
-      console.log(`マッピングが見つからないためスキップ: reservationId=${event.reservationId}`);
+      console.log(
+        `マッピングが見つからないためスキップ: reservationId=${event.reservationId}`,
+      );
       return;
     }
 
     const accessToken = await this.getValidAccessToken(integration);
 
+    // Use integration.calendarId rather than mapping.calendarId because
+    // calendarId is not persisted in the calendar_event_mappings table.
     await this.calendarApiClient.deleteEvent(
       accessToken,
-      mapping.calendarId,
+      integration.calendarId!.value,
       mapping.googleEventId,
     );
 
@@ -131,7 +153,9 @@ export class CalendarSyncService {
    * オーナーのアクティブな連携設定を取得する。
    * BR-2.5: 連携が無効のオーナーに対するイベントは処理をスキップする。
    */
-  private async getActiveIntegration(ownerId: string): Promise<GoogleCalendarIntegration | null> {
+  private async getActiveIntegration(
+    ownerId: string,
+  ): Promise<GoogleCalendarIntegration | null> {
     const integration = await this.integrationRepository.findByOwnerId(ownerId);
     if (!integration || !integration.isActive()) {
       return null;
@@ -143,7 +167,9 @@ export class CalendarSyncService {
    * 有効なアクセストークンを取得する。
    * 期限切れの場合はリフレッシュを試み、失敗時は再認証状態に遷移させる。
    */
-  private async getValidAccessToken(integration: GoogleCalendarIntegration): Promise<string> {
+  private async getValidAccessToken(
+    integration: GoogleCalendarIntegration,
+  ): Promise<string> {
     const token = integration.oauthToken!;
 
     if (!token.needsRefresh()) {
@@ -158,7 +184,9 @@ export class CalendarSyncService {
     } catch {
       integration.markRequiresReauth();
       await this.integrationRepository.save(integration);
-      throw new Error(`トークンリフレッシュ失敗。再認証が必要: ownerId=${integration.ownerId}`);
+      throw new Error(
+        `トークンリフレッシュ失敗。再認証が必要: ownerId=${integration.ownerId}`,
+      );
     }
   }
 }

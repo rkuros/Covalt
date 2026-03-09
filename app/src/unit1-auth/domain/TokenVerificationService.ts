@@ -1,6 +1,6 @@
-import { AuthToken } from "./AuthToken";
-import { SessionRepository } from "./SessionRepository";
-import { OwnerAccountRepository } from "./OwnerAccountRepository";
+import { AuthToken } from './AuthToken';
+import { SessionRepository } from './SessionRepository';
+import { OwnerAccountRepository } from './OwnerAccountRepository';
 
 /**
  * 認証検証レスポンスの型定義（PACT 契約準拠）。
@@ -8,7 +8,7 @@ import { OwnerAccountRepository } from "./OwnerAccountRepository";
 export interface VerificationResult {
   ownerId: string;
   email: string;
-  role: "owner" | "admin";
+  role: 'owner' | 'admin';
 }
 
 /**
@@ -16,11 +16,11 @@ export interface VerificationResult {
  */
 export class AuthVerificationError extends Error {
   constructor(
-    public readonly errorCode: "UNAUTHORIZED" | "ACCOUNT_DISABLED",
+    public readonly errorCode: 'UNAUTHORIZED' | 'ACCOUNT_DISABLED',
     message: string,
   ) {
     super(message);
-    this.name = "AuthVerificationError";
+    this.name = 'AuthVerificationError';
   }
 }
 
@@ -51,20 +51,27 @@ export class TokenVerificationService {
     // シナリオ: 無効なトークン → 401
     if (!session || !session.isValid()) {
       console.log(`トークン検証失敗: セッションが見つからないか期限切れ`);
-      throw new AuthVerificationError("UNAUTHORIZED", "認証トークンが無効です");
+      throw new AuthVerificationError('UNAUTHORIZED', '認証トークンが無効です');
     }
 
     const account = await this.ownerAccountRepository.findById(session.ownerId);
 
     if (!account) {
-      console.log(`トークン検証失敗: アカウントが見つかりません ownerId=${session.ownerId}`);
-      throw new AuthVerificationError("UNAUTHORIZED", "認証トークンが無効です");
+      console.log(
+        `トークン検証失敗: アカウントが見つかりません ownerId=${session.ownerId}`,
+      );
+      throw new AuthVerificationError('UNAUTHORIZED', '認証トークンが無効です');
     }
 
     // シナリオ: アカウント無効化 → 403 (BR-14)
     if (!account.isActive()) {
-      console.log(`トークン検証失敗: アカウント無効化 ownerId=${account.ownerId}`);
-      throw new AuthVerificationError("ACCOUNT_DISABLED", "アカウントが無効化されています");
+      console.log(
+        `トークン検証失敗: アカウント無効化 ownerId=${account.ownerId}`,
+      );
+      throw new AuthVerificationError(
+        'ACCOUNT_DISABLED',
+        'アカウントが無効化されています',
+      );
     }
 
     // シナリオ: 認証成功 → 200

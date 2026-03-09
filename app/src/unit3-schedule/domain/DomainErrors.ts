@@ -42,7 +42,9 @@ export class OptimisticLockError extends Error {
   readonly code = 'OPTIMISTIC_LOCK' as const;
 
   constructor() {
-    super('Optimistic lock conflict: the resource was modified by another transaction');
+    super(
+      'Optimistic lock conflict: the resource was modified by another transaction',
+    );
     this.name = 'OptimisticLockError';
   }
 }

@@ -60,14 +60,18 @@ export class PrismaCustomerRepository implements CustomerRepository {
         id: customer.customerId.value,
         ownerId: customer.ownerId.value,
         customerName: this.encryption.encrypt(customer.customerName.value),
-        displayName: this.encryption.encryptNullable(customer.displayName?.value ?? null),
+        displayName: this.encryption.encryptNullable(
+          customer.displayName?.value ?? null,
+        ),
         lineUserId: customer.lineUserId?.value ?? null,
         isLineLinked: customer.isLineLinked,
         registeredAt: customer.registeredAt,
       },
       update: {
         customerName: this.encryption.encrypt(customer.customerName.value),
-        displayName: this.encryption.encryptNullable(customer.displayName?.value ?? null),
+        displayName: this.encryption.encryptNullable(
+          customer.displayName?.value ?? null,
+        ),
         lineUserId: customer.lineUserId?.value ?? null,
         isLineLinked: customer.isLineLinked,
       },
@@ -88,7 +92,9 @@ export class PrismaCustomerRepository implements CustomerRepository {
     return Customer.reconstruct({
       customerId: CustomerId.create(record.id),
       ownerId: OwnerId.create(record.ownerId),
-      customerName: CustomerName.create(this.encryption.decrypt(record.customerName)),
+      customerName: CustomerName.create(
+        this.encryption.decrypt(record.customerName),
+      ),
       displayName: record.displayName
         ? DisplayName.create(this.encryption.decrypt(record.displayName))
         : null,

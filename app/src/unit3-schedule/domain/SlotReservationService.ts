@@ -32,9 +32,7 @@ export interface ReleaseResult {
  * Coordinates DailySlotList aggregate operations with optimistic locking.
  */
 export class SlotReservationService {
-  constructor(
-    private readonly dailySlotListRepo: DailySlotListRepository,
-  ) {}
+  constructor(private readonly dailySlotListRepo: DailySlotListRepository) {}
 
   /**
    * Reserve a slot for the given reservation.
@@ -48,24 +46,31 @@ export class SlotReservationService {
    * @throws SlotAlreadyBookedError if the slot is already booked.
    * @throws OptimisticLockError on version conflict.
    */
-  async reserve(slotId: SlotId, reservationId: ReservationId): Promise<ReserveResult> {
+  async reserve(
+    slotId: SlotId,
+    reservationId: ReservationId,
+    treatmentDurationMinutes?: number,
+  ): Promise<ReserveResult> {
     const found = await this.dailySlotListRepo.findSlotById(slotId);
     if (!found) {
       throw new SlotNotFoundError(slotId.value);
     }
 
-    const { dailySlotList, slot } = found;
-    dailySlotList.reserveSlot(slotId, reservationId);
+    const { dailySlotList } = found;
+    dailySlotList.reserveSlot(slotId, reservationId, treatmentDurationMinutes);
     await this.dailySlotListRepo.save(dailySlotList);
+
+    // Get the updated slot after reservation (has treatmentDurationMinutes set)
+    const updatedSlot = dailySlotList.findSlotById(slotId)!;
 
     return {
       slotId: slotId.value,
       status: 'booked',
       reservationId: reservationId.value,
       date: dailySlotList.date.value,
-      startTime: slot.startTime.toString(),
-      endTime: slot.endTime.toString(),
-      durationMinutes: slot.durationMinutes,
+      startTime: updatedSlot.startTime.toString(),
+      endTime: updatedSlot.endTime.toString(),
+      durationMinutes: updatedSlot.effectiveTreatmentMinutes,
     };
   }
 
@@ -82,7 +87,10 @@ export class SlotReservationService {
    * @throws ReservationIdMismatchError if the reservationId does not match.
    * @throws OptimisticLockError on version conflict.
    */
-  async release(slotId: SlotId, reservationId: ReservationId): Promise<ReleaseResult> {
+  async release(
+    slotId: SlotId,
+    reservationId: ReservationId,
+  ): Promise<ReleaseResult> {
     const found = await this.dailySlotListRepo.findSlotById(slotId);
     if (!found) {
       throw new SlotNotFoundError(slotId.value);

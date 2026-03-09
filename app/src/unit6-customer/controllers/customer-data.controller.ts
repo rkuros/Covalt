@@ -10,27 +10,22 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
+  BadRequestException,
   ForbiddenException,
   UseGuards,
 } from '@nestjs/common';
-import {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
-  DeleteObjectCommand,
-} from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { randomUUID } from 'crypto';
-
-const BUCKET = process.env['CUSTOMER_DATA_BUCKET'] || '';
-const s3 = new S3Client({});
+import { CustomerDataStorageService } from '../domain/CustomerDataStorageService';
 
 @Controller('api/customers')
 @UseGuards(AuthGuard)
 export class CustomerDataController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: CustomerDataStorageService,
+  ) {}
 
   /**
    * Verify the customer belongs to the authenticated owner.
@@ -93,10 +88,7 @@ export class CustomerDataController {
    * List notes/records metadata (from DB).
    */
   @Get(':customerId/notes')
-  async listNotes(
-    @Param('customerId') customerId: string,
-    @Req() req: any,
-  ) {
+  async listNotes(@Param('customerId') customerId: string, @Req() req: any) {
     const ownerId = req.user.ownerId;
     await this.verifyOwnership(customerId, ownerId);
 
@@ -126,9 +118,22 @@ export class CustomerDataController {
   @HttpCode(HttpStatus.CREATED)
   async createNote(
     @Param('customerId') customerId: string,
-    @Body() body: { category: string; title: string; content: string; noteDate?: string },
+    @Body()
+    body: {
+      category: string;
+      title: string;
+      content: string;
+      noteDate?: string;
+    },
     @Req() req: any,
   ) {
+    if (!body.category || !body.content) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: 'category and content are required',
+      });
+    }
+
     const ownerId = req.user.ownerId;
     await this.verifyOwnership(customerId, ownerId);
 
@@ -137,14 +142,7 @@ export class CustomerDataController {
     const s3Key = `${ownerId}/${customerId}/${folder}/${noteId}.txt`;
 
     // Upload content to S3
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: BUCKET,
-        Key: s3Key,
-        Body: body.content,
-        ContentType: 'text/plain; charset=utf-8',
-      }),
-    );
+    await this.storage.uploadNote(s3Key, body.content);
 
     // Save metadata to DB
     const note = await this.prisma.customerNote.create({
@@ -184,10 +182,10 @@ export class CustomerDataController {
     const ownerId = req.user.ownerId;
     await this.verifyOwnership(customerId, ownerId);
 
-    const note = await this.prisma.customerNote.findUnique({
-      where: { id: noteId },
+    const note = await this.prisma.customerNote.findFirst({
+      where: { id: noteId, customerId, ownerId },
     });
-    if (!note || note.customerId !== customerId || note.ownerId !== ownerId) {
+    if (!note) {
       throw new NotFoundException({
         error: 'NOTE_NOT_FOUND',
         message: '指定されたノートが見つかりません',
@@ -195,13 +193,7 @@ export class CustomerDataController {
     }
 
     // Fetch content from S3
-    const response = await s3.send(
-      new GetObjectCommand({
-        Bucket: BUCKET,
-        Key: note.s3Key,
-      }),
-    );
-    const content = await response.Body?.transformToString('utf-8');
+    const content = await this.storage.downloadNote(note.s3Key);
 
     return {
       noteId: note.id,
@@ -209,7 +201,7 @@ export class CustomerDataController {
       category: note.category,
       title: note.title,
       noteDate: note.noteDate,
-      content: content || '',
+      content,
       createdAt: note.createdAt,
       updatedAt: note.updatedAt,
     };
@@ -229,10 +221,10 @@ export class CustomerDataController {
     const ownerId = req.user.ownerId;
     await this.verifyOwnership(customerId, ownerId);
 
-    const note = await this.prisma.customerNote.findUnique({
-      where: { id: noteId },
+    const note = await this.prisma.customerNote.findFirst({
+      where: { id: noteId, customerId, ownerId },
     });
-    if (!note || note.customerId !== customerId || note.ownerId !== ownerId) {
+    if (!note) {
       throw new NotFoundException({
         error: 'NOTE_NOT_FOUND',
         message: '指定されたノートが見つかりません',
@@ -241,14 +233,7 @@ export class CustomerDataController {
 
     // Update S3 content if provided
     if (body.content !== undefined) {
-      await s3.send(
-        new PutObjectCommand({
-          Bucket: BUCKET,
-          Key: note.s3Key,
-          Body: body.content,
-          ContentType: 'text/plain; charset=utf-8',
-        }),
-      );
+      await this.storage.uploadNote(note.s3Key, body.content);
     }
 
     // Update DB metadata
@@ -256,7 +241,8 @@ export class CustomerDataController {
       where: { id: noteId },
       data: {
         title: body.title ?? undefined,
-        noteDate: body.noteDate !== undefined ? (body.noteDate || null) : undefined,
+        noteDate:
+          body.noteDate !== undefined ? body.noteDate || null : undefined,
       },
     });
 
@@ -285,10 +271,10 @@ export class CustomerDataController {
     const ownerId = req.user.ownerId;
     await this.verifyOwnership(customerId, ownerId);
 
-    const note = await this.prisma.customerNote.findUnique({
-      where: { id: noteId },
+    const note = await this.prisma.customerNote.findFirst({
+      where: { id: noteId, customerId, ownerId },
     });
-    if (!note || note.customerId !== customerId || note.ownerId !== ownerId) {
+    if (!note) {
       throw new NotFoundException({
         error: 'NOTE_NOT_FOUND',
         message: '指定されたノートが見つかりません',
@@ -296,12 +282,7 @@ export class CustomerDataController {
     }
 
     // Delete from S3
-    await s3.send(
-      new DeleteObjectCommand({
-        Bucket: BUCKET,
-        Key: note.s3Key,
-      }),
-    );
+    await this.storage.deleteNote(note.s3Key);
 
     // Delete from DB
     await this.prisma.customerNote.delete({
@@ -319,9 +300,21 @@ export class CustomerDataController {
   async getPresignedUploadUrl(
     @Param('customerId') customerId: string,
     @Body()
-    body: { fileName: string; fileType: string; category?: string; noteDate?: string },
+    body: {
+      fileName: string;
+      fileType: string;
+      category?: string;
+      noteDate?: string;
+    },
     @Req() req: any,
   ) {
+    if (!body.fileName || !body.fileType) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: 'fileName and fileType are required',
+      });
+    }
+
     const ownerId = req.user.ownerId;
     await this.verifyOwnership(customerId, ownerId);
 
@@ -331,12 +324,7 @@ export class CustomerDataController {
     const ext = body.fileName.split('.').pop() || 'bin';
     const s3Key = `${ownerId}/${customerId}/${folder}/${attachmentId}.${ext}`;
 
-    const command = new PutObjectCommand({
-      Bucket: BUCKET,
-      Key: s3Key,
-      ContentType: body.fileType,
-    });
-    const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+    const presignedUrl = await this.storage.getUploadUrl(s3Key, body.fileType);
 
     // Save metadata to DB
     const attachment = await this.prisma.customerAttachment.create({
@@ -402,25 +390,20 @@ export class CustomerDataController {
     const ownerId = req.user.ownerId;
     await this.verifyOwnership(customerId, ownerId);
 
-    const attachment = await this.prisma.customerAttachment.findUnique({
-      where: { id: attachmentId },
+    const attachment = await this.prisma.customerAttachment.findFirst({
+      where: { id: attachmentId, customerId, ownerId },
     });
-    if (
-      !attachment ||
-      attachment.customerId !== customerId ||
-      attachment.ownerId !== ownerId
-    ) {
+    if (!attachment) {
       throw new NotFoundException({
         error: 'ATTACHMENT_NOT_FOUND',
         message: '指定された添付ファイルが見つかりません',
       });
     }
 
-    const command = new GetObjectCommand({
-      Bucket: BUCKET,
-      Key: attachment.s3Key,
-    });
-    const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+    const presignedUrl = await this.storage.getDownloadUrl(
+      attachment.s3Key,
+      attachment.fileName,
+    );
 
     return {
       attachmentId: attachment.id,
@@ -442,14 +425,10 @@ export class CustomerDataController {
     const ownerId = req.user.ownerId;
     await this.verifyOwnership(customerId, ownerId);
 
-    const attachment = await this.prisma.customerAttachment.findUnique({
-      where: { id: attachmentId },
+    const attachment = await this.prisma.customerAttachment.findFirst({
+      where: { id: attachmentId, customerId, ownerId },
     });
-    if (
-      !attachment ||
-      attachment.customerId !== customerId ||
-      attachment.ownerId !== ownerId
-    ) {
+    if (!attachment) {
       throw new NotFoundException({
         error: 'ATTACHMENT_NOT_FOUND',
         message: '指定された添付ファイルが見つかりません',
@@ -457,12 +436,7 @@ export class CustomerDataController {
     }
 
     // Delete from S3
-    await s3.send(
-      new DeleteObjectCommand({
-        Bucket: BUCKET,
-        Key: attachment.s3Key,
-      }),
-    );
+    await this.storage.deleteAttachment(attachment.s3Key);
 
     // Delete from DB
     await this.prisma.customerAttachment.delete({

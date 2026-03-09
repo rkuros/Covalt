@@ -3,7 +3,7 @@
  */
 
 export interface LiffVerifyResult {
-  readonly lineUserId: string;   // U + 32桁hex
+  readonly lineUserId: string; // U + 32桁hex
   readonly displayName: string;
 }
 

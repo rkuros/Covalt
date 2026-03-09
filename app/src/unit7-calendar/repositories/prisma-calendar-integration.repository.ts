@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { GoogleCalendarIntegration, IntegrationStatus } from '../domain/GoogleCalendarIntegration';
+import {
+  GoogleCalendarIntegration,
+  IntegrationStatus,
+} from '../domain/GoogleCalendarIntegration';
 import { GoogleCalendarIntegrationRepository } from '../domain/GoogleCalendarIntegrationRepository';
 import { OAuthToken } from '../domain/OAuthToken';
 import { CalendarId } from '../domain/CalendarId';
@@ -17,7 +20,9 @@ export class PrismaCalendarIntegrationRepository implements GoogleCalendarIntegr
     return this.toDomain(row);
   }
 
-  async findByOwnerId(ownerId: string): Promise<GoogleCalendarIntegration | null> {
+  async findByOwnerId(
+    ownerId: string,
+  ): Promise<GoogleCalendarIntegration | null> {
     const row = await this.prisma.googleCalendarIntegration.findUnique({
       where: { ownerId },
     });
@@ -63,10 +68,16 @@ export class PrismaCalendarIntegrationRepository implements GoogleCalendarIntegr
   }): GoogleCalendarIntegration {
     const oauthToken =
       row.accessToken && row.refreshToken && row.tokenExpiresAt
-        ? OAuthToken.create(row.accessToken, row.refreshToken, row.tokenExpiresAt)
+        ? OAuthToken.create(
+            row.accessToken,
+            row.refreshToken,
+            row.tokenExpiresAt,
+          )
         : null;
 
-    const calendarId = row.calendarId ? CalendarId.create(row.calendarId) : null;
+    const calendarId = row.calendarId
+      ? CalendarId.create(row.calendarId)
+      : null;
 
     // Map DB status to domain IntegrationStatus
     let status: IntegrationStatus;
@@ -82,6 +93,9 @@ export class PrismaCalendarIntegrationRepository implements GoogleCalendarIntegr
         break;
     }
 
+    // The DB schema (google_calendar_integrations) does not have createdAt/updatedAt columns.
+    // The domain model carries these as in-memory fields for tracking mutations within a
+    // single lifecycle. We pass new Date() as placeholders since no persisted values exist.
     return GoogleCalendarIntegration.reconstruct(
       row.ownerId,
       row.ownerId,

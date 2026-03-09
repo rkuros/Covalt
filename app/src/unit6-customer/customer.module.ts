@@ -6,12 +6,13 @@ import { CustomerQueryService } from './domain/CustomerQueryService';
 import { CustomerCommandService } from './domain/CustomerCommandService';
 import { CustomerAutoRegistrationHandler } from './domain/CustomerAutoRegistrationHandler';
 import { LineFriendAddedNestHandler } from './handlers/line-friend-added.handler';
+import { CustomerDataStorageService } from './domain/CustomerDataStorageService';
 
 /**
  * CUSTOMER_REPOSITORY トークン
  * ドメインの CustomerRepository インターフェースを NestJS DI で注入するためのトークン。
  */
-export const CUSTOMER_REPOSITORY = Symbol('CUSTOMER_REPOSITORY');
+export const CUSTOMER_REPOSITORY = 'CustomerRepository';
 
 @Module({
   controllers: [CustomerController, CustomerDataController],
@@ -44,9 +45,12 @@ export const CUSTOMER_REPOSITORY = Symbol('CUSTOMER_REPOSITORY');
       inject: [CustomerCommandService],
     },
 
+    // Storage Service
+    CustomerDataStorageService,
+
     // NestJS Event Handler
     LineFriendAddedNestHandler,
   ],
-  exports: [CustomerQueryService, CustomerCommandService, CUSTOMER_REPOSITORY],
+  exports: [CustomerQueryService, CustomerCommandService, CUSTOMER_REPOSITORY, CustomerDataStorageService],
 })
 export class Unit6CustomerModule {}

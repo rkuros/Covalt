@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   LineMessagingGateway,
   LineUserProfile,
@@ -12,6 +12,8 @@ import { UserBlockedError } from '../domain/DomainErrors';
  */
 @Injectable()
 export class LineMessagingGatewayImpl implements LineMessagingGateway {
+  private readonly logger = new Logger(LineMessagingGatewayImpl.name);
+
   async pushMessage(
     channelAccessToken: string,
     lineUserId: string,
@@ -43,7 +45,7 @@ export class LineMessagingGatewayImpl implements LineMessagingGateway {
         throw new UserBlockedError();
       }
 
-      console.error('[LINE Messaging API] pushMessage failed', {
+      this.logger.error('[LINE Messaging API] pushMessage failed', {
         status: response.status,
         error: errorObj,
       });
@@ -73,7 +75,7 @@ export class LineMessagingGatewayImpl implements LineMessagingGateway {
     );
 
     if (!response.ok) {
-      console.error('[LINE Messaging API] getProfile failed', {
+      this.logger.error('[LINE Messaging API] getProfile failed', {
         status: response.status,
         lineUserId,
       });

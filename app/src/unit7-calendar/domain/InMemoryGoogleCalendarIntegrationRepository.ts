@@ -13,7 +13,9 @@ export class InMemoryGoogleCalendarIntegrationRepository implements GoogleCalend
     return this.store.get(id) ?? null;
   }
 
-  async findByOwnerId(ownerId: string): Promise<GoogleCalendarIntegration | null> {
+  async findByOwnerId(
+    ownerId: string,
+  ): Promise<GoogleCalendarIntegration | null> {
     for (const integration of this.store.values()) {
       if (integration.ownerId === ownerId) {
         return integration;

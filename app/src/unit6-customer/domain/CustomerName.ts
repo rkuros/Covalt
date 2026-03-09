@@ -10,7 +10,7 @@ export class CustomerName {
 
   static create(value: string): CustomerName {
     if (!value || value.trim().length === 0) {
-      throw new Error("CustomerName must not be empty");
+      throw new Error('CustomerName must not be empty');
     }
     return new CustomerName(value.trim());
   }

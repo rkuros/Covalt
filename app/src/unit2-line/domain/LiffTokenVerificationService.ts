@@ -1,6 +1,9 @@
-import { LiffAccessToken } from "./LiffAccessToken";
-import { LiffVerificationGateway, LiffVerificationResult } from "./LiffVerificationGateway";
-import { InvalidLiffTokenError } from "./DomainErrors";
+import { LiffAccessToken } from './LiffAccessToken';
+import {
+  LiffVerificationGateway,
+  LiffVerificationResult,
+} from './LiffVerificationGateway';
+import { InvalidLiffTokenError } from './DomainErrors';
 
 /**
  * LIFF アクセストークンを LINE Platform に問い合わせて検証し、

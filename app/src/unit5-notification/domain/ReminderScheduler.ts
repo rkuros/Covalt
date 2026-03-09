@@ -93,7 +93,7 @@ export class ReminderScheduler {
    */
   getDueReminders(asOf: Date): ReminderEntry[] {
     return Array.from(this.schedules.values()).filter(
-      (entry) => entry.scheduledAt <= asOf
+      (entry) => entry.scheduledAt <= asOf,
     );
   }
 

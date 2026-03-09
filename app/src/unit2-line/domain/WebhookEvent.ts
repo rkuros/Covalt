@@ -1,10 +1,10 @@
 /**
  * LINE Platform から受信した Webhook イベントの共通構造を表す値オブジェクト。
  */
-export type WebhookEventType = "follow" | "unfollow" | "message" | "postback";
+export type WebhookEventType = 'follow' | 'unfollow' | 'message' | 'postback';
 
 export interface WebhookEventSource {
-  readonly type: "user" | "group" | "room";
+  readonly type: 'user' | 'group' | 'room';
   readonly userId?: string;
   readonly groupId?: string;
   readonly roomId?: string;
@@ -27,13 +27,13 @@ export class WebhookEvent {
     webhookEventId?: string;
   }): WebhookEvent {
     if (!params.eventType) {
-      throw new Error("WebhookEvent eventType is required");
+      throw new Error('WebhookEvent eventType is required');
     }
     if (!params.timestamp) {
-      throw new Error("WebhookEvent timestamp is required");
+      throw new Error('WebhookEvent timestamp is required');
     }
     if (!params.source) {
-      throw new Error("WebhookEvent source is required");
+      throw new Error('WebhookEvent source is required');
     }
     return new WebhookEvent(
       params.eventType,
@@ -44,14 +44,14 @@ export class WebhookEvent {
   }
 
   isFollowEvent(): boolean {
-    return this.eventType === "follow";
+    return this.eventType === 'follow';
   }
 
   isUnfollowEvent(): boolean {
-    return this.eventType === "unfollow";
+    return this.eventType === 'unfollow';
   }
 
   isMessageEvent(): boolean {
-    return this.eventType === "message";
+    return this.eventType === 'message';
   }
 }

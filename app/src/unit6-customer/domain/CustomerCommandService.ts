@@ -1,10 +1,10 @@
-import { Customer, CustomerResponse } from "./Customer";
-import { CustomerId } from "./CustomerId";
-import { OwnerId } from "./OwnerId";
-import { CustomerName } from "./CustomerName";
-import { LineUserId } from "./LineUserId";
-import { DisplayName } from "./DisplayName";
-import { CustomerRepository } from "./CustomerRepository";
+import { Customer, CustomerResponse } from './Customer';
+import { CustomerId } from './CustomerId';
+import { OwnerId } from './OwnerId';
+import { CustomerName } from './CustomerName';
+import { LineUserId } from './LineUserId';
+import { DisplayName } from './DisplayName';
+import { CustomerRepository } from './CustomerRepository';
 
 /**
  * CustomerCommandService - 顧客コマンドアプリケーションサービス
@@ -31,7 +31,7 @@ export class CustomerCommandService {
     await this.repository.save(customer);
 
     console.log(
-      `[CustomerCommandService] Manual customer created: ${customer.customerId.value}`
+      `[CustomerCommandService] Manual customer created: ${customer.customerId.value}`,
     );
 
     return customer.toResponse();
@@ -57,11 +57,11 @@ export class CustomerCommandService {
     // BR-9: 冪等性の担保 -- 既存顧客チェック
     const existing = await this.repository.findByOwnerAndLineUserId(
       ownerId,
-      lineUserId
+      lineUserId,
     );
     if (existing) {
       console.log(
-        `[CustomerCommandService] Customer already exists for ownerId=${ownerId.value}, lineUserId=${lineUserId.value}. Skipping creation.`
+        `[CustomerCommandService] Customer already exists for ownerId=${ownerId.value}, lineUserId=${lineUserId.value}. Skipping creation.`,
       );
       return existing.toResponse();
     }
@@ -74,7 +74,7 @@ export class CustomerCommandService {
     await this.repository.save(customer);
 
     console.log(
-      `[CustomerCommandService] LINE follow customer created: ${customer.customerId.value}`
+      `[CustomerCommandService] LINE follow customer created: ${customer.customerId.value}`,
     );
 
     return customer.toResponse();
@@ -87,7 +87,7 @@ export class CustomerCommandService {
    */
   async updateName(
     customerId: string,
-    newName: string
+    newName: string,
   ): Promise<CustomerResponse | null> {
     const id = CustomerId.create(customerId);
     const customer = await this.repository.findById(id);
@@ -99,7 +99,7 @@ export class CustomerCommandService {
     await this.repository.save(customer);
 
     console.log(
-      `[CustomerCommandService] Customer name updated: ${customer.customerId.value}`
+      `[CustomerCommandService] Customer name updated: ${customer.customerId.value}`,
     );
 
     return customer.toResponse();

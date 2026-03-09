@@ -1,11 +1,11 @@
-import { CustomerCommandService } from "./CustomerCommandService";
+import { CustomerCommandService } from './CustomerCommandService';
 
 /**
  * line.friend_added イベントペイロード（E7）
  * Provider: Unit 2（LINE 連携基盤）
  */
 export interface LineFriendAddedEvent {
-  eventType: "line.friend_added";
+  eventType: 'line.friend_added';
   ownerId: string;
   lineUserId: string;
   displayName: string;
@@ -26,22 +26,22 @@ export interface LineFriendAddedEvent {
  */
 export class CustomerAutoRegistrationHandler {
   constructor(
-    private readonly customerCommandService: CustomerCommandService
+    private readonly customerCommandService: CustomerCommandService,
   ) {}
 
   /**
    * line.friend_added イベントを処理する
    */
   async handle(event: LineFriendAddedEvent): Promise<void> {
-    if (event.eventType !== "line.friend_added") {
+    if (event.eventType !== 'line.friend_added') {
       console.warn(
-        `[CustomerAutoRegistrationHandler] Unexpected event type: ${event.eventType}. Ignoring.`
+        `[CustomerAutoRegistrationHandler] Unexpected event type: ${event.eventType}. Ignoring.`,
       );
       return;
     }
 
     console.log(
-      `[CustomerAutoRegistrationHandler] Processing line.friend_added for ownerId=${event.ownerId}, lineUserId=${event.lineUserId}`
+      `[CustomerAutoRegistrationHandler] Processing line.friend_added for ownerId=${event.ownerId}, lineUserId=${event.lineUserId}`,
     );
 
     try {
@@ -52,12 +52,12 @@ export class CustomerAutoRegistrationHandler {
       });
 
       console.log(
-        `[CustomerAutoRegistrationHandler] Successfully processed line.friend_added for lineUserId=${event.lineUserId}`
+        `[CustomerAutoRegistrationHandler] Successfully processed line.friend_added for lineUserId=${event.lineUserId}`,
       );
     } catch (error) {
       console.error(
         `[CustomerAutoRegistrationHandler] Failed to process line.friend_added for lineUserId=${event.lineUserId}`,
-        error
+        error,
       );
       throw error;
     }

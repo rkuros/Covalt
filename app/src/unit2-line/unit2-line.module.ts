@@ -60,7 +60,12 @@ import { LineController } from './controllers/line.controller';
         channelConfigRepo: PrismaLineChannelConfigRepository,
         friendshipRepo: PrismaLineFriendshipRepository,
         messagingGateway: LineMessagingGatewayImpl,
-      ) => new MessagePushService(channelConfigRepo, friendshipRepo, messagingGateway),
+      ) =>
+        new MessagePushService(
+          channelConfigRepo,
+          friendshipRepo,
+          messagingGateway,
+        ),
       inject: [
         PrismaLineChannelConfigRepository,
         PrismaLineFriendshipRepository,

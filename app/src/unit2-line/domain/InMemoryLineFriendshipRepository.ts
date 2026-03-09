@@ -1,13 +1,11 @@
-import { LineUserId } from "./LineUserId";
-import { LineFriendship } from "./LineFriendship";
-import { LineFriendshipRepository } from "./LineFriendshipRepository";
+import { LineUserId } from './LineUserId';
+import { LineFriendship } from './LineFriendship';
+import { LineFriendshipRepository } from './LineFriendshipRepository';
 
 /**
  * LineFriendshipRepository のインメモリ実装。
  */
-export class InMemoryLineFriendshipRepository
-  implements LineFriendshipRepository
-{
+export class InMemoryLineFriendshipRepository implements LineFriendshipRepository {
   private readonly store = new Map<string, LineFriendship>();
 
   async findById(id: string): Promise<LineFriendship | null> {

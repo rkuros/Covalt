@@ -1,5 +1,5 @@
-import { Session } from "./Session";
-import { AuthToken } from "./AuthToken";
+import { Session } from './Session';
+import { AuthToken } from './AuthToken';
 
 /**
  * リポジトリインターフェース: SessionRepository

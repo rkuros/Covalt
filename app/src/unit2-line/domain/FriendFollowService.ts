@@ -1,14 +1,14 @@
-import { randomUUID } from "crypto";
-import { LineUserId } from "./LineUserId";
-import { LineFriendship } from "./LineFriendship";
-import { LineFriendAddedEvent } from "./LineFriendAddedEvent";
-import { PushMessage } from "./PushMessage";
-import { WebhookEvent } from "./WebhookEvent";
-import { LineFriendshipRepository } from "./LineFriendshipRepository";
-import { LineChannelConfigRepository } from "./LineChannelConfigRepository";
-import { LineMessagingGateway } from "./LineMessagingGateway";
-import { EventPublisher } from "./EventPublisher";
-import { ChannelConfigNotFoundError } from "./DomainErrors";
+import { randomUUID } from 'crypto';
+import { LineUserId } from './LineUserId';
+import { LineFriendship } from './LineFriendship';
+import { LineFriendAddedEvent } from './LineFriendAddedEvent';
+import { PushMessage } from './PushMessage';
+import { WebhookEvent } from './WebhookEvent';
+import { LineFriendshipRepository } from './LineFriendshipRepository';
+import { LineChannelConfigRepository } from './LineChannelConfigRepository';
+import { LineMessagingGateway } from './LineMessagingGateway';
+import { EventPublisher } from './EventPublisher';
+import { ChannelConfigNotFoundError } from './DomainErrors';
 
 /**
  * 友だち追加 (follow) / 解除 (unfollow) イベントを処理するドメインサービス。
@@ -31,7 +31,7 @@ export class FriendFollowService {
 
   async handleFollow(ownerId: string, event: WebhookEvent): Promise<void> {
     if (!event.source.userId) {
-      console.log("Follow event without userId, skipping");
+      console.log('Follow event without userId, skipping');
       return;
     }
 
@@ -50,11 +50,10 @@ export class FriendFollowService {
     );
 
     // 既存の友だち関係を確認（再フォロー対応）
-    const existing =
-      await this.friendshipRepository.findByOwnerIdAndLineUserId(
-        ownerId,
-        lineUserId,
-      );
+    const existing = await this.friendshipRepository.findByOwnerIdAndLineUserId(
+      ownerId,
+      lineUserId,
+    );
 
     let friendship: LineFriendship;
     if (existing) {
@@ -73,7 +72,7 @@ export class FriendFollowService {
 
     // ウェルカムメッセージ送信
     const welcomeMessage = PushMessage.createText(
-      "友だち追加ありがとうございます！\nこちらからご予約の確認やリマインダーをお送りします。\n画面下部のメニューからご予約いただけます。",
+      '友だち追加ありがとうございます！\nこちらからご予約の確認やリマインダーをお送りします。\n画面下部のメニューからご予約いただけます。',
     );
     await this.messagingGateway.pushMessage(
       config.channelAccessToken,
@@ -92,7 +91,7 @@ export class FriendFollowService {
 
   async handleUnfollow(ownerId: string, event: WebhookEvent): Promise<void> {
     if (!event.source.userId) {
-      console.log("Unfollow event without userId, skipping");
+      console.log('Unfollow event without userId, skipping');
       return;
     }
 

@@ -8,11 +8,15 @@ import {
   Headers,
   UnauthorizedException,
   BadRequestException,
+  ForbiddenException,
   NotFoundException,
-  InternalServerErrorException,
+  HttpCode,
+  HttpStatus,
   Logger,
   Inject,
 } from '@nestjs/common';
+import { PrismaService } from '../../common/prisma/prisma.service';
+import { CustomerDataStorageService } from '../../unit6-customer/domain/CustomerDataStorageService';
 import { ReservationCommandService } from '../domain/ReservationCommandService';
 import type { ReservationRepository } from '../domain/ReservationRepository';
 import type { LiffGateway } from '../domain/LiffGateway';
@@ -21,7 +25,11 @@ import { ActorType } from '../domain/ActorType';
 import { CustomerId } from '../domain/CustomerId';
 import { OwnerId } from '../domain/OwnerId';
 import { LineUserId } from '../domain/LineUserId';
-import { Reservation } from '../domain/Reservation';
+import {
+  toReservationResponse,
+  handleDomainError,
+} from './reservation-response.helper';
+import { randomUUID } from 'crypto';
 
 // --- Request DTOs ---
 
@@ -38,24 +46,6 @@ interface ModifyReservationBody {
   newDurationMinutes: number;
 }
 
-// --- Response helpers ---
-
-function toReservationResponse(r: Reservation) {
-  return {
-    reservationId: r.reservationId.value,
-    ownerId: r.ownerId.value,
-    customerId: r.customerId.value,
-    slotId: r.slotId.value,
-    dateTime: r.dateTime.toISOString(),
-    durationMinutes: r.durationMinutes.value,
-    status: r.status,
-    customerName: r.customerName.value,
-    createdBy: r.createdBy,
-    createdAt: r.createdAt.toISOString(),
-    updatedAt: r.updatedAt.toISOString(),
-  };
-}
-
 @Controller('api/reservations')
 export class CustomerReservationController {
   private readonly logger = new Logger(CustomerReservationController.name);
@@ -68,6 +58,8 @@ export class CustomerReservationController {
     private readonly liffGateway: LiffGateway,
     @Inject('CustomerGateway')
     private readonly customerGateway: CustomerGateway,
+    private readonly prisma: PrismaService,
+    private readonly storage: CustomerDataStorageService,
   ) {}
 
   /**
@@ -96,12 +88,13 @@ export class CustomerReservationController {
         dateTime: body.dateTime,
         durationMinutes: body.durationMinutes,
         lineUserId: liffResult.lineUserId,
+        displayName: liffResult.displayName,
         createdBy: ActorType.Customer,
       });
 
       return toReservationResponse(reservation);
     } catch (error) {
-      this.handleDomainError(error);
+      handleDomainError(error, this.logger);
     }
   }
 
@@ -150,10 +143,10 @@ export class CustomerReservationController {
         );
 
       return {
-        reservations: reservations.map(toReservationResponse),
+        reservations: reservations.map((r) => toReservationResponse(r)),
       };
     } catch (error) {
-      this.handleDomainError(error);
+      handleDomainError(error, this.logger);
     }
   }
 
@@ -202,10 +195,10 @@ export class CustomerReservationController {
         );
 
       return {
-        reservations: reservations.map(toReservationResponse),
+        reservations: reservations.map((r) => toReservationResponse(r)),
       };
     } catch (error) {
-      this.handleDomainError(error);
+      handleDomainError(error, this.logger);
     }
   }
 
@@ -240,7 +233,7 @@ export class CustomerReservationController {
 
       return toReservationResponse(reservation);
     } catch (error) {
-      this.handleDomainError(error);
+      handleDomainError(error, this.logger);
     }
   }
 
@@ -264,8 +257,292 @@ export class CustomerReservationController {
 
       return toReservationResponse(reservation);
     } catch (error) {
-      this.handleDomainError(error);
+      handleDomainError(error, this.logger);
     }
+  }
+
+  // --- Customer-facing read-only endpoints for notes/attachments/photos ---
+  // These bypass AuthGuard and use verifyLiffToken() directly,
+  // so they work with both LIFF access tokens and mock mode.
+
+  /**
+   * Resolve the authenticated LIFF user to a customerId, verifying they
+   * belong to the given owner.
+   */
+  private async resolveCustomer(
+    authHeader: string | undefined,
+    mockAuthHeader: string | undefined,
+    ownerIdHeader: string | undefined,
+  ): Promise<{ customerId: string; ownerId: string }> {
+    const liffResult = await this.verifyLiffToken(authHeader, mockAuthHeader);
+
+    if (!ownerIdHeader) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: 'x-owner-id header is required',
+      });
+    }
+
+    const ownerId = OwnerId.create(ownerIdHeader);
+    const lineUserId = LineUserId.create(liffResult.lineUserId);
+    if (!lineUserId) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: 'Invalid lineUserId',
+      });
+    }
+
+    const customer = await this.customerGateway.findByLineUserId(
+      ownerId,
+      lineUserId,
+    );
+    if (!customer) {
+      throw new NotFoundException({
+        error: 'CUSTOMER_NOT_FOUND',
+        message: '顧客が見つかりません',
+      });
+    }
+
+    return { customerId: customer.customerId, ownerId: ownerId.value };
+  }
+
+  /**
+   * GET /api/reservations/customer-data/:customerId/notes
+   * Customer-facing: list notes metadata.
+   */
+  @Get('customer-data/:customerId/notes')
+  async listCustomerNotes(
+    @Param('customerId') customerId: string,
+    @Headers('authorization') authHeader: string | undefined,
+    @Headers('x-owner-id') ownerIdHeader: string | undefined,
+    @Headers('x-mock-auth') mockAuthHeader: string | undefined,
+  ) {
+    const resolved = await this.resolveCustomer(
+      authHeader,
+      mockAuthHeader,
+      ownerIdHeader,
+    );
+
+    if (resolved.customerId !== customerId) {
+      throw new ForbiddenException({
+        error: 'FORBIDDEN',
+        message: '他の顧客のデータにはアクセスできません',
+      });
+    }
+
+    const notes = await this.prisma.customerNote.findMany({
+      where: { customerId, ownerId: resolved.ownerId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      notes: notes.map((n) => ({
+        noteId: n.id,
+        customerId: n.customerId,
+        category: n.category,
+        title: n.title,
+        noteDate: n.noteDate,
+        createdAt: n.createdAt,
+        updatedAt: n.updatedAt,
+      })),
+    };
+  }
+
+  /**
+   * GET /api/reservations/customer-data/:customerId/notes/:noteId
+   * Customer-facing: get note content.
+   */
+  @Get('customer-data/:customerId/notes/:noteId')
+  async getCustomerNote(
+    @Param('customerId') customerId: string,
+    @Param('noteId') noteId: string,
+    @Headers('authorization') authHeader: string | undefined,
+    @Headers('x-owner-id') ownerIdHeader: string | undefined,
+    @Headers('x-mock-auth') mockAuthHeader: string | undefined,
+  ) {
+    const resolved = await this.resolveCustomer(
+      authHeader,
+      mockAuthHeader,
+      ownerIdHeader,
+    );
+
+    if (resolved.customerId !== customerId) {
+      throw new ForbiddenException({
+        error: 'FORBIDDEN',
+        message: '他の顧客のデータにはアクセスできません',
+      });
+    }
+
+    const note = await this.prisma.customerNote.findFirst({
+      where: { id: noteId, customerId, ownerId: resolved.ownerId },
+    });
+    if (!note) {
+      throw new NotFoundException({
+        error: 'NOTE_NOT_FOUND',
+        message: '指定されたノートが見つかりません',
+      });
+    }
+
+    const content = await this.storage.downloadNote(note.s3Key);
+
+    return {
+      noteId: note.id,
+      customerId: note.customerId,
+      category: note.category,
+      title: note.title,
+      noteDate: note.noteDate,
+      content,
+      createdAt: note.createdAt,
+      updatedAt: note.updatedAt,
+    };
+  }
+
+  /**
+   * GET /api/reservations/customer-data/:customerId/attachments
+   * Customer-facing: list attachments metadata.
+   */
+  @Get('customer-data/:customerId/attachments')
+  async listCustomerAttachments(
+    @Param('customerId') customerId: string,
+    @Headers('authorization') authHeader: string | undefined,
+    @Headers('x-owner-id') ownerIdHeader: string | undefined,
+    @Headers('x-mock-auth') mockAuthHeader: string | undefined,
+  ) {
+    const resolved = await this.resolveCustomer(
+      authHeader,
+      mockAuthHeader,
+      ownerIdHeader,
+    );
+
+    if (resolved.customerId !== customerId) {
+      throw new ForbiddenException({
+        error: 'FORBIDDEN',
+        message: '他の顧客のデータにはアクセスできません',
+      });
+    }
+
+    const attachments = await this.prisma.customerAttachment.findMany({
+      where: { customerId, ownerId: resolved.ownerId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      attachments: attachments.map((a) => ({
+        attachmentId: a.id,
+        customerId: a.customerId,
+        fileName: a.fileName,
+        fileType: a.fileType,
+        category: a.category,
+        noteDate: a.noteDate,
+        createdAt: a.createdAt,
+      })),
+    };
+  }
+
+  /**
+   * GET /api/reservations/customer-data/:customerId/attachments/:attachmentId/url
+   * Customer-facing: get presigned download URL for a photo/attachment.
+   */
+  @Get('customer-data/:customerId/attachments/:attachmentId/url')
+  async getCustomerAttachmentUrl(
+    @Param('customerId') customerId: string,
+    @Param('attachmentId') attachmentId: string,
+    @Headers('authorization') authHeader: string | undefined,
+    @Headers('x-owner-id') ownerIdHeader: string | undefined,
+    @Headers('x-mock-auth') mockAuthHeader: string | undefined,
+  ) {
+    const resolved = await this.resolveCustomer(
+      authHeader,
+      mockAuthHeader,
+      ownerIdHeader,
+    );
+
+    if (resolved.customerId !== customerId) {
+      throw new ForbiddenException({
+        error: 'FORBIDDEN',
+        message: '他の顧客のデータにはアクセスできません',
+      });
+    }
+
+    const attachment = await this.prisma.customerAttachment.findFirst({
+      where: { id: attachmentId, customerId, ownerId: resolved.ownerId },
+    });
+    if (!attachment) {
+      throw new NotFoundException({
+        error: 'ATTACHMENT_NOT_FOUND',
+        message: '指定された添付ファイルが見つかりません',
+      });
+    }
+
+    const presignedUrl = await this.storage.getDownloadUrl(
+      attachment.s3Key,
+      attachment.fileName,
+    );
+
+    return {
+      attachmentId: attachment.id,
+      presignedUrl,
+    };
+  }
+
+  /**
+   * POST /api/reservations/customer-data/:customerId/attachments/presigned-url
+   * Customer-facing: generate presigned PUT URL for photo upload.
+   */
+  @Post('customer-data/:customerId/attachments/presigned-url')
+  @HttpCode(HttpStatus.OK)
+  async getCustomerUploadUrl(
+    @Param('customerId') customerId: string,
+    @Body()
+    body: {
+      fileName: string;
+      fileType: string;
+      category?: string;
+      noteDate?: string;
+    },
+    @Headers('authorization') authHeader: string | undefined,
+    @Headers('x-owner-id') ownerIdHeader: string | undefined,
+    @Headers('x-mock-auth') mockAuthHeader: string | undefined,
+  ) {
+    const resolved = await this.resolveCustomer(
+      authHeader,
+      mockAuthHeader,
+      ownerIdHeader,
+    );
+
+    if (resolved.customerId !== customerId) {
+      throw new ForbiddenException({
+        error: 'FORBIDDEN',
+        message: '他の顧客のデータにはアクセスできません',
+      });
+    }
+
+    const attachmentId = randomUUID();
+    const category = body.category || 'photo';
+    const folder = category === 'attachment' ? 'attachments' : 'photos';
+    const ext = body.fileName.split('.').pop() || 'bin';
+    const s3Key = `${resolved.ownerId}/${customerId}/${folder}/${attachmentId}.${ext}`;
+
+    const presignedUrl = await this.storage.getUploadUrl(s3Key, body.fileType);
+
+    await this.prisma.customerAttachment.create({
+      data: {
+        id: attachmentId,
+        customerId,
+        ownerId: resolved.ownerId,
+        fileName: body.fileName,
+        fileType: body.fileType,
+        s3Key,
+        category,
+        noteDate: body.noteDate || null,
+      },
+    });
+
+    return {
+      attachmentId,
+      presignedUrl,
+      s3Key,
+    };
   }
 
   // --- Private helpers ---
@@ -283,7 +560,10 @@ export class CustomerReservationController {
 
     // Mock mode: skip LIFF verification and return a mock identity
     if (mockAuthHeader === 'true') {
-      return { lineUserId: 'U00000000000000000000000000000000', displayName: 'テストユーザー' };
+      return {
+        lineUserId: 'U00000000000000000000000000000000',
+        displayName: 'テストユーザー',
+      };
     }
 
     const token = authHeader.slice(7);
@@ -295,31 +575,5 @@ export class CustomerReservationController {
         message: 'Invalid LIFF access token',
       });
     }
-  }
-
-  private handleDomainError(error: unknown): never {
-    const message =
-      error instanceof Error ? error.message : 'Unknown error';
-    this.logger.error(`Domain error: ${message}`);
-
-    if (message.includes('not found')) {
-      throw new NotFoundException({
-        error: 'NOT_FOUND',
-        message,
-      });
-    }
-    if (
-      message.includes('SLOT_ALREADY_BOOKED') ||
-      message.includes('Cannot')
-    ) {
-      throw new BadRequestException({
-        error: 'BUSINESS_RULE_VIOLATION',
-        message,
-      });
-    }
-    throw new InternalServerErrorException({
-      error: 'INTERNAL_ERROR',
-      message,
-    });
   }
 }

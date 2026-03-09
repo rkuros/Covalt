@@ -1,6 +1,6 @@
-import { NotificationType } from "./NotificationType";
-import { RecipientType } from "./RecipientType";
-import { SendResult } from "./SendResult";
+import { NotificationType } from './NotificationType';
+import { RecipientType } from './RecipientType';
+import { SendResult } from './SendResult';
 
 /**
  * 送信済み通知の記録エンティティ。

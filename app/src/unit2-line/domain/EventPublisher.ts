@@ -1,4 +1,4 @@
-import { LineFriendAddedEvent } from "./LineFriendAddedEvent";
+import { LineFriendAddedEvent } from './LineFriendAddedEvent';
 
 /**
  * ドメインイベント発行 Gateway インターフェース。

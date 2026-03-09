@@ -11,12 +11,12 @@ export class EmailAddress {
 
   static create(value: string): EmailAddress {
     if (!value || value.trim().length === 0) {
-      throw new Error("メールアドレスは必須です");
+      throw new Error('メールアドレスは必須です');
     }
     const trimmed = value.trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmed)) {
-      throw new Error("メールアドレスの形式が不正です");
+      throw new Error('メールアドレスの形式が不正です');
     }
     return new EmailAddress(trimmed);
   }

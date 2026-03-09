@@ -23,7 +23,9 @@ export class DayOfWeek {
 
   static create(value: DayOfWeekEnum): DayOfWeek {
     if (!ALL_DAYS.has(value)) {
-      throw new Error(`DayOfWeek must be one of ${[...ALL_DAYS].join(', ')}, got "${value}"`);
+      throw new Error(
+        `DayOfWeek must be one of ${[...ALL_DAYS].join(', ')}, got "${value}"`,
+      );
     }
     return new DayOfWeek(value);
   }

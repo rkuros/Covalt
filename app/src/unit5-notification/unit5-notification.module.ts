@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
+import { PrismaService } from '../common/prisma/prisma.service';
 
 // Repositories
 import { PrismaNotificationRecordRepository } from './repositories/prisma-notification-record.repository';
@@ -50,7 +51,8 @@ import { ReminderCronService } from './cron/reminder.cron';
         templateResolver: NotificationTemplateResolver,
         messageSender: HttpLineMessageSender,
         recordRepo: PrismaNotificationRecordRepository,
-      ) => new NotificationDispatcher(templateResolver, messageSender, recordRepo),
+      ) =>
+        new NotificationDispatcher(templateResolver, messageSender, recordRepo),
       inject: [
         NotificationTemplateResolver,
         HttpLineMessageSender,
@@ -82,8 +84,9 @@ import { ReminderCronService } from './cron/reminder.cron';
       useFactory: (
         reminderRepo: PrismaReminderScheduleRepository,
         messageSender: HttpLineMessageSender,
-      ) => new ReminderCronService(reminderRepo, messageSender),
-      inject: [PrismaReminderScheduleRepository, HttpLineMessageSender],
+        prisma: PrismaService,
+      ) => new ReminderCronService(reminderRepo, messageSender, prisma),
+      inject: [PrismaReminderScheduleRepository, HttpLineMessageSender, PrismaService],
     },
   ],
   exports: [

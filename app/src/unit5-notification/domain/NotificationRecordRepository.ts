@@ -1,4 +1,4 @@
-import { NotificationRecord } from "./NotificationRecord";
+import { NotificationRecord } from './NotificationRecord';
 
 /**
  * NotificationRecord の永続化インターフェース。

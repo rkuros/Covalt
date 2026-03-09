@@ -1,8 +1,8 @@
-import { Customer } from "./Customer";
-import { CustomerId } from "./CustomerId";
-import { OwnerId } from "./OwnerId";
-import { LineUserId } from "./LineUserId";
-import { CustomerRepository } from "./CustomerRepository";
+import { Customer } from './Customer';
+import { CustomerId } from './CustomerId';
+import { OwnerId } from './OwnerId';
+import { LineUserId } from './LineUserId';
+import { CustomerRepository } from './CustomerRepository';
 
 /**
  * InMemoryCustomerRepository - テスト・開発用のインメモリ実装
@@ -16,7 +16,7 @@ export class InMemoryCustomerRepository implements CustomerRepository {
 
   async findByOwnerAndLineUserId(
     ownerId: OwnerId,
-    lineUserId: LineUserId
+    lineUserId: LineUserId,
   ): Promise<Customer | null> {
     for (const customer of this.store.values()) {
       if (
@@ -30,10 +30,7 @@ export class InMemoryCustomerRepository implements CustomerRepository {
     return null;
   }
 
-  async searchByName(
-    ownerId: OwnerId,
-    query: string
-  ): Promise<Customer[]> {
+  async searchByName(ownerId: OwnerId, query: string): Promise<Customer[]> {
     const results: Customer[] = [];
     for (const customer of this.store.values()) {
       if (

@@ -10,7 +10,12 @@ export class CalendarEventDetail {
   readonly endDateTime: Date;
   readonly description: string;
 
-  private constructor(title: string, startDateTime: Date, endDateTime: Date, description: string) {
+  private constructor(
+    title: string,
+    startDateTime: Date,
+    endDateTime: Date,
+    description: string,
+  ) {
     this.title = title;
     this.startDateTime = startDateTime;
     this.endDateTime = endDateTime;
@@ -38,7 +43,12 @@ export class CalendarEventDetail {
     if (endDateTime.getTime() <= startDateTime.getTime()) {
       throw new Error('終了日時は開始日時より後である必要があります');
     }
-    return new CalendarEventDetail(title.trim(), startDateTime, endDateTime, description);
+    return new CalendarEventDetail(
+      title.trim(),
+      startDateTime,
+      endDateTime,
+      description,
+    );
   }
 
   /**

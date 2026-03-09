@@ -1,7 +1,7 @@
-import { randomUUID } from "crypto";
-import { EmailAddress } from "./EmailAddress";
-import { HashedPassword } from "./HashedPassword";
-import { Role } from "./Role";
+import { randomUUID } from 'crypto';
+import { EmailAddress } from './EmailAddress';
+import { HashedPassword } from './HashedPassword';
+import { Role } from './Role';
 
 /**
  * エンティティ: AdminAccount
@@ -31,7 +31,10 @@ export class AdminAccount {
   /**
    * 新規管理者アカウントを作成する。
    */
-  static create(email: EmailAddress, passwordHash: HashedPassword): AdminAccount {
+  static create(
+    email: EmailAddress,
+    passwordHash: HashedPassword,
+  ): AdminAccount {
     return new AdminAccount(randomUUID(), email, passwordHash, new Date());
   }
 

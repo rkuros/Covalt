@@ -14,7 +14,9 @@ export interface CalendarEventMappingRepository {
   /**
    * 予約 ID でアクティブなマッピングを取得する。
    */
-  findByReservationId(reservationId: string): Promise<CalendarEventMapping | null>;
+  findByReservationId(
+    reservationId: string,
+  ): Promise<CalendarEventMapping | null>;
 
   /**
    * マッピングを保存（新規作成・更新）する。

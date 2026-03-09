@@ -1,13 +1,11 @@
-import { NotificationRecord } from "./NotificationRecord";
-import { NotificationRecordRepository } from "./NotificationRecordRepository";
+import { NotificationRecord } from './NotificationRecord';
+import { NotificationRecordRepository } from './NotificationRecordRepository';
 
 /**
  * NotificationRecordRepository のインメモリ実装。
  * テストおよび開発用。
  */
-export class InMemoryNotificationRecordRepository
-  implements NotificationRecordRepository
-{
+export class InMemoryNotificationRecordRepository implements NotificationRecordRepository {
   private readonly records: Map<string, NotificationRecord> = new Map();
 
   async save(record: NotificationRecord): Promise<void> {
@@ -15,10 +13,10 @@ export class InMemoryNotificationRecordRepository
   }
 
   async findByReservationId(
-    reservationId: string
+    reservationId: string,
   ): Promise<NotificationRecord[]> {
     return Array.from(this.records.values()).filter(
-      (r) => r.reservationId === reservationId
+      (r) => r.reservationId === reservationId,
     );
   }
 

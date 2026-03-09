@@ -1,4 +1,4 @@
-import { LineChannelConfig } from "./LineChannelConfig";
+import { LineChannelConfig } from './LineChannelConfig';
 
 /**
  * LineChannelConfig リポジトリインターフェース。

@@ -15,7 +15,9 @@ export interface DailySlotListRepository {
   ): Promise<DailySlotList | null>;
 
   /** Helper: find which DailySlotList contains the given slotId, and return the slot. */
-  findSlotById(slotId: SlotId): Promise<{ dailySlotList: DailySlotList; slot: Slot } | null>;
+  findSlotById(
+    slotId: SlotId,
+  ): Promise<{ dailySlotList: DailySlotList; slot: Slot } | null>;
 
   /** Find all DailySlotLists for an owner within a date range (inclusive). */
   findAllByOwnerIdAndDateRange(

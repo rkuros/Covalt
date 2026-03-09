@@ -14,7 +14,7 @@ export class LineUserId {
   static create(value: string): LineUserId {
     if (!value || !LineUserId.PATTERN.test(value)) {
       throw new Error(
-        `Invalid LineUserId format: "${value}". Expected "U" followed by 32 hex characters.`
+        `Invalid LineUserId format: "${value}". Expected "U" followed by 32 hex characters.`,
       );
     }
     return new LineUserId(value);

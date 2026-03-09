@@ -42,7 +42,9 @@ export class BusinessHour {
   }): BusinessHour {
     if (params.isBusinessDay) {
       if (!params.startTime.isBefore(params.endTime)) {
-        throw new Error('startTime must be before endTime when isBusinessDay is true');
+        throw new Error(
+          'startTime must be before endTime when isBusinessDay is true',
+        );
       }
     }
     return new BusinessHour(

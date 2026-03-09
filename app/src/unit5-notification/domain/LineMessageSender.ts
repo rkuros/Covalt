@@ -1,10 +1,10 @@
-import { SendResult } from "./SendResult";
+import { SendResult } from './SendResult';
 
 /**
  * LINE メッセージの種別。
  */
 export interface LineMessage {
-  readonly type: "text" | "flex";
+  readonly type: 'text' | 'flex';
   readonly text: string;
 }
 
@@ -25,6 +25,6 @@ export interface LineMessageSender {
   send(
     ownerId: string,
     lineUserId: string,
-    messages: readonly LineMessage[]
+    messages: readonly LineMessage[],
   ): Promise<SendResult>;
 }

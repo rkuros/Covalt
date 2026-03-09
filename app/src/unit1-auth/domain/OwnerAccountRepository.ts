@@ -1,5 +1,5 @@
-import { OwnerAccount } from "./OwnerAccount";
-import { EmailAddress } from "./EmailAddress";
+import { OwnerAccount } from './OwnerAccount';
+import { EmailAddress } from './EmailAddress';
 
 /**
  * リポジトリインターフェース: OwnerAccountRepository

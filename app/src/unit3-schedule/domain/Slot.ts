@@ -20,6 +20,7 @@ export class Slot {
   readonly duration: Duration;
   private _status: SlotStatus;
   private _reservationId: ReservationId | null;
+  private _treatmentDurationMinutes: number | null;
 
   private constructor(
     slotId: SlotId,
@@ -27,12 +28,14 @@ export class Slot {
     duration: Duration,
     status: SlotStatus,
     reservationId: ReservationId | null,
+    treatmentDurationMinutes: number | null,
   ) {
     this.slotId = slotId;
     this.timeRange = timeRange;
     this.duration = duration;
     this._status = status;
     this._reservationId = reservationId;
+    this._treatmentDurationMinutes = treatmentDurationMinutes;
   }
 
   static create(params: {
@@ -42,6 +45,7 @@ export class Slot {
     durationMinutes: Duration;
     status?: SlotStatus;
     reservationId?: ReservationId | null;
+    treatmentDurationMinutes?: number | null;
   }): Slot {
     const timeRange = TimeRange.create(params.startTime, params.endTime);
     const actualDuration = timeRange.durationInMinutes();
@@ -67,6 +71,7 @@ export class Slot {
       params.durationMinutes,
       status,
       reservationId,
+      params.treatmentDurationMinutes ?? null,
     );
   }
 
@@ -90,6 +95,18 @@ export class Slot {
     return this.duration.minutes;
   }
 
+  get treatmentDurationMinutes(): number | null {
+    return this._treatmentDurationMinutes;
+  }
+
+  /**
+   * Returns the effective treatment duration:
+   * treatmentDurationMinutes if set, otherwise the slot's own duration.
+   */
+  get effectiveTreatmentMinutes(): number {
+    return this._treatmentDurationMinutes ?? this.duration.minutes;
+  }
+
   isAvailable(): boolean {
     return this._status.isAvailable();
   }
@@ -101,13 +118,20 @@ export class Slot {
   /**
    * Reserve this slot for the given reservation.
    * Transitions: available -> booked.
+   * @param treatmentDurationMinutes actual treatment duration (may exceed slot duration)
    */
-  reserve(reservationId: ReservationId): void {
+  reserve(
+    reservationId: ReservationId,
+    treatmentDurationMinutes?: number,
+  ): void {
     if (this._status.isBooked()) {
       throw new SlotAlreadyBookedError(this.slotId.value);
     }
     this._status = SlotStatus.booked();
     this._reservationId = reservationId;
+    if (treatmentDurationMinutes !== undefined) {
+      this._treatmentDurationMinutes = treatmentDurationMinutes;
+    }
   }
 
   /**
@@ -124,14 +148,11 @@ export class Slot {
     }
     this._status = SlotStatus.available();
     this._reservationId = null;
+    this._treatmentDurationMinutes = null;
   }
 
   /** Check if this slot's time range overlaps with another slot. */
   overlapsWith(other: Slot): boolean {
     return this.timeRange.overlaps(other.timeRange);
-  }
-
-  overlapsWithRange(range: TimeRange): boolean {
-    return this.timeRange.overlaps(range);
   }
 }

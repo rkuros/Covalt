@@ -2,10 +2,10 @@
  * 送信エラー種別。
  */
 export const SendErrorType = {
-  UserBlocked: "USER_BLOCKED",
-  NetworkError: "NETWORK_ERROR",
-  Unknown: "UNKNOWN",
-  Skipped: "SKIPPED",
+  UserBlocked: 'USER_BLOCKED',
+  NetworkError: 'NETWORK_ERROR',
+  Unknown: 'UNKNOWN',
+  Skipped: 'SKIPPED',
 } as const;
 
 export type SendErrorType = (typeof SendErrorType)[keyof typeof SendErrorType];
@@ -24,7 +24,7 @@ export class SendResult {
     success: boolean,
     messageId: string | null,
     errorType: SendErrorType | null,
-    errorMessage: string | null
+    errorMessage: string | null,
   ) {
     this.success = success;
     this.messageId = messageId;
@@ -40,7 +40,7 @@ export class SendResult {
   /** 送信失敗 */
   static fail(errorType: SendErrorType, errorMessage?: string): SendResult {
     return Object.freeze(
-      new SendResult(false, null, errorType, errorMessage ?? null)
+      new SendResult(false, null, errorType, errorMessage ?? null),
     );
   }
 

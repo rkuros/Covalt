@@ -1,12 +1,10 @@
-import { LineChannelConfig } from "./LineChannelConfig";
-import { LineChannelConfigRepository } from "./LineChannelConfigRepository";
+import { LineChannelConfig } from './LineChannelConfig';
+import { LineChannelConfigRepository } from './LineChannelConfigRepository';
 
 /**
  * LineChannelConfigRepository のインメモリ実装。
  */
-export class InMemoryLineChannelConfigRepository
-  implements LineChannelConfigRepository
-{
+export class InMemoryLineChannelConfigRepository implements LineChannelConfigRepository {
   private readonly store = new Map<string, LineChannelConfig>();
 
   async findById(id: string): Promise<LineChannelConfig | null> {

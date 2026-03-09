@@ -10,7 +10,7 @@ export class DisplayName {
 
   static create(value: string): DisplayName {
     if (!value || value.trim().length === 0) {
-      throw new Error("DisplayName must not be empty");
+      throw new Error('DisplayName must not be empty');
     }
     return new DisplayName(value.trim());
   }

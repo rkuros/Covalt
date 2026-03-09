@@ -1,5 +1,5 @@
-import { randomUUID } from "crypto";
-import { AuthToken } from "./AuthToken";
+import { randomUUID } from 'crypto';
+import { AuthToken } from './AuthToken';
 
 /**
  * エンティティ: Session
@@ -34,7 +34,9 @@ export class Session {
    */
   static create(ownerId: string): Session {
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + Session.SESSION_HOURS * 60 * 60 * 1000);
+    const expiresAt = new Date(
+      now.getTime() + Session.SESSION_HOURS * 60 * 60 * 1000,
+    );
     return new Session(
       randomUUID(),
       ownerId,

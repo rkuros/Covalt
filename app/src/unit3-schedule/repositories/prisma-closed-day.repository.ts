@@ -10,6 +10,14 @@ import { SlotDate } from '../domain/SlotDate';
 export class PrismaClosedDayRepository implements ClosedDayRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async findById(closedDayId: ClosedDayId): Promise<ClosedDay | null> {
+    const row = await this.prisma.closedDay.findUnique({
+      where: { id: closedDayId.value },
+    });
+    if (!row) return null;
+    return this.toDomain(row);
+  }
+
   async findByOwnerIdAndDate(
     ownerId: OwnerId,
     date: SlotDate,

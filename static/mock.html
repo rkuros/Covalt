@@ -73,7 +73,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 
 /* Modal */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);display:flex;justify-content:center;align-items:center;z-index:100;display:none;}
-.modal{background:#fff;border-radius:16px;padding:24px;width:400px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.15);}
+.modal{background:#fff;border-radius:16px;padding:24px;width:400px;max-width:90vw;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15);}
 .modal h3{font-size:16px;font-weight:700;margin-bottom:16px;color:#1e293b;}
 
 /* Loading */
@@ -81,6 +81,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 .loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.7);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:9999;}
 .loading-overlay .spinner{width:36px;height:36px;border:3px solid #fed7aa;border-top-color:#ec5b13;border-radius:50%;animation:spin .6s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .2s;line-height:1.2;}
+.btn:hover{opacity:.85;}
+.btn-primary{background:#ec5b13;color:#fff;}
+.btn-outline{background:#fff;color:#64748b;border:1px solid #e2e8f0;}
+.btn-outline:hover{background:#f8fafc;}
+.btn-danger{background:#fff;color:#ef4444;border:1px solid #fca5a5;}
+.btn-danger:hover{background:#fef2f2;}
 .btn.is-loading{opacity:0.6;pointer-events:none;}
 
 /* API indicator */
@@ -639,7 +646,8 @@ async function loadReservationExtras(customerId, dateTime) {
     } else {
       h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px;">';
       matchPhotos.forEach(a => {
-        var pDate = a.createdAt ? new Date(a.createdAt) : null;
+        var pDateSrc = a.noteDate || a.createdAt;
+        var pDate = pDateSrc ? new Date(pDateSrc) : null;
         var pDateStr = pDate ? (pDate.getMonth()+1) + '/' + pDate.getDate() : '';
         h += '<div style="border-radius:8px;overflow:hidden;background:#f1f5f9;">';
         h += '<div style="aspect-ratio:1;"><img id="rsvPhoto_' + a.attachmentId + '" style="width:100%;height:100%;object-fit:cover;" src="" alt="' + esc(a.fileName) + '"></div>';
@@ -884,7 +892,7 @@ function renderScheduleCalendar() {
   const dows = ['日','月','火','水','木','金','土'];
   const closedSet = new Set(cachedClosedDays.map(cd => cd.date));
 
-  let h = '<div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);margin-bottom:16px;">';
+  let h = '<div id="schCalendarWrap" style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);margin-bottom:16px;">';
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">';
   h += '<h2 style="font-size:16px;font-weight:700;color:#1e293b;">' + schYear + '年 ' + (schMonth+1) + '月</h2>';
   h += '<div style="display:flex;gap:8px;">';
@@ -955,9 +963,43 @@ function renderScheduleCalendar() {
   return h;
 }
 
+async function loadSlotSummary() {
+  try {
+    var startD = isoDate(schYear, schMonth, 1);
+    var endD = isoDate(schYear, schMonth + 1, 0);
+    var slotRes = await api('GET', '/api/schedule/slots/summary?startDate=' + startD + '&endDate=' + endD);
+    schSlotSummary = slotRes.days || {};
+    var el = document.getElementById('schCalendarWrap');
+    if (el) el.outerHTML = renderScheduleCalendar();
+  } catch (e) {
+    console.error('Slot summary refresh error:', e);
+  }
+}
+
 function selectSchDay(iso) {
   schSelectedDate = iso;
-  // Re-highlight selected day (update outline via re-render would be heavy, just load slots)
+  // Update visual selection without full re-render
+  document.querySelectorAll('.ow-cal-cell').forEach(cell => {
+    cell.style.outline = '';
+    cell.style.outlineOffset = '';
+    cell.style.boxShadow = '';
+    if (!cell.classList.contains('ow-today') && !cell.classList.contains('ow-holiday')) {
+      cell.style.background = '';
+    }
+  });
+  const cells = document.querySelectorAll('.ow-cal-cell:not(.ow-other)');
+  cells.forEach(cell => {
+    const num = cell.querySelector('.ow-num');
+    if (!num) return;
+    const d = parseInt(num.textContent);
+    const cellIso = isoDate(schYear, schMonth, d);
+    if (cellIso === iso) {
+      cell.style.outline = '3px solid #ec5b13';
+      cell.style.outlineOffset = '-3px';
+      cell.style.background = 'rgba(236,91,19,.12)';
+      cell.style.boxShadow = '0 0 0 1px rgba(236,91,19,.3)';
+    }
+  });
   loadDaySlots(iso);
 }
 
@@ -1046,29 +1088,55 @@ async function loadDaySlots(dateStr) {
   }
 
   // Quick actions
-  h += '<div style="border-top:1px solid #f1f5f9;margin-top:14px;padding-top:14px;">';
-  h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">';
-  h += '<button style="padding:6px 14px;background:#ec5b13;color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;" onclick="quickGenSlots(\'' + dateStr + '\')"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:text-bottom;">auto_awesome</span> 一括生成</button>';
-  h += '<select id="quickGenDur" style="' + _inp2 + '"><option value="30">30分</option><option value="60" selected>60分</option><option value="90">90分</option></select>';
-  h += '<select id="quickGenBuf" style="' + _inp2 + '"><option value="0">バッファなし</option><option value="5">5分</option><option value="10">10分</option><option value="15">15分</option><option value="30">30分</option></select>';
+  var _qa = 'display:flex;align-items:center;gap:8px;';
+  var _qsel = 'padding:6px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#334155;background:#fff;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'10\' height=\'6\'%3E%3Cpath d=\'M0 0l5 6 5-6z\' fill=\'%2394a3b8\'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;cursor:pointer;';
+  var _qinp = 'padding:6px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;color:#334155;background:#fff;outline:none;';
+  var _qbtn = 'display:inline-flex;align-items:center;gap:4px;padding:7px 14px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .15s;';
+
+  h += '<div style="border-top:1px solid #f1f5f9;margin-top:16px;padding-top:16px;">';
+  h += '<div style="display:grid;gap:12px;">';
+
+  // Row 1: Auto-generate
+  h += '<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;">';
+  h += '<div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">スロット生成</div>';
+  h += '<div style="' + _qa + 'flex-wrap:wrap;">';
+  h += '<select id="quickGenDur" style="' + _qsel + '"><option value="30">30分</option><option value="60" selected>60分</option><option value="90">90分</option></select>';
+  h += '<select id="quickGenBuf" style="' + _qsel + '"><option value="0">バッファなし</option><option value="5">5分</option><option value="10">10分</option><option value="15">15分</option><option value="30">30分</option></select>';
+  h += '<button style="' + _qbtn + 'background:#ec5b13;color:#fff;" onclick="quickGenSlots(\'' + dateStr + '\')"><span class="material-symbols-outlined" style="font-size:15px;">auto_awesome</span> 一括生成</button>';
+  var availCount = slots.filter(function(s){ return s.status !== 'booked'; }).length;
+  if (availCount > 0) {
+    h += '<button style="' + _qbtn + 'background:#fff;color:#ef4444;border:1px solid #fecaca;" onclick="bulkDeleteSlots(\'' + dateStr + '\')"><span class="material-symbols-outlined" style="font-size:15px;">delete_sweep</span> 一括削除<span style="background:#fef2f2;padding:1px 6px;border-radius:9999px;font-size:10px;font-weight:700;">' + availCount + '</span></button>';
+  }
   h += '</div>';
-  h += '<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">';
-  h += '<input type="time" id="quickSingleStart" value="09:00" style="' + _inp2 + 'width:90px;">';
-  h += '<span style="font-size:11px;color:#94a3b8;">〜</span>';
-  h += '<input type="time" id="quickSingleEnd" value="10:00" style="' + _inp2 + 'width:90px;">';
-  h += '<button style="padding:6px 14px;background:#10b981;color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;" onclick="quickAddSlot(\'' + dateStr + '\')"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:text-bottom;">add</span> 1枠追加</button>';
   h += '</div>';
 
+  // Row 2: Single slot add
+  h += '<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;">';
+  h += '<div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">個別追加</div>';
+  h += '<div style="' + _qa + '">';
+  h += '<input type="time" id="quickSingleStart" value="09:00" style="' + _qinp + 'width:88px;">';
+  h += '<span style="font-size:12px;color:#94a3b8;font-weight:500;">〜</span>';
+  h += '<input type="time" id="quickSingleEnd" value="10:00" style="' + _qinp + 'width:88px;">';
+  h += '<button style="' + _qbtn + 'background:#10b981;color:#fff;" onclick="quickAddSlot(\'' + dateStr + '\')"><span class="material-symbols-outlined" style="font-size:15px;">add_circle</span> 追加</button>';
+  h += '</div>';
+  h += '</div>';
+
+  // Row 3: Template apply
   if (cachedTemplates.length > 0) {
-    h += '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">';
-    h += '<select id="quickTpl" style="' + _inp2 + '">';
+    h += '<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;">';
+    h += '<div style="font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">テンプレート</div>';
+    h += '<div style="' + _qa + 'flex-wrap:wrap;">';
+    h += '<select id="quickTpl" style="' + _qsel + 'flex:1;min-width:120px;">';
     cachedTemplates.forEach(tpl => {
       h += '<option value="' + tpl.templateId + '">' + tpl.name + ' (' + tpl.entries.length + '枠)</option>';
     });
     h += '</select>';
-    h += '<button style="padding:6px 14px;background:#8b5cf6;color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;" onclick="quickApplyTemplate(\'' + dateStr + '\')"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:text-bottom;">content_copy</span> テンプレ適用</button>';
+    h += '<button style="' + _qbtn + 'background:#7c3aed;color:#fff;" onclick="quickApplyTemplate(\'' + dateStr + '\')"><span class="material-symbols-outlined" style="font-size:15px;">content_copy</span> 適用</button>';
+    h += '</div>';
     h += '</div>';
   }
+
+  h += '</div>';
   h += '</div>';
 
   h += '</div>';
@@ -1083,6 +1151,7 @@ async function quickGenSlots(dateStr) {
     const res = await api('POST', '/api/schedule/slots/generate', { date: dateStr, durationMinutes: dur, bufferMinutes: buf });
     showToast(res.generatedCount + '件のスロットを生成しました');
     loadDaySlots(dateStr);
+    loadSlotSummary();
   } catch (e) {
     showToast('生成エラー: ' + e.message, true);
   } finally { hideLoading(); }
@@ -1115,6 +1184,7 @@ async function quickAddSlot(dateStr) {
     await api('POST', '/api/schedule/slots', { date: dateStr, startTime, endTime });
     showToast('スロットを追加しました');
     loadDaySlots(dateStr);
+    loadSlotSummary();
   } catch (e) {
     showToast('追加エラー: ' + e.message, true);
   } finally { hideLoading(); }
@@ -1387,8 +1457,22 @@ async function deleteSlot(slotId, dateStr) {
     await api('DELETE', '/api/schedule/slots/' + slotId);
     showToast('スロットを削除しました');
     loadDaySlots(dateStr);
+    loadSlotSummary();
   } catch (e) {
     showToast('削除エラー: ' + e.message, true);
+  } finally { hideLoading(); }
+}
+
+async function bulkDeleteSlots(dateStr) {
+  if (!confirm('空きスロットを全て削除しますか？\n（予約済みスロットは削除されません）')) return;
+  showLoading();
+  try {
+    const res = await api('DELETE', '/api/schedule/slots/date/' + dateStr);
+    showToast(res.deletedCount + '件のスロットを削除しました');
+    loadDaySlots(dateStr);
+    loadSlotSummary();
+  } catch (e) {
+    showToast('一括削除エラー: ' + e.message, true);
   } finally { hideLoading(); }
 }
 
@@ -1405,6 +1489,7 @@ async function createSingleSlot() {
     const res = await api('POST', '/api/schedule/slots', { date, startTime, endTime });
     el.innerHTML = '<p style="font-size:12px;color:#2e7d32;">' + res.startTime + ' - ' + res.endTime + ' (' + res.durationMinutes + '分) を追加しました</p>';
     if (schSelectedDate === date) loadDaySlots(date);
+    loadSlotSummary();
   } catch (e) {
     el.innerHTML = '<span style="font-size:12px;color:#d32f2f;">' + e.message + '</span>';
   } finally { hideLoading(); }
@@ -1544,7 +1629,8 @@ async function showCustomerDetail(customerId) {
       } else {
         h += '<div id="photoGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">';
         attachments.forEach(a => {
-          var photoDate = a.createdAt ? new Date(a.createdAt) : null;
+          var photoDateSrc = a.noteDate || a.createdAt;
+          var photoDate = photoDateSrc ? new Date(photoDateSrc) : null;
           var photoDateStr = photoDate ? (photoDate.getMonth()+1) + '/' + photoDate.getDate() : '';
           h += '<div style="position:relative;border:1px solid #f1f5f9;border-radius:10px;overflow:hidden;background:#f8fafc;" id="photoWrap_' + a.attachmentId + '">';
           h += '<div style="aspect-ratio:1;"><img id="photoImg_' + a.attachmentId + '" style="width:100%;height:100%;object-fit:cover;" src="" alt="' + esc(a.fileName) + '"></div>';
@@ -1792,9 +1878,13 @@ async function doNewCustomer() {
 async function renderSettings(mc) {
   mc.innerHTML = '<div class="loading">読み込み中...</div>';
   let cancellationPolicy = '';
+  let defaultTreatmentMinutes = 0;
+  let autoCompleteEnabled = false;
   try {
     const settings = await api('GET', '/api/schedule/settings');
     cancellationPolicy = settings.cancellationPolicy || '';
+    defaultTreatmentMinutes = settings.defaultTreatmentMinutes || 0;
+    autoCompleteEnabled = settings.autoCompleteEnabled || false;
   } catch (e) { /* default empty */ }
 
   const _sCard = 'background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);margin-bottom:16px;';
@@ -1810,6 +1900,22 @@ async function renderSettings(mc) {
   h += '<div style="' + _sRow + '"><dt style="' + _sDt + '">メール</dt><dd style="' + _sDd + '">' + (currentUser?.email || '-') + '</dd></div>';
   h += '<div style="' + _sRow + '"><dt style="' + _sDt + '">オーナーID</dt><dd style="' + _sDd + 'font-size:11px;word-break:break-all;">' + (currentUser?.ownerId || '-') + '</dd></div>';
   h += '</div>';
+
+  h += '<div style="' + _sCard + '"><h3 style="' + _sTitle + '"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:text-bottom;color:#ec5b13;margin-right:6px;">timer</span>施術時間（デフォルト）</h3>';
+  h += '<p style="font-size:12px;color:#64748b;margin-bottom:10px;">1回の施術にかかるデフォルトの時間（分）を設定します。スロット間隔より長い場合、予約時に前後のスロットが自動でブロックされます。0の場合はスロットの長さがそのまま使われます。</p>';
+  h += '<div style="display:flex;align-items:center;gap:8px;"><input class="ow-input" id="cfgTreatmentMin" type="number" min="0" step="5" style="width:100px;" value="' + defaultTreatmentMinutes + '"><span style="font-size:13px;color:#64748b;">分</span></div>';
+  h += '<button style="padding:8px 20px;background:#ec5b13;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-top:10px;" onclick="saveTreatmentDuration()">保存</button></div>';
+
+  h += '<div style="' + _sCard + '"><h3 style="' + _sTitle + '"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:text-bottom;color:#ec5b13;margin-right:6px;">task_alt</span>予約の自動完了</h3>';
+  h += '<p style="font-size:12px;color:#64748b;margin-bottom:10px;">有効にすると、予約日時を過ぎた「確定」ステータスの予約が自動的に「完了」に変更されます（毎時チェック）。</p>';
+  h += '<div style="display:flex;align-items:center;gap:10px;">';
+  h += '<label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;">';
+  h += '<input type="checkbox" id="cfgAutoComplete" ' + (autoCompleteEnabled ? 'checked' : '') + ' onchange="saveAutoComplete()" style="opacity:0;width:0;height:0;">';
+  h += '<span style="position:absolute;top:0;left:0;right:0;bottom:0;background:' + (autoCompleteEnabled ? '#ec5b13' : '#cbd5e1') + ';border-radius:24px;transition:background .2s;" id="cfgAutoCompleteTrack"></span>';
+  h += '<span style="position:absolute;top:2px;left:' + (autoCompleteEnabled ? '22px' : '2px') + ';width:20px;height:20px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.15);" id="cfgAutoCompleteThumb"></span>';
+  h += '</label>';
+  h += '<span style="font-size:13px;font-weight:600;color:' + (autoCompleteEnabled ? '#ec5b13' : '#94a3b8') + ';" id="cfgAutoCompleteLabel">' + (autoCompleteEnabled ? 'ON' : 'OFF') + '</span>';
+  h += '</div></div>';
 
   h += '<div style="' + _sCard + '"><h3 style="' + _sTitle + '"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:text-bottom;color:#ec5b13;margin-right:6px;">policy</span>キャンセルポリシー</h3>';
   h += '<p style="font-size:12px;color:#64748b;margin-bottom:10px;">顧客がキャンセルする際に表示されるポリシーを設定します。</p>';
@@ -1829,6 +1935,40 @@ async function renderSettings(mc) {
   h += '<div style="' + _sRow + '"><dt style="' + _sDt + '">リージョン</dt><dd style="' + _sDd + '">ap-southeast-1 (Singapore)</dd></div>';
   h += '</div>';
   mc.innerHTML = h;
+}
+
+async function saveAutoComplete() {
+  var cb = document.getElementById('cfgAutoComplete');
+  var val = cb.checked;
+  var track = document.getElementById('cfgAutoCompleteTrack');
+  var thumb = document.getElementById('cfgAutoCompleteThumb');
+  var label = document.getElementById('cfgAutoCompleteLabel');
+  track.style.background = val ? '#ec5b13' : '#cbd5e1';
+  thumb.style.left = val ? '22px' : '2px';
+  label.textContent = val ? 'ON' : 'OFF';
+  label.style.color = val ? '#ec5b13' : '#94a3b8';
+  try {
+    await api('PUT', '/api/schedule/settings', { autoCompleteEnabled: val });
+    showToast('自動完了を' + (val ? '有効' : '無効') + 'にしました');
+  } catch (e) {
+    showToast('保存エラー: ' + e.message, true);
+    cb.checked = !val;
+    track.style.background = !val ? '#ec5b13' : '#cbd5e1';
+    thumb.style.left = !val ? '22px' : '2px';
+    label.textContent = !val ? 'ON' : 'OFF';
+    label.style.color = !val ? '#ec5b13' : '#94a3b8';
+  }
+}
+
+async function saveTreatmentDuration() {
+  const val = parseInt(document.getElementById('cfgTreatmentMin').value) || 0;
+  showLoading();
+  try {
+    await api('PUT', '/api/schedule/settings', { defaultTreatmentMinutes: val });
+    showToast('施術時間を保存しました (' + val + '分)');
+  } catch (e) {
+    showToast('保存エラー: ' + e.message, true);
+  } finally { hideLoading(); }
 }
 
 async function saveCancellationPolicy() {

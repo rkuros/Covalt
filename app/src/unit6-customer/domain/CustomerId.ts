@@ -11,7 +11,7 @@ export class CustomerId {
 
   static create(value: string): CustomerId {
     if (!value || value.trim().length === 0) {
-      throw new Error("CustomerId must not be empty");
+      throw new Error('CustomerId must not be empty');
     }
     return new CustomerId(value.trim());
   }

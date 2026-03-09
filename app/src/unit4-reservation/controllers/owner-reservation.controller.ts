@@ -9,10 +9,8 @@ import {
   Req,
   UseGuards,
   BadRequestException,
-  ConflictException,
   ForbiddenException,
   NotFoundException,
-  InternalServerErrorException,
   Logger,
   Inject,
 } from '@nestjs/common';
@@ -22,7 +20,10 @@ import type { ReservationRepository } from '../domain/ReservationRepository';
 import { ActorType } from '../domain/ActorType';
 import { OwnerId } from '../domain/OwnerId';
 import { ReservationId } from '../domain/ReservationId';
-import { Reservation } from '../domain/Reservation';
+import {
+  toReservationResponse,
+  handleDomainError,
+} from './reservation-response.helper';
 
 // --- Request DTOs ---
 
@@ -47,34 +48,6 @@ interface AuthenticatedRequest {
     ownerId: string;
     email: string;
     role: string;
-  };
-}
-
-// --- Response helpers ---
-
-function toReservationResponse(r: Reservation) {
-  return {
-    reservationId: r.reservationId.value,
-    ownerId: r.ownerId.value,
-    customerId: r.customerId.value,
-    slotId: r.slotId.value,
-    dateTime: r.dateTime.toISOString(),
-    durationMinutes: r.durationMinutes.value,
-    status: r.status,
-    customerName: r.customerName.value,
-    createdBy: r.createdBy,
-    createdAt: r.createdAt.toISOString(),
-    updatedAt: r.updatedAt.toISOString(),
-    histories: r.histories.map((h) => ({
-      historyId: h.historyId.value,
-      changeType: h.changeType,
-      previousDateTime: h.previousDateTime?.toISOString() ?? null,
-      newDateTime: h.newDateTime?.toISOString() ?? null,
-      previousSlotId: h.previousSlotId?.value ?? null,
-      newSlotId: h.newSlotId?.value ?? null,
-      changedBy: h.changedBy,
-      changedAt: h.changedAt.toISOString(),
-    })),
   };
 }
 
@@ -123,9 +96,9 @@ export class OwnerReservationController {
         createdBy: ActorType.Owner,
       });
 
-      return toReservationResponse(reservation);
+      return toReservationResponse(reservation, { includeHistories: true });
     } catch (error) {
-      this.handleDomainError(error);
+      handleDomainError(error, this.logger);
     }
   }
 
@@ -134,13 +107,19 @@ export class OwnerReservationController {
    * 予約詳細 (US-O02)
    */
   @Get(':id')
-  async getDetail(
-    @Req() req: AuthenticatedRequest,
-    @Param('id') id: string,
-  ) {
+  async getDetail(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    let reservationId: ReservationId;
+    try {
+      reservationId = ReservationId.create(id);
+    } catch {
+      throw new NotFoundException({
+        error: 'NOT_FOUND',
+        message: '予約が見つかりません',
+      });
+    }
     const ownerId = OwnerId.create(req.user.ownerId);
-    const reservationId = ReservationId.create(id);
-    const reservation = await this.reservationRepository.findById(reservationId);
+    const reservation =
+      await this.reservationRepository.findById(reservationId);
 
     if (!reservation || reservation.ownerId.value !== ownerId.value) {
       throw new NotFoundException({
@@ -149,7 +128,7 @@ export class OwnerReservationController {
       });
     }
 
-    return toReservationResponse(reservation);
+    return toReservationResponse(reservation, { includeHistories: true });
   }
 
   /**
@@ -189,11 +168,13 @@ export class OwnerReservationController {
         );
 
       return {
-        reservations: reservations.map(toReservationResponse),
+        reservations: reservations.map((r) =>
+          toReservationResponse(r, { includeHistories: true }),
+        ),
         total: reservations.length,
       };
     } catch (error) {
-      this.handleDomainError(error);
+      handleDomainError(error, this.logger);
     }
   }
 
@@ -224,9 +205,9 @@ export class OwnerReservationController {
         modifiedBy: ActorType.Owner,
       });
 
-      return toReservationResponse(reservation);
+      return toReservationResponse(reservation, { includeHistories: true });
     } catch (error) {
-      this.handleDomainError(error);
+      handleDomainError(error, this.logger);
     }
   }
 
@@ -243,9 +224,9 @@ export class OwnerReservationController {
         cancelledBy: ActorType.Owner,
       });
 
-      return toReservationResponse(reservation);
+      return toReservationResponse(reservation, { includeHistories: true });
     } catch (error) {
-      this.handleDomainError(error);
+      handleDomainError(error, this.logger);
     }
   }
 
@@ -261,51 +242,41 @@ export class OwnerReservationController {
         reservationId: id,
       });
 
-      return toReservationResponse(reservation);
+      return toReservationResponse(reservation, { includeHistories: true });
     } catch (error) {
-      this.handleDomainError(error);
+      handleDomainError(error, this.logger);
     }
   }
 
   // --- Private helpers ---
 
-  private async verifyOwnership(ownerId: string, reservationId: string): Promise<void> {
-    const reservation = await this.reservationRepository.findById(
-      ReservationId.create(reservationId),
-    );
-    if (!reservation) {
-      throw new NotFoundException({ error: 'NOT_FOUND', message: '予約が見つかりません' });
-    }
-    if (reservation.ownerId.value !== ownerId) {
-      throw new ForbiddenException({ error: 'FORBIDDEN', message: 'この予約へのアクセス権がありません' });
-    }
-  }
-
-  private handleDomainError(error: unknown): never {
-    const message =
-      error instanceof Error ? error.message : 'Unknown error';
-    const code = (error as any)?.code as string | undefined;
-    this.logger.error(`Domain error: ${message}`);
-
-    if (message.includes('not found') || code === 'SLOT_NOT_FOUND') {
+  private async verifyOwnership(
+    ownerId: string,
+    reservationId: string,
+  ): Promise<void> {
+    let reservationIdVo: ReservationId;
+    try {
+      reservationIdVo = ReservationId.create(reservationId);
+    } catch {
       throw new NotFoundException({
         error: 'NOT_FOUND',
-        message,
+        message: '予約が見つかりません',
       });
     }
-    if (
-      code === 'SLOT_ALREADY_BOOKED' ||
-      message.includes('already booked') ||
-      message.includes('Cannot')
-    ) {
-      throw new ConflictException({
-        error: 'CONFLICT',
-        message,
+    const reservation = await this.reservationRepository.findById(
+      reservationIdVo,
+    );
+    if (!reservation) {
+      throw new NotFoundException({
+        error: 'NOT_FOUND',
+        message: '予約が見つかりません',
       });
     }
-    throw new InternalServerErrorException({
-      error: 'INTERNAL_ERROR',
-      message,
-    });
+    if (reservation.ownerId.value !== ownerId) {
+      throw new ForbiddenException({
+        error: 'FORBIDDEN',
+        message: 'この予約へのアクセス権がありません',
+      });
+    }
   }
 }

@@ -9,7 +9,11 @@ export class OAuthToken {
   readonly refreshToken: string;
   readonly expiresAt: Date;
 
-  private constructor(accessToken: string, refreshToken: string, expiresAt: Date) {
+  private constructor(
+    accessToken: string,
+    refreshToken: string,
+    expiresAt: Date,
+  ) {
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
     this.expiresAt = expiresAt;
@@ -18,7 +22,11 @@ export class OAuthToken {
   /**
    * ファクトリメソッド: 新しい OAuthToken を生成する。
    */
-  static create(accessToken: string, refreshToken: string, expiresAt: Date): OAuthToken {
+  static create(
+    accessToken: string,
+    refreshToken: string,
+    expiresAt: Date,
+  ): OAuthToken {
     if (!accessToken) {
       throw new Error('accessToken は必須です');
     }

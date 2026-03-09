@@ -1,8 +1,8 @@
-import { randomUUID } from "crypto";
-import { EmailAddress } from "./EmailAddress";
-import { HashedPassword } from "./HashedPassword";
-import { Role } from "./Role";
-import { AccountStatus } from "./AccountStatus";
+import { randomUUID } from 'crypto';
+import { EmailAddress } from './EmailAddress';
+import { HashedPassword } from './HashedPassword';
+import { Role } from './Role';
+import { AccountStatus } from './AccountStatus';
 
 /**
  * エンティティ: OwnerAccount
@@ -38,7 +38,10 @@ export class OwnerAccount {
   /**
    * 新規オーナーアカウントを作成する。初期状態は ACTIVE。
    */
-  static create(email: EmailAddress, passwordHash: HashedPassword): OwnerAccount {
+  static create(
+    email: EmailAddress,
+    passwordHash: HashedPassword,
+  ): OwnerAccount {
     const now = new Date();
     return new OwnerAccount(
       randomUUID(),
@@ -61,7 +64,14 @@ export class OwnerAccount {
     createdAt: Date,
     updatedAt: Date,
   ): OwnerAccount {
-    return new OwnerAccount(ownerId, email, passwordHash, status, createdAt, updatedAt);
+    return new OwnerAccount(
+      ownerId,
+      email,
+      passwordHash,
+      status,
+      createdAt,
+      updatedAt,
+    );
   }
 
   get passwordHash(): HashedPassword {

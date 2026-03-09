@@ -15,7 +15,9 @@ export class PrismaCalendarEventMappingRepository implements CalendarEventMappin
     return this.toDomain(row);
   }
 
-  async findByReservationId(reservationId: string): Promise<CalendarEventMapping | null> {
+  async findByReservationId(
+    reservationId: string,
+  ): Promise<CalendarEventMapping | null> {
     const rows = await this.prisma.calendarEventMapping.findMany({
       where: {
         reservationId,
@@ -57,6 +59,13 @@ export class PrismaCalendarEventMappingRepository implements CalendarEventMappin
     googleEventId: string;
     isActive: boolean;
   }): CalendarEventMapping {
+    // calendarId is not persisted in the DB schema (calendar_event_mappings).
+    // It is populated at creation time in CalendarSyncService but lost on DB roundtrip.
+    // Callers that need calendarId (e.g., update/delete flows) should source it from
+    // the GoogleCalendarIntegration entity instead of relying on mapping.calendarId.
+    //
+    // The DB schema also lacks createdAt/updatedAt columns. These domain fields exist
+    // only for in-memory mutation tracking; new Date() is used as a placeholder.
     return CalendarEventMapping.reconstruct(
       row.id,
       row.reservationId,

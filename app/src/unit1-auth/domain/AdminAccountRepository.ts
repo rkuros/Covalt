@@ -1,5 +1,5 @@
-import { AdminAccount } from "./AdminAccount";
-import { EmailAddress } from "./EmailAddress";
+import { AdminAccount } from './AdminAccount';
+import { EmailAddress } from './EmailAddress';
 
 /**
  * リポジトリインターフェース: AdminAccountRepository

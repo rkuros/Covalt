@@ -33,7 +33,9 @@ export class PrismaNotificationRecordRepository implements NotificationRecordRep
     });
   }
 
-  async findByReservationId(reservationId: string): Promise<NotificationRecord[]> {
+  async findByReservationId(
+    reservationId: string,
+  ): Promise<NotificationRecord[]> {
     const rows = await this.prisma.notificationRecord.findMany({
       where: { reservationId },
     });

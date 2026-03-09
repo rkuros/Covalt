@@ -3,18 +3,18 @@
  * ユーザーのロール種別を表す。認証検証レスポンスで返却される。
  */
 export class Role {
-  static readonly OWNER = new Role("owner");
-  static readonly ADMIN = new Role("admin");
+  static readonly OWNER = new Role('owner');
+  static readonly ADMIN = new Role('admin');
 
-  readonly value: "owner" | "admin";
+  readonly value: 'owner' | 'admin';
 
-  private constructor(value: "owner" | "admin") {
+  private constructor(value: 'owner' | 'admin') {
     this.value = value;
   }
 
   static create(value: string): Role {
-    if (value === "owner") return Role.OWNER;
-    if (value === "admin") return Role.ADMIN;
+    if (value === 'owner') return Role.OWNER;
+    if (value === 'admin') return Role.ADMIN;
     throw new Error(`不正なロールです: ${value}`);
   }
 

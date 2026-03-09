@@ -48,7 +48,12 @@ import { CalendarController } from './controllers/calendar.controller';
         integrationRepo: PrismaCalendarIntegrationRepository,
         oauthService: GoogleOAuthService,
         calendarApiClient: GoogleCalendarApiGatewayImpl,
-      ) => new CalendarIntegrationService(integrationRepo, oauthService, calendarApiClient),
+      ) =>
+        new CalendarIntegrationService(
+          integrationRepo,
+          oauthService,
+          calendarApiClient,
+        ),
       inject: [
         PrismaCalendarIntegrationRepository,
         GoogleOAuthService,
@@ -64,7 +69,13 @@ import { CalendarController } from './controllers/calendar.controller';
         mappingRepo: PrismaCalendarEventMappingRepository,
         calendarApiClient: GoogleCalendarApiGatewayImpl,
         oauthService: GoogleOAuthService,
-      ) => new CalendarSyncService(integrationRepo, mappingRepo, calendarApiClient, oauthService),
+      ) =>
+        new CalendarSyncService(
+          integrationRepo,
+          mappingRepo,
+          calendarApiClient,
+          oauthService,
+        ),
       inject: [
         PrismaCalendarIntegrationRepository,
         PrismaCalendarEventMappingRepository,

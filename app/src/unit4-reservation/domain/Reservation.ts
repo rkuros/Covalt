@@ -11,7 +11,11 @@ import { CustomerId } from './CustomerId';
 import { SlotId } from './SlotId';
 import { ReservationDateTime } from './ReservationDateTime';
 import { DurationMinutes } from './DurationMinutes';
-import { ReservationStatus, canTransition, isTerminal } from './ReservationStatus';
+import {
+  ReservationStatus,
+  canTransition,
+  isTerminal,
+} from './ReservationStatus';
 import { CustomerName } from './CustomerName';
 import { LineUserId } from './LineUserId';
 import { ActorType } from './ActorType';

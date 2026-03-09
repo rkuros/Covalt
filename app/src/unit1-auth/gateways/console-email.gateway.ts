@@ -1,13 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { EmailGateway } from '../domain/EmailGateway';
 
 @Injectable()
 export class ConsoleEmailGateway implements EmailGateway {
+  private readonly logger = new Logger(ConsoleEmailGateway.name);
+
   async sendPasswordResetEmail(
     email: string,
     resetToken: string,
   ): Promise<void> {
-    console.log(
+    this.logger.log(
       `[EmailGateway] パスワードリセットメール送信: email=${email}, resetToken=${resetToken}`,
     );
   }
@@ -16,7 +18,7 @@ export class ConsoleEmailGateway implements EmailGateway {
     email: string,
     setupToken: string,
   ): Promise<void> {
-    console.log(
+    this.logger.log(
       `[EmailGateway] アカウント初期設定メール送信: email=${email}, setupToken=${setupToken}`,
     );
   }

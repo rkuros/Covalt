@@ -18,8 +18,35 @@ export class AuthGuard implements CanActivate {
     const internalKey = request.headers['x-internal-key'];
     const expectedKey = process.env['INTERNAL_SERVICE_KEY'];
     if (expectedKey && internalKey && internalKey === expectedKey) {
-      const internalOwnerId = request.headers['x-owner-id'] || request.query?.ownerId;
-      request.user = { ownerId: internalOwnerId, email: 'internal', role: 'service' };
+      const internalOwnerId =
+        request.headers['x-owner-id'] || request.query?.ownerId;
+      if (
+        !internalOwnerId ||
+        typeof internalOwnerId !== 'string' ||
+        internalOwnerId.trim() === ''
+      ) {
+        throw new UnauthorizedException({
+          error: 'UNAUTHORIZED',
+          message: 'x-owner-id ヘッダーが無効です',
+        });
+      }
+      request.user = {
+        ownerId: internalOwnerId,
+        email: 'internal',
+        role: 'service',
+      };
+      return true;
+    }
+
+    // Mock auth for LIFF testing — customer-side calls with x-mock-auth + x-owner-id
+    const mockAuth = request.headers['x-mock-auth'];
+    const mockOwnerId = request.headers['x-owner-id'];
+    if (mockAuth === 'true' && mockOwnerId) {
+      request.user = {
+        ownerId: mockOwnerId,
+        email: 'mock',
+        role: 'mock',
+      };
       return true;
     }
 

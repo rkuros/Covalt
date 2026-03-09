@@ -32,7 +32,11 @@ export class GoogleOAuthService {
     const response = await this.oauthGateway.exchangeAuthorizationCode(code);
     const expiresAt = new Date(Date.now() + response.expiresInSeconds * 1000);
 
-    return OAuthToken.create(response.accessToken, response.refreshToken, expiresAt);
+    return OAuthToken.create(
+      response.accessToken,
+      response.refreshToken,
+      expiresAt,
+    );
   }
 
   /**
@@ -40,8 +44,12 @@ export class GoogleOAuthService {
    * 既存の OAuthToken を受け取り、リフレッシュ後の OAuthToken を返す。
    */
   async refreshToken(currentToken: OAuthToken): Promise<OAuthToken> {
-    const response = await this.oauthGateway.refreshAccessToken(currentToken.refreshToken);
-    const newExpiresAt = new Date(Date.now() + response.expiresInSeconds * 1000);
+    const response = await this.oauthGateway.refreshAccessToken(
+      currentToken.refreshToken,
+    );
+    const newExpiresAt = new Date(
+      Date.now() + response.expiresInSeconds * 1000,
+    );
 
     return currentToken.withRefreshedAccessToken(
       response.accessToken,

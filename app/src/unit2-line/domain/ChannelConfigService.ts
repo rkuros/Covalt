@@ -1,8 +1,8 @@
-import { randomUUID } from "crypto";
-import { LineChannelConfig } from "./LineChannelConfig";
-import { LineChannelConfigRepository } from "./LineChannelConfigRepository";
-import { LineMessagingGateway } from "./LineMessagingGateway";
-import { ChannelConfigNotFoundError } from "./DomainErrors";
+import { randomUUID } from 'crypto';
+import { LineChannelConfig } from './LineChannelConfig';
+import { LineChannelConfigRepository } from './LineChannelConfigRepository';
+import { LineMessagingGateway } from './LineMessagingGateway';
+import { ChannelConfigNotFoundError } from './DomainErrors';
 
 /**
  * LINE チャネル設定の CRUD と接続テスト（疎通確認）を提供するドメインサービス。
@@ -77,19 +77,21 @@ export class ChannelConfigService {
    * 接続テスト（疎通確認）。
    * チャネルアクセストークンで Bot 情報を取得し、設定の正当性を確認する。
    */
-  async testConnection(ownerId: string): Promise<{ success: boolean; message: string }> {
+  async testConnection(
+    ownerId: string,
+  ): Promise<{ success: boolean; message: string }> {
     const config = await this.getConfig(ownerId);
 
     try {
       // Bot のプロフィールを取得して疎通確認の代替とする
       // （実際には LINE Bot Info API を呼ぶが、ここでは getProfile を利用）
-      await this.messagingGateway.getProfile(
-        config.channelAccessToken,
-        "self",
-      );
-      return { success: true, message: "接続テストに成功しました" };
+      await this.messagingGateway.getProfile(config.channelAccessToken, 'self');
+      return { success: true, message: '接続テストに成功しました' };
     } catch {
-      return { success: false, message: "接続テストに失敗しました。設定を確認してください" };
+      return {
+        success: false,
+        message: '接続テストに失敗しました。設定を確認してください',
+      };
     }
   }
 }

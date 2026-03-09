@@ -46,10 +46,12 @@ export class DirectSlotGateway implements SlotGateway {
   async reserveSlot(
     slotId: SlotId,
     reservationId: ReservationId,
+    treatmentDurationMinutes?: number,
   ): Promise<SlotReserveResult> {
     const result = await this.reservationService.reserve(
       ScheduleSlotId.create(slotId.value),
       ScheduleReservationId.create(reservationId.value),
+      treatmentDurationMinutes,
     );
     return {
       slotId: result.slotId,

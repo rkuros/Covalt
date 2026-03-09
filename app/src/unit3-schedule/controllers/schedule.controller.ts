@@ -13,6 +13,7 @@ import {
   UseGuards,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -34,7 +35,12 @@ import { TimeOfDay } from '../domain/TimeOfDay';
 import { TimeRange } from '../domain/TimeRange';
 import { SlotDate } from '../domain/SlotDate';
 import { Duration } from '../domain/Duration';
-import { SlotOverlapError, SlotNotFoundError, SlotNotAvailableError } from '../domain/DomainErrors';
+import {
+  SlotOverlapError,
+  SlotNotFoundError,
+  SlotNotAvailableError,
+  OptimisticLockError,
+} from '../domain/DomainErrors';
 import { SlotTemplate } from '../domain/SlotTemplate';
 import { SlotTemplateId } from '../domain/SlotTemplateId';
 import type { SlotTemplateRepository } from '../domain/SlotTemplateRepository';
@@ -44,6 +50,7 @@ import {
   DAILY_SLOT_LIST_REPOSITORY,
   SLOT_TEMPLATE_REPOSITORY,
 } from '../di-tokens';
+import { buildSlotSummary } from './slot-summary.helper';
 
 interface AuthenticatedRequest {
   user: { ownerId: string; email: string; role: string };
@@ -114,29 +121,22 @@ export class ScheduleController {
     }
     const ownerId = OwnerId.create(req.user.ownerId);
 
-    const dailySlotLists = await this.dailySlotListRepo.findAllByOwnerIdAndDateRange(
-      ownerId,
-      startDate,
-      endDate,
-    );
+    const dailySlotLists =
+      await this.dailySlotListRepo.findAllByOwnerIdAndDateRange(
+        ownerId,
+        startDate,
+        endDate,
+      );
 
-    const days: Record<string, {
-      total: number;
-      available: number;
-      booked: number;
-      availableSlots: { startTime: string; endTime: string }[];
-    }> = {};
-    for (const dsl of dailySlotLists) {
-      const slots = dsl.slots;
-      days[dsl.date.value] = {
-        total: slots.length,
-        available: slots.filter((s) => s.isAvailable()).length,
-        booked: slots.filter((s) => s.isBooked()).length,
-        availableSlots: slots
-          .filter((s) => s.isAvailable())
-          .map((s) => ({ startTime: s.startTime.toString(), endTime: s.endTime.toString() })),
-      };
-    }
+    const settings = await this.prisma.ownerSettings.findUnique({
+      where: { ownerId: req.user.ownerId },
+    });
+    const treatmentDuration =
+      settings && settings.defaultTreatmentMinutes > 0
+        ? settings.defaultTreatmentMinutes
+        : undefined;
+
+    const days = buildSlotSummary(dailySlotLists, treatmentDuration);
 
     return { days };
   }
@@ -151,16 +151,38 @@ export class ScheduleController {
     @Param('date') dateParam: string,
   ) {
     const ownerId = OwnerId.create(req.user.ownerId);
-    const date = SlotDate.create(dateParam);
+    let date: SlotDate;
+    try {
+      date = SlotDate.create(dateParam);
+    } catch (e) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: e instanceof Error ? e.message : '日付の形式が不正です',
+      });
+    }
 
-    const dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(ownerId, date);
+    const dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(
+      ownerId,
+      date,
+    );
     if (!dailySlotList) {
       return { date: date.value, slots: [] };
     }
 
+    // オーナー設定の施術時間を取得し、ブロックされたスロットを非表示にする
+    const settings = await this.prisma.ownerSettings.findUnique({
+      where: { ownerId: req.user.ownerId },
+    });
+    const treatmentDuration =
+      settings && settings.defaultTreatmentMinutes > 0
+        ? settings.defaultTreatmentMinutes
+        : undefined;
+
+    const visibleSlots = dailySlotList.getVisibleSlots(treatmentDuration);
+
     return {
       date: date.value,
-      slots: dailySlotList.slots.map((slot) => ({
+      slots: visibleSlots.map((slot) => ({
         slotId: slot.slotId.value,
         startTime: slot.startTime.toString(),
         endTime: slot.endTime.toString(),
@@ -213,19 +235,37 @@ export class ScheduleController {
             message: '営業日の場合、開始時間と終了時間が必要です',
           });
         }
-        const startTime = TimeOfDay.fromString(body.startTime);
-        const endTime = TimeOfDay.fromString(body.endTime);
+        let startTime: TimeOfDay;
+        let endTime: TimeOfDay;
+        try {
+          startTime = TimeOfDay.fromString(body.startTime);
+          endTime = TimeOfDay.fromString(body.endTime);
+        } catch (e) {
+          throw new BadRequestException({
+            error: 'VALIDATION_ERROR',
+            message: e instanceof Error ? e.message : '時刻の形式が不正です',
+          });
+        }
         businessHour.setAsBusinessDay(startTime, endTime);
       } else {
         businessHour.setAsClosedDay();
       }
     } else {
-      const startTime = body.startTime
-        ? TimeOfDay.fromString(body.startTime)
-        : TimeOfDay.create(9, 0);
-      const endTime = body.endTime
-        ? TimeOfDay.fromString(body.endTime)
-        : TimeOfDay.create(18, 0);
+      let startTime: TimeOfDay;
+      let endTime: TimeOfDay;
+      try {
+        startTime = body.startTime
+          ? TimeOfDay.fromString(body.startTime)
+          : TimeOfDay.create(9, 0);
+        endTime = body.endTime
+          ? TimeOfDay.fromString(body.endTime)
+          : TimeOfDay.create(18, 0);
+      } catch (e) {
+        throw new BadRequestException({
+          error: 'VALIDATION_ERROR',
+          message: e instanceof Error ? e.message : '時刻の形式が不正です',
+        });
+      }
 
       businessHour = BusinessHour.create({
         businessHourId: BusinessHourId.generate(),
@@ -257,12 +297,8 @@ export class ScheduleController {
     const ownerId = OwnerId.create(req.user.ownerId);
     // Fetch a wide range (current year +/- 1 year)
     const now = new Date();
-    const startDate = SlotDate.create(
-      `${now.getFullYear() - 1}-01-01`,
-    );
-    const endDate = SlotDate.create(
-      `${now.getFullYear() + 1}-12-31`,
-    );
+    const startDate = SlotDate.create(`${now.getFullYear() - 1}-01-01`);
+    const endDate = SlotDate.create(`${now.getFullYear() + 1}-12-31`);
     const closedDays = await this.closedDayRepo.findAllByOwnerIdAndDateRange(
       ownerId,
       startDate,
@@ -288,8 +324,17 @@ export class ScheduleController {
     @Req() req: AuthenticatedRequest,
     @Body() body: { date: string; reason?: string },
   ) {
-    const ownerId = OwnerId.create(req.user.ownerId);
-    const date = SlotDate.create(body.date);
+    let ownerId: OwnerId;
+    let date: SlotDate;
+    try {
+      ownerId = OwnerId.create(req.user.ownerId);
+      date = SlotDate.create(body.date);
+    } catch (e) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: e instanceof Error ? e.message : '入力値が不正です',
+      });
+    }
 
     // Check if already exists
     const existing = await this.closedDayRepo.findByOwnerIdAndDate(
@@ -331,20 +376,9 @@ export class ScheduleController {
     @Param('closedDayId') closedDayIdParam: string,
   ) {
     const ownerId = OwnerId.create(req.user.ownerId);
-    // We need to find the closed day to verify ownership.
-    // Since the repository interface doesn't have findById, we search by date range.
-    const startDate = SlotDate.create('2000-01-01');
-    const endDate = SlotDate.create('2099-12-31');
-    const closedDays = await this.closedDayRepo.findAllByOwnerIdAndDateRange(
-      ownerId,
-      startDate,
-      endDate,
-    );
-
-    const closedDay = closedDays.find(
-      (cd) => cd.closedDayId.value === closedDayIdParam,
-    );
-    if (!closedDay) {
+    const closedDayId = ClosedDayId.create(closedDayIdParam);
+    const closedDay = await this.closedDayRepo.findById(closedDayId);
+    if (!closedDay || closedDay.ownerId.value !== ownerId.value) {
       throw new NotFoundException({
         error: 'CLOSED_DAY_NOT_FOUND',
         message: '指定された休業日が見つかりません',
@@ -364,11 +398,22 @@ export class ScheduleController {
   @HttpCode(200)
   async generateSlots(
     @Req() req: AuthenticatedRequest,
-    @Body() body: { date: string; durationMinutes: number; bufferMinutes?: number },
+    @Body()
+    body: { date: string; durationMinutes: number; bufferMinutes?: number },
   ) {
-    const ownerId = OwnerId.create(req.user.ownerId);
-    const date = SlotDate.create(body.date);
-    const duration = Duration.create(body.durationMinutes);
+    let ownerId: OwnerId;
+    let date: SlotDate;
+    let duration: Duration;
+    try {
+      ownerId = OwnerId.create(req.user.ownerId);
+      date = SlotDate.create(body.date);
+      duration = Duration.create(body.durationMinutes);
+    } catch (e) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: e instanceof Error ? e.message : '入力値が不正です',
+      });
+    }
     const bufferMinutes = body.bufferMinutes ?? 0;
 
     if (bufferMinutes < 0 || bufferMinutes > 120) {
@@ -408,9 +453,6 @@ export class ScheduleController {
     @Req() req: AuthenticatedRequest,
     @Body() body: { date: string; startTime: string; endTime: string },
   ) {
-    const ownerId = OwnerId.create(req.user.ownerId);
-    const date = SlotDate.create(body.date);
-
     if (!body.startTime || !body.endTime) {
       throw new BadRequestException({
         error: 'MISSING_TIME',
@@ -418,12 +460,29 @@ export class ScheduleController {
       });
     }
 
-    const startTime = TimeOfDay.fromString(body.startTime);
-    const endTime = TimeOfDay.fromString(body.endTime);
-    const timeRange = TimeRange.create(startTime, endTime);
-    const duration = Duration.create(timeRange.durationInMinutes());
+    let ownerId: OwnerId;
+    let date: SlotDate;
+    let startTime: TimeOfDay;
+    let endTime: TimeOfDay;
+    let duration: Duration;
+    try {
+      ownerId = OwnerId.create(req.user.ownerId);
+      date = SlotDate.create(body.date);
+      startTime = TimeOfDay.fromString(body.startTime);
+      endTime = TimeOfDay.fromString(body.endTime);
+      const timeRange = TimeRange.create(startTime, endTime);
+      duration = Duration.create(timeRange.durationInMinutes());
+    } catch (e) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: e instanceof Error ? e.message : '入力値が不正です',
+      });
+    }
 
-    let dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(ownerId, date);
+    let dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(
+      ownerId,
+      date,
+    );
     if (!dailySlotList) {
       dailySlotList = DailySlotList.create({ ownerId, date });
     }
@@ -448,7 +507,14 @@ export class ScheduleController {
       }
       throw e;
     }
-    await this.dailySlotListRepo.save(dailySlotList);
+    try {
+      await this.dailySlotListRepo.save(dailySlotList);
+    } catch (e) {
+      if (e instanceof OptimisticLockError) {
+        throw new ConflictException({ error: 'VERSION_CONFLICT', message: 'スケジュールが他で更新されました。再読み込みしてください。' });
+      }
+      throw e;
+    }
 
     return {
       slotId: newSlot.slotId.value,
@@ -457,6 +523,60 @@ export class ScheduleController {
       durationMinutes: newSlot.durationMinutes,
       status: newSlot.status.toPact(),
     };
+  }
+
+  /**
+   * DELETE /api/schedule/slots/date/:date
+   * Bulk-deletes all available (non-booked) slots for the given date.
+   */
+  @Delete('slots/date/:date')
+  @HttpCode(200)
+  async bulkDeleteSlots(
+    @Req() req: AuthenticatedRequest,
+    @Param('date') dateParam: string,
+  ) {
+    let ownerId: OwnerId;
+    let date: SlotDate;
+    try {
+      ownerId = OwnerId.create(req.user.ownerId);
+      date = SlotDate.create(dateParam);
+    } catch (e) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: e instanceof Error ? e.message : '入力値が不正です',
+      });
+    }
+
+    const dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(
+      ownerId,
+      date,
+    );
+    if (!dailySlotList) {
+      return { date: date.value, deletedCount: 0 };
+    }
+
+    const availableSlotIds = dailySlotList.slots
+      .filter((s) => s.isAvailable())
+      .map((s) => s.slotId);
+
+    if (availableSlotIds.length === 0) {
+      return { date: date.value, deletedCount: 0 };
+    }
+
+    for (const slotId of availableSlotIds) {
+      dailySlotList.removeSlot(slotId);
+    }
+
+    try {
+      await this.dailySlotListRepo.save(dailySlotList);
+    } catch (e) {
+      if (e instanceof OptimisticLockError) {
+        throw new ConflictException({ error: 'VERSION_CONFLICT', message: 'スケジュールが他で更新されました。再読み込みしてください。' });
+      }
+      throw e;
+    }
+
+    return { date: date.value, deletedCount: availableSlotIds.length };
   }
 
   /**
@@ -505,7 +625,14 @@ export class ScheduleController {
       throw e;
     }
 
-    await this.dailySlotListRepo.save(found.dailySlotList);
+    try {
+      await this.dailySlotListRepo.save(found.dailySlotList);
+    } catch (e) {
+      if (e instanceof OptimisticLockError) {
+        throw new ConflictException({ error: 'VERSION_CONFLICT', message: 'スケジュールが他で更新されました。再読み込みしてください。' });
+      }
+      throw e;
+    }
 
     return { message: 'スロットを削除しました' };
   }
@@ -540,7 +667,8 @@ export class ScheduleController {
   @HttpCode(201)
   async createTemplate(
     @Req() req: AuthenticatedRequest,
-    @Body() body: {
+    @Body()
+    body: {
       name: string;
       entries?: { startTime: string; endTime: string }[];
       fromDate?: string;
@@ -560,7 +688,10 @@ export class ScheduleController {
     if (body.fromDate) {
       // Build entries from existing slots on the given date
       const date = SlotDate.create(body.fromDate);
-      const dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(ownerId, date);
+      const dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(
+        ownerId,
+        date,
+      );
       if (!dailySlotList || dailySlotList.slots.length === 0) {
         throw new BadRequestException({
           error: 'NO_SLOTS',
@@ -572,10 +703,17 @@ export class ScheduleController {
         endTime: s.endTime,
       }));
     } else if (body.entries && body.entries.length > 0) {
-      entries = body.entries.map((e) => ({
-        startTime: TimeOfDay.fromString(e.startTime),
-        endTime: TimeOfDay.fromString(e.endTime),
-      }));
+      try {
+        entries = body.entries.map((e) => ({
+          startTime: TimeOfDay.fromString(e.startTime),
+          endTime: TimeOfDay.fromString(e.endTime),
+        }));
+      } catch (e) {
+        throw new BadRequestException({
+          error: 'INVALID_TIME_FORMAT',
+          message: e instanceof Error ? e.message : '時刻の形式が不正です',
+        });
+      }
     } else {
       throw new BadRequestException({
         error: 'MISSING_ENTRIES',
@@ -583,12 +721,20 @@ export class ScheduleController {
       });
     }
 
-    const template = SlotTemplate.create({
-      templateId: SlotTemplateId.generate(),
-      ownerId,
-      name: body.name.trim(),
-      entries,
-    });
+    let template: SlotTemplate;
+    try {
+      template = SlotTemplate.create({
+        templateId: SlotTemplateId.generate(),
+        ownerId,
+        name: body.name.trim(),
+        entries,
+      });
+    } catch (e) {
+      throw new BadRequestException({
+        error: 'INVALID_TEMPLATE',
+        message: e instanceof Error ? e.message : 'テンプレートの内容が不正です',
+      });
+    }
 
     await this.slotTemplateRepo.save(template);
 
@@ -637,7 +783,13 @@ export class ScheduleController {
   async applyTemplate(
     @Req() req: AuthenticatedRequest,
     @Param('templateId') templateIdParam: string,
-    @Body() body: { date?: string; startDate?: string; endDate?: string; clearExisting?: boolean },
+    @Body()
+    body: {
+      date?: string;
+      startDate?: string;
+      endDate?: string;
+      clearExisting?: boolean;
+    },
   ) {
     const ownerId = OwnerId.create(req.user.ownerId);
     const templateId = SlotTemplateId.create(templateIdParam);
@@ -655,14 +807,31 @@ export class ScheduleController {
     const targetDates: SlotDate[] = [];
 
     if (body.date) {
-      targetDates.push(SlotDate.create(body.date));
+      try {
+        targetDates.push(SlotDate.create(body.date));
+      } catch (e) {
+        throw new BadRequestException({
+          error: 'VALIDATION_ERROR',
+          message: e instanceof Error ? e.message : '日付の形式が不正です',
+        });
+      }
     } else if (body.startDate && body.endDate) {
+      let closedStartDate: SlotDate;
+      let closedEndDate: SlotDate;
+      try {
+        closedStartDate = SlotDate.create(body.startDate);
+        closedEndDate = SlotDate.create(body.endDate);
+      } catch (e) {
+        throw new BadRequestException({
+          error: 'VALIDATION_ERROR',
+          message: e instanceof Error ? e.message : '日付の形式が不正です',
+        });
+      }
       // Apply to business days in the range
       const start = new Date(body.startDate + 'T00:00:00');
       const end = new Date(body.endDate + 'T00:00:00');
-      const businessHours = await this.businessHourRepo.findAllByOwnerId(ownerId);
-      const closedStartDate = SlotDate.create(body.startDate);
-      const closedEndDate = SlotDate.create(body.endDate);
+      const businessHours =
+        await this.businessHourRepo.findAllByOwnerId(ownerId);
       const closedDays = await this.closedDayRepo.findAllByOwnerIdAndDateRange(
         ownerId,
         closedStartDate,
@@ -670,11 +839,22 @@ export class ScheduleController {
       );
       const closedSet = new Set(closedDays.map((cd) => cd.date.value));
 
-      const dayKeyMap = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+      const dayKeyMap = [
+        'SUNDAY',
+        'MONDAY',
+        'TUESDAY',
+        'WEDNESDAY',
+        'THURSDAY',
+        'FRIDAY',
+        'SATURDAY',
+      ];
 
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        const iso = d.getFullYear() + '-' +
-          String(d.getMonth() + 1).padStart(2, '0') + '-' +
+        const iso =
+          d.getFullYear() +
+          '-' +
+          String(d.getMonth() + 1).padStart(2, '0') +
+          '-' +
           String(d.getDate()).padStart(2, '0');
 
         if (closedSet.has(iso)) continue;
@@ -698,7 +878,10 @@ export class ScheduleController {
     const results: { date: string; added: number; skipped: number }[] = [];
 
     for (const date of targetDates) {
-      let dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(ownerId, date);
+      let dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(
+        ownerId,
+        date,
+      );
       if (!dailySlotList) {
         dailySlotList = DailySlotList.create({ ownerId, date });
       }
@@ -726,20 +909,23 @@ export class ScheduleController {
           status: SlotStatus.available(),
           reservationId: null,
         });
-        try {
-          dailySlotList.addSlot(newSlot);
+        const wasAdded = dailySlotList.addSlotForce(newSlot);
+        if (wasAdded) {
           added++;
-        } catch (e) {
-          if (e instanceof SlotOverlapError) {
-            skipped++;
-            continue;
-          }
-          throw e;
+        } else {
+          skipped++;
         }
       }
 
       if (added > 0 || clearExisting) {
-        await this.dailySlotListRepo.save(dailySlotList);
+        try {
+          await this.dailySlotListRepo.save(dailySlotList);
+        } catch (e) {
+          if (e instanceof OptimisticLockError) {
+            throw new ConflictException({ error: 'VERSION_CONFLICT', message: 'スケジュールが他で更新されました。再読み込みしてください。' });
+          }
+          throw e;
+        }
         totalAdded += added;
       }
       totalSkipped += skipped;
@@ -768,6 +954,8 @@ export class ScheduleController {
     });
     return {
       cancellationPolicy: settings?.cancellationPolicy ?? '',
+      defaultTreatmentMinutes: settings?.defaultTreatmentMinutes ?? 0,
+      autoCompleteEnabled: settings?.autoCompleteEnabled ?? false,
     };
   }
 
@@ -779,16 +967,51 @@ export class ScheduleController {
   @HttpCode(200)
   async updateSettings(
     @Req() req: AuthenticatedRequest,
-    @Body() body: { cancellationPolicy?: string },
+    @Body()
+    body: {
+      cancellationPolicy?: string;
+      defaultTreatmentMinutes?: number;
+      autoCompleteEnabled?: boolean;
+    },
   ) {
+    if (
+      body.defaultTreatmentMinutes !== undefined &&
+      (typeof body.defaultTreatmentMinutes !== 'number' || body.defaultTreatmentMinutes < 0)
+    ) {
+      throw new BadRequestException({
+        error: 'INVALID_VALUE',
+        message: '施術時間は0以上の数値を指定してください',
+      });
+    }
+    if (
+      body.autoCompleteEnabled !== undefined &&
+      typeof body.autoCompleteEnabled !== 'boolean'
+    ) {
+      throw new BadRequestException({
+        error: 'INVALID_VALUE',
+        message: 'autoCompleteEnabledはboolean値で指定してください',
+      });
+    }
     const ownerId = req.user.ownerId;
-    await this.prisma.ownerSettings.upsert({
+    const autoCompleteValue = body.autoCompleteEnabled !== undefined ? body.autoCompleteEnabled : undefined;
+    const result = await this.prisma.ownerSettings.upsert({
       where: { ownerId },
-      update: { cancellationPolicy: body.cancellationPolicy ?? '' },
-      create: { ownerId, cancellationPolicy: body.cancellationPolicy ?? '' },
+      update: {
+        cancellationPolicy: body.cancellationPolicy ?? undefined,
+        defaultTreatmentMinutes: body.defaultTreatmentMinutes ?? undefined,
+        autoCompleteEnabled: autoCompleteValue,
+      },
+      create: {
+        ownerId,
+        cancellationPolicy: body.cancellationPolicy ?? '',
+        defaultTreatmentMinutes: body.defaultTreatmentMinutes ?? 0,
+        autoCompleteEnabled: body.autoCompleteEnabled ?? false,
+      },
     });
     return {
-      cancellationPolicy: body.cancellationPolicy ?? '',
+      cancellationPolicy: result.cancellationPolicy,
+      defaultTreatmentMinutes: result.defaultTreatmentMinutes,
+      autoCompleteEnabled: result.autoCompleteEnabled,
     };
   }
 }

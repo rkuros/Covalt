@@ -13,9 +13,7 @@ export class EncryptionService {
   constructor(private readonly config: ConfigService) {
     const keyHex = this.config.get<string>('ENCRYPTION_KEY');
     if (!keyHex || keyHex.length !== 64) {
-      throw new Error(
-        'ENCRYPTION_KEY must be a 64-char hex string (32 bytes)',
-      );
+      throw new Error('ENCRYPTION_KEY must be a 64-char hex string (32 bytes)');
     }
     this.key = Buffer.from(keyHex, 'hex');
   }

@@ -39,7 +39,9 @@ export class PrismaReminderScheduleRepository {
     });
   }
 
-  async findByReservationId(reservationId: string): Promise<ReminderScheduleRow | null> {
+  async findByReservationId(
+    reservationId: string,
+  ): Promise<ReminderScheduleRow | null> {
     return this.prisma.reminderSchedule.findUnique({
       where: { reservationId },
     });

@@ -89,7 +89,15 @@ export class GoogleCalendarIntegration {
     createdAt: Date,
     updatedAt: Date,
   ): GoogleCalendarIntegration {
-    return new GoogleCalendarIntegration(id, ownerId, oauthToken, calendarId, status, createdAt, updatedAt);
+    return new GoogleCalendarIntegration(
+      id,
+      ownerId,
+      oauthToken,
+      calendarId,
+      status,
+      createdAt,
+      updatedAt,
+    );
   }
 
   /**
@@ -97,7 +105,11 @@ export class GoogleCalendarIntegration {
    * BR-2.5: 連携が無効のオーナーに対するイベントは処理をスキップする。
    */
   isActive(): boolean {
-    return this._status === 'active' && this._oauthToken !== null && this._calendarId !== null;
+    return (
+      this._status === 'active' &&
+      this._oauthToken !== null &&
+      this._calendarId !== null
+    );
   }
 
   /**
@@ -113,7 +125,9 @@ export class GoogleCalendarIntegration {
    */
   selectCalendar(calendarId: CalendarId): void {
     if (!this._oauthToken) {
-      throw new Error('OAuth 認証が完了していないためカレンダーを選択できません');
+      throw new Error(
+        'OAuth 認証が完了していないためカレンダーを選択できません',
+      );
     }
     this._calendarId = calendarId;
     this._status = 'active';

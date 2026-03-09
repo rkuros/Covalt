@@ -13,7 +13,9 @@ export class InMemoryCalendarEventMappingRepository implements CalendarEventMapp
     return this.store.get(id) ?? null;
   }
 
-  async findByReservationId(reservationId: string): Promise<CalendarEventMapping | null> {
+  async findByReservationId(
+    reservationId: string,
+  ): Promise<CalendarEventMapping | null> {
     for (const mapping of this.store.values()) {
       if (mapping.reservationId === reservationId && mapping.isActive()) {
         return mapping;

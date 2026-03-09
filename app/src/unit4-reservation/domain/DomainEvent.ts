@@ -25,9 +25,9 @@ export interface ReservationCreatedEvent extends DomainEvent {
   readonly lineUserId: string | null;
   readonly ownerLineUserId: string | null;
   readonly slotId: string;
-  readonly dateTime: string;       // ISO 8601 JST
+  readonly dateTime: string; // ISO 8601 JST
   readonly durationMinutes: number;
-  readonly timestamp: string;      // ISO 8601 UTC
+  readonly timestamp: string; // ISO 8601 UTC
 }
 
 /**
@@ -43,11 +43,11 @@ export interface ReservationModifiedEvent extends DomainEvent {
   readonly lineUserId: string | null;
   readonly ownerLineUserId: string | null;
   readonly slotId: string;
-  readonly dateTime: string;           // 変更後 ISO 8601 JST
-  readonly previousDateTime: string;   // 変更前 ISO 8601 JST
+  readonly dateTime: string; // 変更後 ISO 8601 JST
+  readonly previousDateTime: string; // 変更前 ISO 8601 JST
   readonly durationMinutes: number;
   readonly modifiedBy: 'customer' | 'owner';
-  readonly timestamp: string;          // ISO 8601 UTC
+  readonly timestamp: string; // ISO 8601 UTC
 }
 
 /**
@@ -63,9 +63,9 @@ export interface ReservationCancelledEvent extends DomainEvent {
   readonly lineUserId: string | null;
   readonly ownerLineUserId: string | null;
   readonly slotId: string;
-  readonly dateTime: string;             // ISO 8601 JST
+  readonly dateTime: string; // ISO 8601 JST
   readonly cancelledBy: 'customer' | 'owner';
-  readonly timestamp: string;            // ISO 8601 UTC
+  readonly timestamp: string; // ISO 8601 UTC
 }
 
 /** Unit 4 が発行する全イベントの判別共用型 */

@@ -36,17 +36,14 @@ export class HttpLineMessageSender implements LineMessageSender {
         })),
       };
 
-      const response = await fetch(
-        'https://api.line.me/v2/bot/message/push',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${config.channelAccessToken}`,
-          },
-          body: JSON.stringify(body),
+      const response = await fetch('https://api.line.me/v2/bot/message/push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${config.channelAccessToken}`,
         },
-      );
+        body: JSON.stringify(body),
+      });
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));

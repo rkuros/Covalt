@@ -1,5 +1,5 @@
-import { NotificationType } from "./NotificationType";
-import { RecipientType } from "./RecipientType";
+import { NotificationType } from './NotificationType';
+import { RecipientType } from './RecipientType';
 
 /**
  * 送信メッセージ本文を組み立てた結果を保持する不変オブジェクト。
@@ -12,7 +12,7 @@ export class NotificationMessage {
   private constructor(
     notificationType: NotificationType,
     recipientType: RecipientType,
-    body: string
+    body: string,
   ) {
     this.notificationType = notificationType;
     this.recipientType = recipientType;
@@ -26,13 +26,13 @@ export class NotificationMessage {
   static create(
     notificationType: NotificationType,
     recipientType: RecipientType,
-    body: string
+    body: string,
   ): NotificationMessage {
     if (!body || body.trim().length === 0) {
-      throw new Error("メッセージ本文は空にできません");
+      throw new Error('メッセージ本文は空にできません');
     }
     return Object.freeze(
-      new NotificationMessage(notificationType, recipientType, body)
+      new NotificationMessage(notificationType, recipientType, body),
     );
   }
 }

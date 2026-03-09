@@ -5,14 +5,20 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const expressApp = express();
-  expressApp.use(express.json({
-    verify: (req: any, _res, buf) => {
-      req.rawBody = buf;
+  expressApp.use(
+    express.json({
+      verify: (req: any, _res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
+  const app = await NestFactory.create(
+    AppModule,
+    new ExpressAdapter(expressApp),
+    {
+      bodyParser: false,
     },
-  }));
-  const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp), {
-    bodyParser: false,
-  });
+  );
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();

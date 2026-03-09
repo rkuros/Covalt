@@ -1,5 +1,5 @@
-import { LineUserId } from "./LineUserId";
-import { LineFriendship } from "./LineFriendship";
+import { LineUserId } from './LineUserId';
+import { LineFriendship } from './LineFriendship';
 
 /**
  * LineFriendship リポジトリインターフェース。

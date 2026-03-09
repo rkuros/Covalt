@@ -18,20 +18,20 @@ interface ReservationEventBase {
 
 /** 予約作成イベント */
 export interface ReservationCreatedEvent extends ReservationEventBase {
-  readonly eventType: "reservation.created";
+  readonly eventType: 'reservation.created';
 }
 
 /** 予約変更イベント */
 export interface ReservationModifiedEvent extends ReservationEventBase {
-  readonly eventType: "reservation.modified";
+  readonly eventType: 'reservation.modified';
   readonly previousDateTime: string;
-  readonly modifiedBy: "customer" | "owner";
+  readonly modifiedBy: 'customer' | 'owner';
 }
 
 /** 予約キャンセルイベント */
 export interface ReservationCancelledEvent extends ReservationEventBase {
-  readonly eventType: "reservation.cancelled";
-  readonly cancelledBy: "customer" | "owner";
+  readonly eventType: 'reservation.cancelled';
+  readonly cancelledBy: 'customer' | 'owner';
 }
 
 /** 予約イベントの Union 型 */
@@ -41,97 +41,96 @@ export type ReservationEvent =
   | ReservationCancelledEvent;
 
 /** イベント種別の文字列リテラル */
-export type ReservationEventType = ReservationEvent["eventType"];
+export type ReservationEventType = ReservationEvent['eventType'];
 
 /**
  * 生の JSON ペイロードから ReservationEvent を生成するファクトリ。
  * 必須フィールドの存在とイベント種別の妥当性を検証する。
  */
 export function parseReservationEvent(payload: unknown): ReservationEvent {
-  if (typeof payload !== "object" || payload === null) {
-    throw new Error("イベントペイロードがオブジェクトではありません");
+  if (typeof payload !== 'object' || payload === null) {
+    throw new Error('イベントペイロードがオブジェクトではありません');
   }
 
   const obj = payload as Record<string, unknown>;
 
   const requiredBase = [
-    "eventType",
-    "reservationId",
-    "ownerId",
-    "customerId",
-    "customerName",
-    "slotId",
-    "dateTime",
-    "timestamp",
+    'eventType',
+    'reservationId',
+    'ownerId',
+    'customerId',
+    'customerName',
+    'slotId',
+    'dateTime',
+    'timestamp',
   ] as const;
 
   for (const field of requiredBase) {
-    if (typeof obj[field] !== "string") {
+    if (typeof obj[field] !== 'string') {
       throw new Error(`必須フィールド '${field}' が不足または不正です`);
     }
   }
 
   // lineUserId / ownerLineUserId は null 許容
-  const nullableFields = ["lineUserId", "ownerLineUserId"] as const;
+  const nullableFields = ['lineUserId', 'ownerLineUserId'] as const;
   for (const field of nullableFields) {
-    if (obj[field] !== null && typeof obj[field] !== "string") {
-      throw new Error(`フィールド '${field}' は文字列またはnullである必要があります`);
+    if (obj[field] !== null && typeof obj[field] !== 'string') {
+      throw new Error(
+        `フィールド '${field}' は文字列またはnullである必要があります`,
+      );
     }
   }
 
   const base = {
-    reservationId: obj["reservationId"] as string,
-    ownerId: obj["ownerId"] as string,
-    customerId: obj["customerId"] as string,
-    customerName: obj["customerName"] as string,
-    lineUserId: (obj["lineUserId"] as string | null),
-    ownerLineUserId: (obj["ownerLineUserId"] as string | null),
-    slotId: obj["slotId"] as string,
-    dateTime: obj["dateTime"] as string,
-    timestamp: obj["timestamp"] as string,
+    reservationId: obj['reservationId'] as string,
+    ownerId: obj['ownerId'] as string,
+    customerId: obj['customerId'] as string,
+    customerName: obj['customerName'] as string,
+    lineUserId: obj['lineUserId'] as string | null,
+    ownerLineUserId: obj['ownerLineUserId'] as string | null,
+    slotId: obj['slotId'] as string,
+    dateTime: obj['dateTime'] as string,
+    timestamp: obj['timestamp'] as string,
   };
 
-  switch (obj["eventType"]) {
-    case "reservation.created":
+  switch (obj['eventType']) {
+    case 'reservation.created':
       return Object.freeze({
         ...base,
-        eventType: "reservation.created" as const,
+        eventType: 'reservation.created' as const,
       });
 
-    case "reservation.modified":
-      if (typeof obj["previousDateTime"] !== "string") {
+    case 'reservation.modified':
+      if (typeof obj['previousDateTime'] !== 'string') {
         throw new Error(
-          "reservation.modified には 'previousDateTime' が必要です"
+          "reservation.modified には 'previousDateTime' が必要です",
         );
       }
-      if (obj["modifiedBy"] !== "customer" && obj["modifiedBy"] !== "owner") {
+      if (obj['modifiedBy'] !== 'customer' && obj['modifiedBy'] !== 'owner') {
         throw new Error(
-          "reservation.modified の 'modifiedBy' は 'customer' または 'owner' である必要があります"
+          "reservation.modified の 'modifiedBy' は 'customer' または 'owner' である必要があります",
         );
       }
       return Object.freeze({
         ...base,
-        eventType: "reservation.modified" as const,
-        previousDateTime: obj["previousDateTime"] as string,
-        modifiedBy: obj["modifiedBy"] as "customer" | "owner",
+        eventType: 'reservation.modified' as const,
+        previousDateTime: obj['previousDateTime'],
+        modifiedBy: obj['modifiedBy'],
       });
 
-    case "reservation.cancelled":
-      if (
-        obj["cancelledBy"] !== "customer" &&
-        obj["cancelledBy"] !== "owner"
-      ) {
+    case 'reservation.cancelled':
+      if (obj['cancelledBy'] !== 'customer' && obj['cancelledBy'] !== 'owner') {
         throw new Error(
-          "reservation.cancelled の 'cancelledBy' は 'customer' または 'owner' である必要があります"
+          "reservation.cancelled の 'cancelledBy' は 'customer' または 'owner' である必要があります",
         );
       }
       return Object.freeze({
         ...base,
-        eventType: "reservation.cancelled" as const,
-        cancelledBy: obj["cancelledBy"] as "customer" | "owner",
+        eventType: 'reservation.cancelled' as const,
+        cancelledBy: obj['cancelledBy'],
       });
 
     default:
-      throw new Error(`未知のイベント種別: ${String(obj["eventType"])}`);
+      throw new Error(`未知のイベント種別: ${String(obj['eventType'])}`);
   }
 }

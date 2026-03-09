@@ -1,17 +1,20 @@
-import { createHmac, timingSafeEqual } from "crypto";
-import { WebhookEvent, WebhookEventType } from "./WebhookEvent";
-import { LineChannelConfigRepository } from "./LineChannelConfigRepository";
+import { createHmac, timingSafeEqual } from 'crypto';
+import { WebhookEvent, WebhookEventType } from './WebhookEvent';
+import { LineChannelConfigRepository } from './LineChannelConfigRepository';
 import {
   ChannelConfigNotFoundError,
   WebhookSignatureVerificationError,
   DuplicateWebhookEventError,
-} from "./DomainErrors";
+} from './DomainErrors';
 
 /**
  * LINE Platform からの Webhook リクエストを受信し、署名検証を行い、
  * イベント種別ごとにディスパッチするドメインサービス。
  */
-export type WebhookEventHandler = (ownerId: string, event: WebhookEvent) => Promise<void>;
+export type WebhookEventHandler = (
+  ownerId: string,
+  event: WebhookEvent,
+) => Promise<void>;
 
 export class WebhookReceiveService {
   private readonly handlers = new Map<WebhookEventType, WebhookEventHandler>();
@@ -37,9 +40,9 @@ export class WebhookReceiveService {
     signature: string,
     channelSecret: string,
   ): boolean {
-    const hash = createHmac("SHA256", channelSecret)
+    const hash = createHmac('SHA256', channelSecret)
       .update(body)
-      .digest("base64");
+      .digest('base64');
     const hashBuf = Buffer.from(hash);
     const sigBuf = Buffer.from(signature);
     if (hashBuf.length !== sigBuf.length) return false;

@@ -15,8 +15,7 @@ export class InMemoryBusinessHourRepository implements BusinessHourRepository {
   ): Promise<BusinessHour | null> {
     return (
       this.store.find(
-        (bh) =>
-          bh.ownerId.equals(ownerId) && bh.dayOfWeek.equals(dayOfWeek),
+        (bh) => bh.ownerId.equals(ownerId) && bh.dayOfWeek.equals(dayOfWeek),
       ) ?? null
     );
   }
@@ -26,8 +25,8 @@ export class InMemoryBusinessHourRepository implements BusinessHourRepository {
   }
 
   async save(businessHour: BusinessHour): Promise<void> {
-    const index = this.store.findIndex(
-      (bh) => bh.businessHourId.equals(businessHour.businessHourId),
+    const index = this.store.findIndex((bh) =>
+      bh.businessHourId.equals(businessHour.businessHourId),
     );
     if (index >= 0) {
       this.store[index] = businessHour;

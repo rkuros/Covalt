@@ -71,13 +71,46 @@ export class DailySlotList {
     return this._slots.find((s) => s.slotId.equals(slotId)) ?? null;
   }
 
-  /** Get all available slots, excluding those that overlap with booked slots. */
-  getAvailableSlots(): Slot[] {
+  /**
+   * Get available slots, excluding those that conflict with booked treatments.
+   *
+   * @param treatmentDurationMinutes - the duration of a new potential treatment.
+   *   When provided, an available slot is excluded if a treatment of this length
+   *   starting at the slot's start time would overlap with any booked treatment window.
+   *   When omitted, uses each slot's own duration for the overlap check.
+   */
+  getAvailableSlots(treatmentDurationMinutes?: number): Slot[] {
     const bookedSlots = this._slots.filter((s) => s.isBooked());
     return this._slots.filter((s) => {
       if (!s.isAvailable()) return false;
-      return !bookedSlots.some((booked) => s.overlapsWith(booked));
+      return !bookedSlots.some((booked) => {
+        // Booked treatment window: startTime → startTime + effectiveTreatmentMinutes
+        const bookedStartMin = booked.startTime.toMinutes();
+        const bookedEndMin = bookedStartMin + booked.effectiveTreatmentMinutes;
+
+        // Candidate treatment window: slotStart → slotStart + treatmentDuration
+        const candidateDur = treatmentDurationMinutes ?? s.durationMinutes;
+        const candidateStartMin = s.startTime.toMinutes();
+        const candidateEndMin = candidateStartMin + candidateDur;
+
+        // Standard overlap: candidateStart < bookedEnd AND bookedStart < candidateEnd
+        return (
+          candidateStartMin < bookedEndMin && bookedStartMin < candidateEndMin
+        );
+      });
     });
+  }
+
+  /**
+   * Get visible slots for owner view: booked slots + non-blocked available slots.
+   * Blocked available slots (overlapping with a booked treatment window) are excluded.
+   */
+  getVisibleSlots(treatmentDurationMinutes?: number): Slot[] {
+    const bookedSlots = this._slots.filter((s) => s.isBooked());
+    const availableSlots = this.getAvailableSlots(treatmentDurationMinutes);
+    return [...bookedSlots, ...availableSlots].sort(
+      (a, b) => a.startTime.toMinutes() - b.startTime.toMinutes(),
+    );
   }
 
   /**
@@ -87,6 +120,23 @@ export class DailySlotList {
     this.assertNoOverlap(slot.timeRange, null);
     this._slots.push(slot);
     this._version = this._version.increment();
+  }
+
+  /**
+   * Add a slot, skipping the overlap check.
+   * Exact duplicates (same start+end time) are skipped.
+   * Returns true if the slot was added, false if duplicate.
+   */
+  addSlotForce(slot: Slot): boolean {
+    const isDuplicate = this._slots.some(
+      (s) =>
+        s.startTime.equals(slot.startTime) && s.endTime.equals(slot.endTime),
+    );
+    if (isDuplicate) return false;
+
+    this._slots.push(slot);
+    this._version = this._version.increment();
+    return true;
   }
 
   /**
@@ -105,7 +155,11 @@ export class DailySlotList {
    * Edit a slot's time range. Only available slots can be edited.
    * The new time range must not overlap with other slots.
    */
-  editSlot(slotId: SlotId, newStartTime: TimeOfDay, newEndTime: TimeOfDay): void {
+  editSlot(
+    slotId: SlotId,
+    newStartTime: TimeOfDay,
+    newEndTime: TimeOfDay,
+  ): void {
     const slot = this.getSlotOrThrow(slotId);
     if (!slot.isAvailable()) {
       throw new SlotNotAvailableError(slotId.value);
@@ -131,10 +185,15 @@ export class DailySlotList {
 
   /**
    * Reserve a slot for a reservation.
+   * @param treatmentDurationMinutes actual treatment duration (may exceed slot duration)
    */
-  reserveSlot(slotId: SlotId, reservationId: ReservationId): void {
+  reserveSlot(
+    slotId: SlotId,
+    reservationId: ReservationId,
+    treatmentDurationMinutes?: number,
+  ): void {
     const slot = this.getSlotOrThrow(slotId);
-    slot.reserve(reservationId);
+    slot.reserve(reservationId, treatmentDurationMinutes);
     this._version = this._version.increment();
   }
 
@@ -152,7 +211,12 @@ export class DailySlotList {
    * Existing slots (including booked ones) are preserved.
    * Only non-overlapping new slots are added.
    */
-  generateSlots(businessStartTime: TimeOfDay, businessEndTime: TimeOfDay, duration: Duration, bufferMinutes: number = 0): Slot[] {
+  generateSlots(
+    businessStartTime: TimeOfDay,
+    businessEndTime: TimeOfDay,
+    duration: Duration,
+    bufferMinutes: number = 0,
+  ): Slot[] {
     const addedSlots: Slot[] = [];
     let currentMinutes = businessStartTime.toMinutes();
     const endMinutes = businessEndTime.toMinutes();
@@ -210,7 +274,10 @@ export class DailySlotList {
    * Assert that the given time range does not overlap with any existing slot,
    * optionally excluding a specific slot (for edit operations).
    */
-  private assertNoOverlap(range: TimeRange, excludeSlotId: SlotId | null): void {
+  private assertNoOverlap(
+    range: TimeRange,
+    excludeSlotId: SlotId | null,
+  ): void {
     const overlapping = this._slots.find((s) => {
       if (excludeSlotId && s.slotId.equals(excludeSlotId)) {
         return false;

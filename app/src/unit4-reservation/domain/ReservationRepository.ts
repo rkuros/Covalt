@@ -15,10 +15,16 @@ export interface ReservationRepository {
   findById(reservationId: ReservationId): Promise<Reservation | null>;
 
   /** 顧客IDとオーナーIDで今後の予約一覧を取得する（dateTime が現在以降、status = confirmed）。 */
-  findUpcomingByCustomerId(customerId: CustomerId, ownerId: OwnerId): Promise<Reservation[]>;
+  findUpcomingByCustomerId(
+    customerId: CustomerId,
+    ownerId: OwnerId,
+  ): Promise<Reservation[]>;
 
   /** 顧客IDとオーナーIDで過去の予約履歴を取得する。直近順にソート。 */
-  findPastByCustomerId(customerId: CustomerId, ownerId: OwnerId): Promise<Reservation[]>;
+  findPastByCustomerId(
+    customerId: CustomerId,
+    ownerId: OwnerId,
+  ): Promise<Reservation[]>;
 
   /** オーナーIDと日付範囲で予約一覧を取得する。 */
   findByOwnerIdAndDateRange(

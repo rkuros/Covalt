@@ -1,5 +1,5 @@
-import { randomUUID } from "crypto";
-import { AuthToken } from "./AuthToken";
+import { randomUUID } from 'crypto';
+import { AuthToken } from './AuthToken';
 
 /**
  * エンティティ: PasswordResetToken
@@ -34,7 +34,9 @@ export class PasswordResetToken {
    */
   static create(ownerId: string): PasswordResetToken {
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + PasswordResetToken.EXPIRY_HOURS * 60 * 60 * 1000);
+    const expiresAt = new Date(
+      now.getTime() + PasswordResetToken.EXPIRY_HOURS * 60 * 60 * 1000,
+    );
     return new PasswordResetToken(
       randomUUID(),
       ownerId,
@@ -74,7 +76,7 @@ export class PasswordResetToken {
    */
   markAsUsed(): void {
     if (!this.isValid()) {
-      throw new Error("無効または使用済みのリセットトークンです");
+      throw new Error('無効または使用済みのリセットトークンです');
     }
     this._usedAt = new Date();
   }

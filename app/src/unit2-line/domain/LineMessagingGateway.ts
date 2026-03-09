@@ -1,4 +1,4 @@
-import { PushMessage } from "./PushMessage";
+import { PushMessage } from './PushMessage';
 
 /**
  * LINE Messaging API Gateway インターフェース。

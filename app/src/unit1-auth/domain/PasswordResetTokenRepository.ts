@@ -1,5 +1,5 @@
-import { PasswordResetToken } from "./PasswordResetToken";
-import { AuthToken } from "./AuthToken";
+import { PasswordResetToken } from './PasswordResetToken';
+import { AuthToken } from './AuthToken';
 
 /**
  * リポジトリインターフェース: PasswordResetTokenRepository

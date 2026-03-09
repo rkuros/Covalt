@@ -10,7 +10,7 @@ export class OwnerId {
 
   static create(value: string): OwnerId {
     if (!value || value.trim().length === 0) {
-      throw new Error("OwnerId must not be empty");
+      throw new Error('OwnerId must not be empty');
     }
     return new OwnerId(value.trim());
   }

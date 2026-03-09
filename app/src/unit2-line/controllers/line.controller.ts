@@ -55,7 +55,12 @@ interface WebhookBody {
   events: Array<{
     eventType: 'follow' | 'unfollow' | 'message' | 'postback';
     timestamp: string;
-    source: { type: 'user' | 'group' | 'room'; userId?: string; groupId?: string; roomId?: string };
+    source: {
+      type: 'user' | 'group' | 'room';
+      userId?: string;
+      groupId?: string;
+      roomId?: string;
+    };
     webhookEventId?: string;
   }>;
 }
@@ -176,7 +181,12 @@ export class LineController {
         type: string;
         timestamp: number;
         webhookEventId?: string;
-        source?: { type: string; userId?: string; groupId?: string; roomId?: string };
+        source?: {
+          type: string;
+          userId?: string;
+          groupId?: string;
+          roomId?: string;
+        };
       }>;
 
       const supportedTypes = ['follow', 'unfollow', 'message', 'postback'];
@@ -186,13 +196,20 @@ export class LineController {
           WebhookEvent.create({
             eventType: e.type as 'follow' | 'unfollow' | 'message' | 'postback',
             timestamp: new Date(e.timestamp),
-            source: (e.source ?? { type: 'user' }) as { type: 'user' | 'group' | 'room'; userId?: string; groupId?: string; roomId?: string },
+            source: (e.source ?? { type: 'user' }) as {
+              type: 'user' | 'group' | 'room';
+              userId?: string;
+              groupId?: string;
+              roomId?: string;
+            },
             webhookEventId: e.webhookEventId,
           }),
         );
 
       // Use raw body for signature verification (not re-serialized JSON)
-      const rawBody = req.rawBody ? req.rawBody.toString('utf-8') : JSON.stringify(body);
+      const rawBody = req.rawBody
+        ? req.rawBody.toString('utf-8')
+        : JSON.stringify(body);
       await this.webhookReceiveService.receive(
         ownerId,
         rawBody,
@@ -259,7 +276,9 @@ export class LineController {
   @UseGuards(AuthGuard)
   async getChannelConfig(@Req() req: AuthenticatedRequest) {
     try {
-      const config = await this.channelConfigService.getConfig(req.user.ownerId);
+      const config = await this.channelConfigService.getConfig(
+        req.user.ownerId,
+      );
       return {
         id: config.id,
         ownerId: config.ownerId,

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   GoogleCalendarApiClient,
   CalendarListEntry,
@@ -9,10 +9,14 @@ import { CalendarEventDetail } from '../domain/CalendarEventDetail';
  * Google Calendar API Gateway の仮実装。
  * 本番では Google Calendar API を呼び出す。現時点では console.log で代替する。
  */
+// TODO: Replace stub with actual Google API integration
 @Injectable()
 export class GoogleCalendarApiGatewayImpl implements GoogleCalendarApiClient {
+  private readonly logger = new Logger(GoogleCalendarApiGatewayImpl.name);
+
+  // TODO: Replace stub with actual Google API integration
   async listCalendars(accessToken: string): Promise<CalendarListEntry[]> {
-    console.log('[Google Calendar API] listCalendars called', {
+    this.logger.log('[Google Calendar API] listCalendars called', {
       accessToken: accessToken.substring(0, 8) + '...',
     });
 
@@ -23,13 +27,14 @@ export class GoogleCalendarApiGatewayImpl implements GoogleCalendarApiClient {
     ];
   }
 
+  // TODO: Replace stub with actual Google API integration
   async createEvent(
     accessToken: string,
     calendarId: string,
     eventDetail: CalendarEventDetail,
   ): Promise<string> {
     const googleEventId = `gcal_evt_${Date.now()}`;
-    console.log('[Google Calendar API] createEvent called', {
+    this.logger.log('[Google Calendar API] createEvent called', {
       accessToken: accessToken.substring(0, 8) + '...',
       calendarId,
       title: eventDetail.title,
@@ -40,13 +45,14 @@ export class GoogleCalendarApiGatewayImpl implements GoogleCalendarApiClient {
     return googleEventId;
   }
 
+  // TODO: Replace stub with actual Google API integration
   async updateEvent(
     accessToken: string,
     calendarId: string,
     eventId: string,
     eventDetail: CalendarEventDetail,
   ): Promise<void> {
-    console.log('[Google Calendar API] updateEvent called', {
+    this.logger.log('[Google Calendar API] updateEvent called', {
       accessToken: accessToken.substring(0, 8) + '...',
       calendarId,
       eventId,
@@ -56,12 +62,13 @@ export class GoogleCalendarApiGatewayImpl implements GoogleCalendarApiClient {
     });
   }
 
+  // TODO: Replace stub with actual Google API integration
   async deleteEvent(
     accessToken: string,
     calendarId: string,
     eventId: string,
   ): Promise<void> {
-    console.log('[Google Calendar API] deleteEvent called', {
+    this.logger.log('[Google Calendar API] deleteEvent called', {
       accessToken: accessToken.substring(0, 8) + '...',
       calendarId,
       eventId,

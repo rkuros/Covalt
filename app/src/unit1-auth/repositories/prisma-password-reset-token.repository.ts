@@ -5,9 +5,7 @@ import { PasswordResetToken } from '../domain/PasswordResetToken';
 import { AuthToken } from '../domain/AuthToken';
 
 @Injectable()
-export class PrismaPasswordResetTokenRepository
-  implements PasswordResetTokenRepository
-{
+export class PrismaPasswordResetTokenRepository implements PasswordResetTokenRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async save(token: PasswordResetToken): Promise<void> {

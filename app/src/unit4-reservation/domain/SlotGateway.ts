@@ -39,8 +39,15 @@ export interface SlotGateway {
   findAvailableSlots(ownerId: OwnerId, date: string): Promise<SlotListResult>;
 
   /** スロットを予約確保する。競合時は SLOT_ALREADY_BOOKED エラーをスローする。 */
-  reserveSlot(slotId: SlotId, reservationId: ReservationId): Promise<SlotReserveResult>;
+  reserveSlot(
+    slotId: SlotId,
+    reservationId: ReservationId,
+    treatmentDurationMinutes?: number,
+  ): Promise<SlotReserveResult>;
 
   /** スロットを解放する（キャンセル・変更時）。 */
-  releaseSlot(slotId: SlotId, reservationId: ReservationId): Promise<SlotReleaseResult>;
+  releaseSlot(
+    slotId: SlotId,
+    reservationId: ReservationId,
+  ): Promise<SlotReleaseResult>;
 }

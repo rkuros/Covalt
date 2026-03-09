@@ -52,13 +52,19 @@ export class SlotGenerationService {
     }
 
     // 2. Check if it's a closed day (holiday)
-    const closedDay = await this.closedDayRepo.findByOwnerIdAndDate(ownerId, date);
+    const closedDay = await this.closedDayRepo.findByOwnerIdAndDate(
+      ownerId,
+      date,
+    );
     if (closedDay) {
       return [];
     }
 
     // 3. Get or create the DailySlotList
-    let dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(ownerId, date);
+    let dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(
+      ownerId,
+      date,
+    );
     if (!dailySlotList) {
       dailySlotList = DailySlotList.create({ ownerId, date });
     }
@@ -66,7 +72,12 @@ export class SlotGenerationService {
     // 4. Generate slots within the business hours, skipping overlaps
     const startTime = businessHour.startTime!;
     const endTime = businessHour.endTime!;
-    const addedSlots = dailySlotList.generateSlots(startTime, endTime, durationMinutes, bufferMinutes);
+    const addedSlots = dailySlotList.generateSlots(
+      startTime,
+      endTime,
+      durationMinutes,
+      bufferMinutes,
+    );
 
     // 5. Save only if new slots were actually added
     if (addedSlots.length > 0) {

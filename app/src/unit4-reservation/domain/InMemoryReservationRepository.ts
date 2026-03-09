@@ -34,9 +34,7 @@ export class InMemoryReservationRepository implements ReservationRepository {
           r.status === ReservationStatus.Confirmed &&
           !r.dateTime.isPast(now),
       )
-      .sort(
-        (a, b) => a.dateTime.value.getTime() - b.dateTime.value.getTime(),
-      );
+      .sort((a, b) => a.dateTime.value.getTime() - b.dateTime.value.getTime());
   }
 
   async findPastByCustomerId(
@@ -53,9 +51,7 @@ export class InMemoryReservationRepository implements ReservationRepository {
             r.status === ReservationStatus.Cancelled ||
             r.status === ReservationStatus.Completed),
       )
-      .sort(
-        (a, b) => b.dateTime.value.getTime() - a.dateTime.value.getTime(),
-      );
+      .sort((a, b) => b.dateTime.value.getTime() - a.dateTime.value.getTime());
   }
 
   async findByOwnerIdAndDateRange(
@@ -70,9 +66,7 @@ export class InMemoryReservationRepository implements ReservationRepository {
           r.dateTime.value.getTime() >= startDate.getTime() &&
           r.dateTime.value.getTime() <= endDate.getTime(),
       )
-      .sort(
-        (a, b) => a.dateTime.value.getTime() - b.dateTime.value.getTime(),
-      );
+      .sort((a, b) => a.dateTime.value.getTime() - b.dateTime.value.getTime());
   }
 
   async findByOwnerIdAndStatus(
@@ -80,12 +74,8 @@ export class InMemoryReservationRepository implements ReservationRepository {
     status: ReservationStatus,
   ): Promise<Reservation[]> {
     return this.allReservations()
-      .filter(
-        (r) => r.ownerId.equals(ownerId) && r.status === status,
-      )
-      .sort(
-        (a, b) => a.dateTime.value.getTime() - b.dateTime.value.getTime(),
-      );
+      .filter((r) => r.ownerId.equals(ownerId) && r.status === status)
+      .sort((a, b) => a.dateTime.value.getTime() - b.dateTime.value.getTime());
   }
 
   async findByOwnerIdAndDateRangeAndStatus(
@@ -102,9 +92,7 @@ export class InMemoryReservationRepository implements ReservationRepository {
           r.dateTime.value.getTime() >= startDate.getTime() &&
           r.dateTime.value.getTime() <= endDate.getTime(),
       )
-      .sort(
-        (a, b) => a.dateTime.value.getTime() - b.dateTime.value.getTime(),
-      );
+      .sort((a, b) => a.dateTime.value.getTime() - b.dateTime.value.getTime());
   }
 
   /** テスト用: ストアをクリアする。 */

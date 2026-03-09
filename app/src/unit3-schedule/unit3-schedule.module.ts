@@ -43,8 +43,17 @@ import {
         businessHourRepo: PrismaBusinessHourRepository,
         closedDayRepo: PrismaClosedDayRepository,
         dailySlotListRepo: PrismaDailySlotListRepository,
-      ) => new SlotAvailabilityService(businessHourRepo, closedDayRepo, dailySlotListRepo),
-      inject: [BUSINESS_HOUR_REPOSITORY, CLOSED_DAY_REPOSITORY, DAILY_SLOT_LIST_REPOSITORY],
+      ) =>
+        new SlotAvailabilityService(
+          businessHourRepo,
+          closedDayRepo,
+          dailySlotListRepo,
+        ),
+      inject: [
+        BUSINESS_HOUR_REPOSITORY,
+        CLOSED_DAY_REPOSITORY,
+        DAILY_SLOT_LIST_REPOSITORY,
+      ],
     },
     {
       provide: SlotReservationService,
@@ -58,8 +67,17 @@ import {
         businessHourRepo: PrismaBusinessHourRepository,
         closedDayRepo: PrismaClosedDayRepository,
         dailySlotListRepo: PrismaDailySlotListRepository,
-      ) => new SlotGenerationService(businessHourRepo, closedDayRepo, dailySlotListRepo),
-      inject: [BUSINESS_HOUR_REPOSITORY, CLOSED_DAY_REPOSITORY, DAILY_SLOT_LIST_REPOSITORY],
+      ) =>
+        new SlotGenerationService(
+          businessHourRepo,
+          closedDayRepo,
+          dailySlotListRepo,
+        ),
+      inject: [
+        BUSINESS_HOUR_REPOSITORY,
+        CLOSED_DAY_REPOSITORY,
+        DAILY_SLOT_LIST_REPOSITORY,
+      ],
     },
   ],
   exports: [

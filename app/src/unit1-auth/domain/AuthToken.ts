@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import { randomUUID } from 'crypto';
 
 /**
  * 値オブジェクト: AuthToken
@@ -16,7 +16,7 @@ export class AuthToken {
    */
   static create(value: string): AuthToken {
     if (!value || value.trim().length === 0) {
-      throw new Error("トークンは必須です");
+      throw new Error('トークンは必須です');
     }
     return new AuthToken(value.trim());
   }

@@ -1,9 +1,4 @@
-import {
-  Controller,
-  Get,
-  Query,
-  BadRequestException,
-} from '@nestjs/common';
+import { Controller, Get, Query, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
 @Controller('api/schedule')
@@ -15,9 +10,7 @@ export class SchedulePublicController {
    * Returns public-facing settings (cancellation policy) for the given owner.
    */
   @Get('public-settings')
-  async getPublicSettings(
-    @Query('ownerId') ownerIdParam: string,
-  ) {
+  async getPublicSettings(@Query('ownerId') ownerIdParam: string) {
     if (!ownerIdParam) {
       throw new BadRequestException({
         error: 'VALIDATION_ERROR',

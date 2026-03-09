@@ -83,7 +83,14 @@ export class CalendarEventMapping {
     updatedAt: Date,
   ): CalendarEventMapping {
     return new CalendarEventMapping(
-      id, reservationId, ownerId, googleEventId, calendarId, active, createdAt, updatedAt,
+      id,
+      reservationId,
+      ownerId,
+      googleEventId,
+      calendarId,
+      active,
+      createdAt,
+      updatedAt,
     );
   }
 

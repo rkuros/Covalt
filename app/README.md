@@ -1,6 +1,8 @@
 # Covalt
 
-LINE連携型 予約管理システム
+LINE連携型 予約管理SaaS
+
+サロン・クリニック等の個人事業主（オーナー）向けに、LINE経由の顧客予約受付と管理機能を提供する。
 
 ## システム構成
 
@@ -32,7 +34,7 @@ graph TB
 
         subgraph U3["Unit3: スケジュール・空き枠"]
             U3A["/api/slots/*<br/>available, reserve, release"]
-            U3B["/api/schedule/*<br/>business-hours, closed-days<br/>slots/generate"]
+            U3B["/api/schedule/*<br/>business-hours, closed-days<br/>slots/generate, templates"]
         end
 
         subgraph U4["Unit4: 予約管理"]
@@ -45,7 +47,7 @@ graph TB
         end
 
         subgraph U6["Unit6: 顧客情報管理"]
-            U6A["/api/customers/*<br/>CRUD, search"]
+            U6A["/api/customers/*<br/>CRUD, search, notes, attachments"]
         end
 
         subgraph U7["Unit7: Googleカレンダー"]
@@ -54,12 +56,13 @@ graph TB
     end
 
     subgraph DB["データベース"]
-        PG[("PostgreSQL<br/>17テーブル")]
+        PG[("Neon PostgreSQL<br/>22テーブル")]
     end
 
     subgraph External["外部サービス"]
         LINE["LINE Messaging API"]
         GCAL["Google Calendar API"]
+        S3["AWS S3<br/>(顧客データ)"]
     end
 
     U1 --> PG
@@ -72,6 +75,7 @@ graph TB
 
     U2 -.->|HTTP| LINE
     U5 -.->|HTTP via Unit2| LINE
+    U6 -.->|presigned URL| S3
     U7 -.->|HTTP| GCAL
 ```
 
@@ -79,10 +83,9 @@ graph TB
 
 ```mermaid
 graph LR
-    subgraph "同期通信 (HTTP Gateway)"
+    subgraph "同期通信 (Direct Gateway)"
         U4["Unit4: 予約"] -->|SlotGateway| U3["Unit3: スケジュール"]
         U4 -->|CustomerGateway| U6["Unit6: 顧客"]
-        U4 -->|AuthGateway| U1["Unit1: 認証"]
         U4 -->|LiffGateway| U2["Unit2: LINE"]
         U5["Unit5: 通知"] -->|LineMessageSender| U2
     end
@@ -101,161 +104,91 @@ graph LR
     end
 ```
 
-### データベース ER図
-
-```mermaid
-erDiagram
-    owner_accounts ||--o{ sessions : "has"
-    owner_accounts ||--o{ password_reset_tokens : "has"
-    owner_accounts ||--o{ business_hours : "has"
-    owner_accounts ||--o{ closed_days : "has"
-    owner_accounts ||--o{ daily_slot_lists : "has"
-    owner_accounts ||--o{ reservations : "has"
-    owner_accounts ||--o{ customers : "has"
-    owner_accounts ||--o| google_calendar_integrations : "has"
-    daily_slot_lists ||--o{ slots : "contains"
-    reservations ||--o{ reservation_histories : "has"
-    customers ||--o{ reservations : "books"
-
-    owner_accounts {
-        uuid owner_id PK
-        string email UK
-        string password_hash
-        string role
-        string status
-    }
-    admin_accounts {
-        uuid admin_id PK
-        string email UK
-        string password_hash
-        string role
-    }
-    sessions {
-        uuid session_id PK
-        uuid owner_id FK
-        string token UK
-        datetime expires_at
-    }
-    password_reset_tokens {
-        uuid token_id PK
-        uuid owner_id FK
-        string token UK
-        datetime expires_at
-    }
-    line_channel_configs {
-        uuid owner_id PK
-        string channel_access_token
-        string channel_secret
-        string liff_id
-        boolean is_active
-    }
-    line_friendships {
-        uuid id PK
-        string owner_id
-        string line_user_id
-        string status
-    }
-    business_hours {
-        uuid business_hour_id PK
-        uuid owner_id FK
-        string day_of_week
-        string start_time
-        string end_time
-        boolean is_business_day
-    }
-    closed_days {
-        uuid closed_day_id PK
-        uuid owner_id FK
-        string date
-        string reason
-    }
-    daily_slot_lists {
-        uuid daily_slot_list_id PK
-        uuid owner_id FK
-        string date
-        int version
-    }
-    slots {
-        uuid slot_id PK
-        uuid daily_slot_list_id FK
-        string start_time
-        string end_time
-        int duration_minutes
-        string status
-    }
-    reservations {
-        uuid reservation_id PK
-        uuid owner_id FK
-        uuid customer_id FK
-        uuid slot_id
-        string date_time
-        int duration_minutes
-        string status
-    }
-    reservation_histories {
-        uuid history_id PK
-        uuid reservation_id FK
-        string change_type
-        string changed_by
-    }
-    customers {
-        uuid customer_id PK
-        uuid owner_id FK
-        string customer_name
-        string line_user_id
-        boolean is_line_linked
-    }
-    notification_records {
-        uuid notification_id PK
-        uuid reservation_id
-        string notification_type
-        boolean success
-    }
-    reminder_schedules {
-        uuid reminder_id PK
-        uuid reservation_id UK
-        datetime scheduled_at
-        boolean is_active
-    }
-    google_calendar_integrations {
-        uuid owner_id PK_FK
-        string access_token
-        string refresh_token
-        string calendar_id
-        string status
-    }
-    calendar_event_mappings {
-        uuid id PK
-        string owner_id
-        string reservation_id
-        string google_event_id
-        boolean is_active
-    }
-```
-
-### AWS デプロイ構成
+### AWSデプロイ構成
 
 ```mermaid
 graph TB
-    User["ユーザー"] --> R53["Route 53<br/>(DNS)"]
-    R53 --> ALB["ALB<br/>(HTTPS:443)"]
+    User["ユーザー"] --> CF["CloudFront<br/>(静的サイト + Basic認証)"]
+    User --> APIGW["API Gateway<br/>(HTTP API)"]
 
-    subgraph VPC["VPC"]
-        subgraph Public["Public Subnet"]
-            ALB
-        end
+    CF --> S3Static["S3<br/>(mock.html, liff.html)"]
+    APIGW --> Lambda["Lambda<br/>(NestJS)"]
+    Lambda --> Neon[("Neon PostgreSQL")]
+    Lambda --> S3Data["S3<br/>(顧客データ)"]
+    Lambda -.-> LINE["LINE API"]
+    Lambda -.-> GCAL["Google Calendar API"]
 
-        subgraph Private["Private Subnet"]
-            ECS["ECS Fargate<br/>NestJS :3000"]
-            RDS[("RDS PostgreSQL")]
-        end
-    end
-
-    ALB --> ECS
-    ECS --> RDS
-    ECS -.-> LINE["LINE<br/>Messaging API"]
-    ECS -.-> GCAL["Google<br/>Calendar API"]
+    Cron["EventBridge<br/>(1時間毎)"] --> Reminder["Lambda<br/>(リマインダー)"]
+    Reminder --> Neon
 ```
+
+**インフラ:**
+- API Lambda: `dist/src/lambda.ts` — NestJSを `@codegenie/serverless-express` でラップ
+- Reminder Lambda: `dist/src/reminder-handler.ts` — 1時間毎のCronでリマインダー送信
+- CloudFront: `liff.html` は認証なし（LINE LIFF用）、`mock.html` はBasic認証付き
+- DB: Neon PostgreSQL（サーバレス）
+
+## プロジェクト構造
+
+```
+Covalt/
+├── app/                          # NestJSバックエンド
+│   ├── src/
+│   │   ├── common/               # 共通モジュール
+│   │   │   ├── crypto/           #   暗号化サービス (AES-256)
+│   │   │   ├── guards/           #   認証ガード
+│   │   │   └── prisma/           #   Prismaサービス
+│   │   ├── unit1-auth/           # 認証・アカウント管理
+│   │   ├── unit2-line/           # LINE連携基盤
+│   │   ├── unit3-schedule/       # スケジュール・空き枠管理
+│   │   ├── unit4-reservation/    # 予約管理
+│   │   ├── unit5-notification/   # 通知・リマインダー
+│   │   ├── unit6-customer/       # 顧客情報管理
+│   │   ├── unit7-calendar/       # Googleカレンダー連携
+│   │   ├── lambda.ts             # Lambda エントリポイント
+│   │   ├── reminder-handler.ts   # リマインダーLambda
+│   │   └── main.ts              # ローカル開発エントリポイント
+│   ├── prisma/
+│   │   ├── schema.prisma         # DBスキーマ定義
+│   │   └── migrations/           # マイグレーション
+│   └── package.json
+├── static/                       # フロントエンド（静的HTML）
+│   ├── mock.html                 # オーナー管理画面 (Tailwind CSS)
+│   └── liff.html                 # 顧客用LINE LIFFアプリ
+├── template.yaml                 # AWS SAMテンプレート
+└── samconfig.toml                # SAMデプロイ設定
+```
+
+### 各ユニットの内部構造（DDDパターン）
+
+```
+unit{N}-{name}/
+├── controllers/          # REST APIエンドポイント（HTTPの関心のみ）
+├── domain/               # ドメインモデル・サービス・Repository IF・Value Object
+│   ├── {Entity}.ts       #   集約ルート / エンティティ
+│   ├── {ValueObject}.ts  #   値オブジェクト（OwnerId, SlotDate等）
+│   ├── {Service}.ts      #   ドメインサービス
+│   ├── {Repository}.ts   #   リポジトリインターフェース
+│   └── InMemory*.ts      #   テスト用InMemory実装
+├── gateways/             # 外部サービス・ユニット間アダプタ
+├── repositories/         # Prisma永続化実装
+├── handlers/             # イベントハンドラー（非同期）
+└── unit{N}-{name}.module.ts  # NestJS DI設定
+```
+
+## 技術スタック
+
+| カテゴリ | 技術 |
+|---------|------|
+| フレームワーク | NestJS 11 |
+| 言語 | TypeScript 5 (strict) |
+| ORM | Prisma 7 |
+| DB | PostgreSQL (Neon) |
+| イベント | @nestjs/event-emitter (EventEmitter2) |
+| アーキテクチャ | DDD（ドメイン駆動設計）/ ヘキサゴナル |
+| 設計パターン | Aggregate, Value Object, Repository, Gateway |
+| インフラ | AWS SAM (Lambda + API Gateway + S3 + CloudFront) |
+| フロントエンド | 単一HTML + Tailwind CSS（フレームワーク不使用） |
 
 ## API エンドポイント
 
@@ -273,12 +206,13 @@ graph TB
 | 2 | POST | `/api/line/webhook` | - | Webhook受信 |
 | 2 | POST | `/api/line/messages/push` | - | メッセージ送信 |
 | 2 | CRUD | `/api/line/channel-config` | Bearer | チャネル設定 |
-| 3 | GET | `/api/slots/available` | Bearer | 空き枠取得 |
+| 3 | GET | `/api/slots/available` | - | 空き枠取得（公開） |
 | 3 | PUT | `/api/slots/:id/reserve` | Bearer | 枠予約 |
 | 3 | PUT | `/api/slots/:id/release` | Bearer | 枠解放 |
 | 3 | GET/PUT | `/api/schedule/business-hours` | Bearer | 営業時間管理 |
 | 3 | CRUD | `/api/schedule/closed-days` | Bearer | 休業日管理 |
 | 3 | POST | `/api/schedule/slots/generate` | Bearer | 枠自動生成 |
+| 3 | CRUD | `/api/schedule/templates` | Bearer | スロットテンプレート |
 | 4 | POST | `/api/reservations` | LIFF | 予約作成(顧客) |
 | 4 | GET | `/api/reservations/upcoming` | LIFF | 今後の予約 |
 | 4 | GET | `/api/reservations/history` | LIFF | 予約履歴 |
@@ -289,11 +223,12 @@ graph TB
 | 4 | PUT | `/api/owner/reservations/:id/modify` | Bearer | 予約変更(オーナー) |
 | 4 | PUT | `/api/owner/reservations/:id/cancel` | Bearer | 予約キャンセル(オーナー) |
 | 4 | PUT | `/api/owner/reservations/:id/complete` | Bearer | 予約完了 |
-| 6 | GET | `/api/customers` | Bearer | 顧客一覧 |
 | 6 | POST | `/api/customers` | Bearer | 顧客登録 |
 | 6 | GET | `/api/customers/:id` | Bearer | 顧客詳細 |
 | 6 | GET | `/api/customers/search` | Bearer | 顧客検索 |
 | 6 | PUT | `/api/customers/:id` | Bearer | 顧客更新 |
+| 6 | * | `/api/customers/:id/notes` | Bearer | 顧客ノートCRUD |
+| 6 | * | `/api/customers/:id/attachments` | Bearer | 顧客添付ファイルCRUD |
 | 7 | POST | `/api/calendar/connect` | Bearer | OAuth開始 |
 | 7 | POST | `/api/calendar/callback` | - | OAuthコールバック |
 | 7 | GET | `/api/calendar/status` | Bearer | 連携状態確認 |
@@ -301,22 +236,11 @@ graph TB
 | 7 | PUT | `/api/calendar/select` | Bearer | カレンダー選択 |
 | 7 | DELETE | `/api/calendar/disconnect` | Bearer | 連携解除 |
 
-## 技術スタック
-
-| カテゴリ | 技術 |
-|---------|------|
-| フレームワーク | NestJS 11 |
-| 言語 | TypeScript 5 (ES2023, strict) |
-| ORM | Prisma 7 |
-| DB | PostgreSQL |
-| イベント | @nestjs/event-emitter (EventEmitter2) |
-| アーキテクチャ | DDD (ドメイン駆動設計) |
-| 設計パターン | Aggregate, Value Object, Repository, Gateway |
-| テスト | Vitest (ドメイン), Jest (E2E) |
-
 ## セットアップ
 
 ```bash
+cd app
+
 # 依存関係インストール
 npm install
 
@@ -330,12 +254,44 @@ npx prisma migrate dev
 npm run start:dev
 ```
 
+## デプロイ
+
+```bash
+# ビルド＆デプロイ（Lambda + API Gateway）
+sam build && sam deploy
+
+# 静的ファイルアップロード（S3 + CloudFrontキャッシュ無効化）
+aws s3 sync static/ s3://covalt-staticsitebucket-h30ycubraluf/ --delete
+aws cloudfront create-invalidation --distribution-id E51S7M9SMQKZ0 --paths "/*"
+```
+
 ## 環境変数
 
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/covalt?schema=public"
+DATABASE_URL="postgresql://user:password@host:5432/covalt?schema=public"
 PORT=3000
+ENCRYPTION_KEY="64文字の16進数（AES-256用）"
 GOOGLE_CLIENT_ID=xxx
-GOOGLE_REDIRECT_URI=http://localhost:3000/api/calendar/callback
-INTERNAL_API_BASE_URL=http://localhost:3000
+GOOGLE_CLIENT_SECRET=xxx
+GOOGLE_REDIRECT_URI=https://api-url/api/calendar/callback
+CUSTOMER_DATA_BUCKET=covalt-customerdatabucket-xxx
 ```
+
+## DI（依存性注入）パターン
+
+各ユニットはNestJSモジュールでDI設定を行う。リポジトリ・ゲートウェイは文字列トークンで注入:
+
+```typescript
+// モジュールでの登録例
+providers: [
+  { provide: 'OwnerAccountRepository', useClass: PrismaOwnerAccountRepository },
+  { provide: 'SlotGateway', useClass: DirectSlotGateway },
+]
+
+// サービスでの注入例
+constructor(
+  @Inject('OwnerAccountRepository') private readonly repo: OwnerAccountRepository,
+)
+```
+
+Unit4（予約）はDirect Gatewayパターンでユニット間通信を行う（HTTP経由ではなくプロセス内直接呼び出し）。

@@ -1,8 +1,8 @@
-import { CustomerId } from "./CustomerId";
-import { OwnerId } from "./OwnerId";
-import { CustomerName } from "./CustomerName";
-import { LineUserId } from "./LineUserId";
-import { DisplayName } from "./DisplayName";
+import { CustomerId } from './CustomerId';
+import { OwnerId } from './OwnerId';
+import { CustomerName } from './CustomerName';
+import { LineUserId } from './LineUserId';
+import { DisplayName } from './DisplayName';
 
 /**
  * Customer - 顧客の集約ルート
@@ -131,7 +131,7 @@ export class Customer {
       displayName: this._displayName?.value ?? null,
       lineUserId: this._lineUserId?.value ?? null,
       isLineLinked: this._isLineLinked,
-      registeredAt: this.registeredAt.toISOString().replace(/\.\d{3}Z$/, "Z"),
+      registeredAt: this.registeredAt.toISOString().replace(/\.\d{3}Z$/, 'Z'),
       birthDate: this._birthDate,
       gender: this._gender,
     };

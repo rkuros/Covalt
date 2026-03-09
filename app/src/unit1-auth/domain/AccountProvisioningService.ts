@@ -1,10 +1,10 @@
-import { EmailAddress } from "./EmailAddress";
-import { HashedPassword } from "./HashedPassword";
-import { OwnerAccount } from "./OwnerAccount";
-import { PasswordResetToken } from "./PasswordResetToken";
-import { OwnerAccountRepository } from "./OwnerAccountRepository";
-import { PasswordResetTokenRepository } from "./PasswordResetTokenRepository";
-import { EmailGateway } from "./EmailGateway";
+import { EmailAddress } from './EmailAddress';
+import { HashedPassword } from './HashedPassword';
+import { OwnerAccount } from './OwnerAccount';
+import { PasswordResetToken } from './PasswordResetToken';
+import { OwnerAccountRepository } from './OwnerAccountRepository';
+import { PasswordResetTokenRepository } from './PasswordResetTokenRepository';
+import { EmailGateway } from './EmailGateway';
 
 /**
  * ドメインサービス: AccountProvisioningService
@@ -24,13 +24,16 @@ export class AccountProvisioningService {
   async provision(email: string): Promise<OwnerAccount> {
     const emailAddress = EmailAddress.create(email);
 
-    const existing = await this.ownerAccountRepository.findByEmail(emailAddress);
+    const existing =
+      await this.ownerAccountRepository.findByEmail(emailAddress);
     if (existing) {
-      throw new Error("このメールアドレスは既に登録されています");
+      throw new Error('このメールアドレスは既に登録されています');
     }
 
     // 仮パスワード（初期設定メール経由で変更前提）
-    const temporaryPassword = HashedPassword.create("temporary-password-" + Date.now());
+    const temporaryPassword = HashedPassword.create(
+      'temporary-password-' + Date.now(),
+    );
     const account = OwnerAccount.create(emailAddress, temporaryPassword);
 
     await this.ownerAccountRepository.save(account);
@@ -44,7 +47,9 @@ export class AccountProvisioningService {
       setupToken.token.value,
     );
 
-    console.log(`オーナーアカウント作成: ownerId=${account.ownerId} email=${email}`);
+    console.log(
+      `オーナーアカウント作成: ownerId=${account.ownerId} email=${email}`,
+    );
     return account;
   }
 }

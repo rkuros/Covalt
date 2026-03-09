@@ -20,21 +20,25 @@ export class ReservationEventHandler {
    * イベント種別に応じて CalendarSyncService の適切なメソッドに委譲する。
    */
   async handle(event: ReservationEvent): Promise<void> {
-    console.log(`予約イベント受信: type=${event.eventType}, reservationId=${event.reservationId}`);
+    console.log(
+      `予約イベント受信: type=${event.eventType}, reservationId=${event.reservationId}`,
+    );
 
     try {
       switch (event.eventType) {
         case 'reservation.created':
-          await this.calendarSyncService.handleReservationCreated(event as ReservationCreatedEvent);
+          await this.calendarSyncService.handleReservationCreated(event);
           break;
         case 'reservation.modified':
-          await this.calendarSyncService.handleReservationModified(event as ReservationModifiedEvent);
+          await this.calendarSyncService.handleReservationModified(event);
           break;
         case 'reservation.cancelled':
-          await this.calendarSyncService.handleReservationCancelled(event as ReservationCancelledEvent);
+          await this.calendarSyncService.handleReservationCancelled(event);
           break;
         default:
-          console.log(`未知のイベント種別: ${(event as ReservationEvent).eventType}`);
+          console.log(
+            `未知のイベント種別: ${(event as ReservationEvent).eventType}`,
+          );
       }
     } catch (error) {
       console.error(

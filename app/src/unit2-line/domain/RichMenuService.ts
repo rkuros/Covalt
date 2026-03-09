@@ -1,6 +1,6 @@
-import { LineChannelConfigRepository } from "./LineChannelConfigRepository";
-import { RichMenuGateway, RichMenuConfig } from "./RichMenuGateway";
-import { ChannelConfigNotFoundError } from "./DomainErrors";
+import { LineChannelConfigRepository } from './LineChannelConfigRepository';
+import { RichMenuGateway, RichMenuConfig } from './RichMenuGateway';
+import { ChannelConfigNotFoundError } from './DomainErrors';
 
 export class RichMenuService {
   constructor(

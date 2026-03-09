@@ -42,8 +42,10 @@ model AdminAccount {
 }
 
 model OwnerSettings {
-  ownerId            String @id @map("owner_id")
-  cancellationPolicy String @default("") @map("cancellation_policy")
+  ownerId                  String  @id @map("owner_id")
+  cancellationPolicy       String  @default("") @map("cancellation_policy")
+  defaultTreatmentMinutes  Int     @default(0) @map("default_treatment_minutes")
+  autoCompleteEnabled      Boolean @default(false) @map("auto_complete_enabled")
 
   @@map("owner_settings")
 }
@@ -169,13 +171,14 @@ model SlotTemplateEntry {
 }
 
 model Slot {
-  id              String  @id @default(uuid()) @map("slot_id")
-  dailySlotListId String  @map("daily_slot_list_id")
-  startTime       String  @map("start_time")
-  endTime         String  @map("end_time")
-  durationMinutes Int     @map("duration_minutes")
-  status          String  @default("available")
-  reservationId   String? @map("reservation_id")
+  id                        String  @id @default(uuid()) @map("slot_id")
+  dailySlotListId           String  @map("daily_slot_list_id")
+  startTime                 String  @map("start_time")
+  endTime                   String  @map("end_time")
+  durationMinutes           Int     @map("duration_minutes")
+  status                    String  @default("available")
+  reservationId             String? @map("reservation_id")
+  treatmentDurationMinutes  Int?    @map("treatment_duration_minutes")
 
   dailySlotList DailySlotList @relation(fields: [dailySlotListId], references: [id])
 

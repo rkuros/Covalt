@@ -1,7 +1,7 @@
 /**
  * LINE Messaging API へ送信するメッセージ1件分の構造を表す値オブジェクト。
  */
-export type PushMessageType = "text" | "flex";
+export type PushMessageType = 'text' | 'flex';
 
 export class PushMessage {
   private constructor(
@@ -14,19 +14,19 @@ export class PushMessage {
 
   static createText(text: string): PushMessage {
     if (!text || text.trim().length === 0) {
-      throw new Error("PushMessage text must not be empty");
+      throw new Error('PushMessage text must not be empty');
     }
-    return new PushMessage("text", text);
+    return new PushMessage('text', text);
   }
 
   static createFlex(text: string, altText: string): PushMessage {
     if (!text || text.trim().length === 0) {
-      throw new Error("PushMessage text must not be empty");
+      throw new Error('PushMessage text must not be empty');
     }
     if (!altText || altText.trim().length === 0) {
-      throw new Error("PushMessage altText is required for flex messages");
+      throw new Error('PushMessage altText is required for flex messages');
     }
-    return new PushMessage("flex", text, altText);
+    return new PushMessage('flex', text, altText);
   }
 
   equals(other: PushMessage): boolean {

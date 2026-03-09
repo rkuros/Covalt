@@ -21,6 +21,7 @@ interface SlotRow {
   durationMinutes: number;
   status: string;
   reservationId: string | null;
+  treatmentDurationMinutes?: number | null;
 }
 
 interface DailySlotListRow {
@@ -127,6 +128,7 @@ export class PrismaDailySlotListRepository implements DailySlotListRepository {
               durationMinutes: slot.durationMinutes,
               status: slot.status.toPact(),
               reservationId: slot.reservationId?.value ?? null,
+              treatmentDurationMinutes: slot.treatmentDurationMinutes,
             })),
           });
         }
@@ -145,6 +147,7 @@ export class PrismaDailySlotListRepository implements DailySlotListRepository {
                 durationMinutes: slot.durationMinutes,
                 status: slot.status.toPact(),
                 reservationId: slot.reservationId?.value ?? null,
+                treatmentDurationMinutes: slot.treatmentDurationMinutes,
               })),
             },
           },
@@ -183,6 +186,7 @@ export class PrismaDailySlotListRepository implements DailySlotListRepository {
       durationMinutes: duration,
       status,
       reservationId,
+      treatmentDurationMinutes: row.treatmentDurationMinutes ?? null,
     });
   }
 }

@@ -9,7 +9,7 @@ export class LiffAccessToken {
 
   static create(value: string): LiffAccessToken {
     if (!value || value.trim().length === 0) {
-      throw new Error("LiffAccessToken must not be empty");
+      throw new Error('LiffAccessToken must not be empty');
     }
     return new LiffAccessToken(value);
   }

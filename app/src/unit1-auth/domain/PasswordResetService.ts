@@ -1,10 +1,10 @@
-import { EmailAddress } from "./EmailAddress";
-import { HashedPassword } from "./HashedPassword";
-import { AuthToken } from "./AuthToken";
-import { PasswordResetToken } from "./PasswordResetToken";
-import { OwnerAccountRepository } from "./OwnerAccountRepository";
-import { PasswordResetTokenRepository } from "./PasswordResetTokenRepository";
-import { EmailGateway } from "./EmailGateway";
+import { EmailAddress } from './EmailAddress';
+import { HashedPassword } from './HashedPassword';
+import { AuthToken } from './AuthToken';
+import { PasswordResetToken } from './PasswordResetToken';
+import { OwnerAccountRepository } from './OwnerAccountRepository';
+import { PasswordResetTokenRepository } from './PasswordResetTokenRepository';
+import { EmailGateway } from './EmailGateway';
 
 /**
  * ドメインサービス: PasswordResetService
@@ -28,7 +28,9 @@ export class PasswordResetService {
 
     if (!account) {
       // セキュリティ上、アカウントが存在しない場合でもエラーを返さない
-      console.log(`パスワードリセット要求: アカウントが見つかりません email=${email}`);
+      console.log(
+        `パスワードリセット要求: アカウントが見つかりません email=${email}`,
+      );
       return;
     }
 
@@ -48,19 +50,22 @@ export class PasswordResetService {
    */
   async resetPassword(tokenValue: string, newPassword: string): Promise<void> {
     const token = AuthToken.create(tokenValue);
-    const resetToken = await this.passwordResetTokenRepository.findByToken(token);
+    const resetToken =
+      await this.passwordResetTokenRepository.findByToken(token);
 
     if (!resetToken) {
-      throw new Error("リセットトークンが見つかりません");
+      throw new Error('リセットトークンが見つかりません');
     }
 
     if (!resetToken.isValid()) {
-      throw new Error("リセットトークンが無効または期限切れです");
+      throw new Error('リセットトークンが無効または期限切れです');
     }
 
-    const account = await this.ownerAccountRepository.findById(resetToken.ownerId);
+    const account = await this.ownerAccountRepository.findById(
+      resetToken.ownerId,
+    );
     if (!account) {
-      throw new Error("アカウントが見つかりません");
+      throw new Error('アカウントが見つかりません');
     }
 
     const newPasswordHash = HashedPassword.create(newPassword);

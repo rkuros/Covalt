@@ -1,10 +1,10 @@
-import { LineUserId } from "./LineUserId";
+import { LineUserId } from './LineUserId';
 
 /**
  * 友だち追加状態を管理するエンティティ。
  * follow / unfollow イベントに応じてステータスを遷移させる。
  */
-export type FriendshipStatus = "active" | "blocked";
+export type FriendshipStatus = 'active' | 'blocked';
 
 export class LineFriendship {
   private constructor(
@@ -24,10 +24,10 @@ export class LineFriendship {
     displayName: string;
   }): LineFriendship {
     if (!params.ownerId || params.ownerId.trim().length === 0) {
-      throw new Error("ownerId is required");
+      throw new Error('ownerId is required');
     }
     if (!params.displayName || params.displayName.trim().length === 0) {
-      throw new Error("displayName is required");
+      throw new Error('displayName is required');
     }
 
     return new LineFriendship(
@@ -35,7 +35,7 @@ export class LineFriendship {
       params.ownerId,
       params.lineUserId,
       params.displayName,
-      "active",
+      'active',
       new Date(),
       null,
     );
@@ -74,20 +74,20 @@ export class LineFriendship {
   }
 
   isActive(): boolean {
-    return this._status === "active";
+    return this._status === 'active';
   }
 
   isBlocked(): boolean {
-    return this._status === "blocked";
+    return this._status === 'blocked';
   }
 
   block(): void {
-    this._status = "blocked";
+    this._status = 'blocked';
     this._unfollowedAt = new Date();
   }
 
   refollow(displayName: string): void {
-    this._status = "active";
+    this._status = 'active';
     this._displayName = displayName;
     this._unfollowedAt = null;
   }

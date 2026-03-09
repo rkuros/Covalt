@@ -1,4 +1,4 @@
-import { createHash } from "crypto";
+import { createHash } from 'crypto';
 
 /**
  * 値オブジェクト: HashedPassword
@@ -19,9 +19,9 @@ export class HashedPassword {
    */
   static create(plainPassword: string): HashedPassword {
     if (!plainPassword || plainPassword.length < 8) {
-      throw new Error("パスワードは8文字以上である必要があります");
+      throw new Error('パスワードは8文字以上である必要があります');
     }
-    const hash = createHash("sha256").update(plainPassword).digest("hex");
+    const hash = createHash('sha256').update(plainPassword).digest('hex');
     return new HashedPassword(hash);
   }
 
@@ -30,7 +30,7 @@ export class HashedPassword {
    */
   static fromHash(hash: string): HashedPassword {
     if (!hash || hash.length === 0) {
-      throw new Error("ハッシュ値は必須です");
+      throw new Error('ハッシュ値は必須です');
     }
     return new HashedPassword(hash);
   }
@@ -39,7 +39,7 @@ export class HashedPassword {
    * 平文パスワードがこのハッシュと一致するか検証する。
    */
   matches(plainPassword: string): boolean {
-    const hash = createHash("sha256").update(plainPassword).digest("hex");
+    const hash = createHash('sha256').update(plainPassword).digest('hex');
     return this.value === hash;
   }
 

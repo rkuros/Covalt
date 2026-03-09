@@ -8,7 +8,10 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { AuthenticationService } from '../domain/AuthenticationService';
-import { TokenVerificationService, AuthVerificationError } from '../domain/TokenVerificationService';
+import {
+  TokenVerificationService,
+  AuthVerificationError,
+} from '../domain/TokenVerificationService';
 import { PasswordResetService } from '../domain/PasswordResetService';
 
 @Controller('api/auth')
@@ -41,7 +44,10 @@ export class AuthController {
       if (error instanceof AuthVerificationError) {
         if (error.errorCode === 'ACCOUNT_DISABLED') {
           throw new HttpException(
-            { error: 'ACCOUNT_DISABLED', message: 'アカウントが無効化されています' },
+            {
+              error: 'ACCOUNT_DISABLED',
+              message: 'アカウントが無効化されています',
+            },
             HttpStatus.FORBIDDEN,
           );
         }
@@ -66,7 +72,10 @@ export class AuthController {
   async login(@Body() body: { email: string; password: string }) {
     if (!body.email || !body.password) {
       throw new HttpException(
-        { error: 'VALIDATION_ERROR', message: 'email and password are required' },
+        {
+          error: 'VALIDATION_ERROR',
+          message: 'email and password are required',
+        },
         HttpStatus.BAD_REQUEST,
       );
     }

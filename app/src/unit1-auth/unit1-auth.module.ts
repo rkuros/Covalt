@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { PrismaService } from '../common/prisma/prisma.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 
 // Controllers
@@ -33,7 +32,6 @@ const EMAIL_GATEWAY = 'EmailGateway';
   controllers: [AuthController, AdminController],
   providers: [
     // Infrastructure
-    PrismaService,
     AuthGuard,
 
     // Repositories

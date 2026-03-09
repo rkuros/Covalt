@@ -31,40 +31,46 @@ export class SlotAvailabilityService {
    * Check slot availability for the given owner and date.
    *
    * Flow:
-   * 1. Check ClosedDay; if holiday, return isHoliday=true with empty slots.
-   * 2. Check BusinessHour; if regular closed day, return empty slots.
-   * 3. Fetch DailySlotList and return only available slots.
+   * 1. Fetch DailySlotList. If slots exist, return them regardless of holiday status.
+   * 2. If no slots exist, check ClosedDay / BusinessHour to determine isHoliday flag.
+   *
+   * スロットが明示的に登録されていれば、休業日・定休日でも表示する（特別営業）。
    */
   async getAvailability(
     ownerId: OwnerId,
     date: SlotDate,
+    treatmentDurationMinutes?: number,
   ): Promise<SlotAvailabilityResult> {
-    // 1. Check for closed day (holiday)
-    const closedDay = await this.closedDayRepo.findByOwnerIdAndDate(ownerId, date);
+    // 1. Get slots first — if slots exist, honor them regardless of holiday
+    const dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(
+      ownerId,
+      date,
+    );
+
+    const availableSlots = dailySlotList
+      ? dailySlotList.getAvailableSlots(treatmentDurationMinutes)
+      : [];
+
+    if (availableSlots.length > 0) {
+      return { date, isHoliday: false, availableSlots };
+    }
+
+    // 2. No available slots — determine if the day is a holiday for UI hints
+    const closedDay = await this.closedDayRepo.findByOwnerIdAndDate(
+      ownerId,
+      date,
+    );
     if (closedDay) {
       return { date, isHoliday: true, availableSlots: [] };
     }
 
-    // 2. Check business hour for the day of week
     const dayOfWeek = date.getDayOfWeek();
     const businessHour = await this.businessHourRepo.findByOwnerIdAndDayOfWeek(
       ownerId,
       dayOfWeek,
     );
-    if (!businessHour || !businessHour.isBusinessDay) {
-      return { date, isHoliday: false, availableSlots: [] };
-    }
+    const isHoliday = !businessHour || !businessHour.isBusinessDay;
 
-    // 3. Get slots and filter to available only
-    const dailySlotList = await this.dailySlotListRepo.findByOwnerIdAndDate(ownerId, date);
-    if (!dailySlotList) {
-      return { date, isHoliday: false, availableSlots: [] };
-    }
-
-    return {
-      date,
-      isHoliday: false,
-      availableSlots: dailySlotList.getAvailableSlots(),
-    };
+    return { date, isHoliday, availableSlots: [] };
   }
 }

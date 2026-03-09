@@ -42,13 +42,29 @@ export class DirectCustomerGateway implements CustomerGateway {
     return this.queryService.searchByName(ownerId.value, query);
   }
 
-  async create(
-    ownerId: OwnerId,
-    customerName: string,
-  ): Promise<CustomerInfo> {
+  async create(ownerId: OwnerId, customerName: string): Promise<CustomerInfo> {
     const result = await this.commandService.createManual({
       ownerId: ownerId.value,
       customerName,
+    });
+    return result as unknown as CustomerInfo;
+  }
+
+  async findOrCreateByLineUserId(
+    ownerId: OwnerId,
+    lineUserId: LineUserId,
+    displayName: string,
+  ): Promise<CustomerInfo> {
+    const existing = await this.queryService.findByLineUserId(
+      ownerId.value,
+      lineUserId.value,
+    );
+    if (existing) return existing as unknown as CustomerInfo;
+
+    const result = await this.commandService.createFromLineFollow({
+      ownerId: ownerId.value,
+      lineUserId: lineUserId.value,
+      displayName,
     });
     return result as unknown as CustomerInfo;
   }

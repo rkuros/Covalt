@@ -1,12 +1,12 @@
-import { LineMessage, LineMessageSender } from "./LineMessageSender";
-import { NotificationMessage } from "./NotificationMessage";
-import { NotificationRecord } from "./NotificationRecord";
-import { NotificationRecordRepository } from "./NotificationRecordRepository";
-import { NotificationTemplateResolver } from "./NotificationTemplateResolver";
-import { NotificationType } from "./NotificationType";
-import { RecipientType } from "./RecipientType";
-import { ReservationEvent } from "./ReservationEvent";
-import { SendResult, SendErrorType } from "./SendResult";
+import { LineMessage, LineMessageSender } from './LineMessageSender';
+import { NotificationMessage } from './NotificationMessage';
+import { NotificationRecord } from './NotificationRecord';
+import { NotificationRecordRepository } from './NotificationRecordRepository';
+import { NotificationTemplateResolver } from './NotificationTemplateResolver';
+import { NotificationType } from './NotificationType';
+import { RecipientType } from './RecipientType';
+import { ReservationEvent } from './ReservationEvent';
+import { SendResult, SendErrorType } from './SendResult';
 
 /**
  * 受信者種別に応じて顧客向け・オーナー向けの通知をそれぞれ生成・送信するサービス。
@@ -18,7 +18,7 @@ export class NotificationDispatcher {
   constructor(
     private readonly templateResolver: NotificationTemplateResolver,
     private readonly messageSender: LineMessageSender,
-    private readonly recordRepository: NotificationRecordRepository
+    private readonly recordRepository: NotificationRecordRepository,
   ) {}
 
   /**
@@ -28,27 +28,41 @@ export class NotificationDispatcher {
    */
   async dispatchBoth(
     notificationType: NotificationType,
-    event: ReservationEvent
+    event: ReservationEvent,
   ): Promise<{ customer: SendResult; owner: SendResult }> {
     // 顧客向けとオーナー向けを独立して処理（互いに影響しない）
     const [customer, owner] = await Promise.allSettled([
       event.lineUserId
-        ? this.dispatchTo(notificationType, RecipientType.Customer, event, event.lineUserId)
-        : Promise.resolve(SendResult.fail(SendErrorType.Skipped, "lineUserId is null")),
+        ? this.dispatchTo(
+            notificationType,
+            RecipientType.Customer,
+            event,
+            event.lineUserId,
+          )
+        : Promise.resolve(
+            SendResult.fail(SendErrorType.Skipped, 'lineUserId is null'),
+          ),
       event.ownerLineUserId
-        ? this.dispatchTo(notificationType, RecipientType.Owner, event, event.ownerLineUserId)
-        : Promise.resolve(SendResult.fail(SendErrorType.Skipped, "ownerLineUserId is null")),
+        ? this.dispatchTo(
+            notificationType,
+            RecipientType.Owner,
+            event,
+            event.ownerLineUserId,
+          )
+        : Promise.resolve(
+            SendResult.fail(SendErrorType.Skipped, 'ownerLineUserId is null'),
+          ),
     ]);
 
     return {
       customer:
-        customer.status === "fulfilled"
+        customer.status === 'fulfilled'
           ? customer.value
-          : SendResult.fail("UNKNOWN", String(customer.reason)),
+          : SendResult.fail('UNKNOWN', String(customer.reason)),
       owner:
-        owner.status === "fulfilled"
+        owner.status === 'fulfilled'
           ? owner.value
-          : SendResult.fail("UNKNOWN", String(owner.reason)),
+          : SendResult.fail('UNKNOWN', String(owner.reason)),
     };
   }
 
@@ -59,25 +73,25 @@ export class NotificationDispatcher {
     notificationType: NotificationType,
     recipientType: RecipientType,
     event: ReservationEvent,
-    lineUserId: string
+    lineUserId: string,
   ): Promise<SendResult> {
     // テンプレート解決 -> メッセージ生成
     const message = this.templateResolver.resolve(
       notificationType,
       recipientType,
-      event
+      event,
     );
 
     // LINE メッセージ送信
     const lineMessage: LineMessage = {
-      type: "text",
+      type: 'text',
       text: message.body,
     };
 
     const sendResult = await this.messageSender.send(
       event.ownerId,
       lineUserId,
-      [lineMessage]
+      [lineMessage],
     );
 
     // 送信記録を保存
@@ -86,13 +100,13 @@ export class NotificationDispatcher {
       notificationType,
       recipientType,
       lineUserId,
-      sendResult
+      sendResult,
     );
 
     // BR-7: USER_BLOCKED の場合はエラーを記録して正常終了
     if (sendResult.isUserBlocked) {
       console.warn(
-        `ブロック済みユーザーへの送信をスキップしました: reservationId=${event.reservationId}, recipientType=${recipientType}`
+        `ブロック済みユーザーへの送信をスキップしました: reservationId=${event.reservationId}, recipientType=${recipientType}`,
       );
     }
 
@@ -104,7 +118,7 @@ export class NotificationDispatcher {
     notificationType: NotificationType,
     recipientType: RecipientType,
     lineUserId: string,
-    sendResult: SendResult
+    sendResult: SendResult,
   ): Promise<void> {
     const record = NotificationRecord.create({
       reservationId: event.reservationId,

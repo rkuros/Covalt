@@ -3,7 +3,7 @@
  * Consumer: Unit 6 (顧客情報管理) -- 顧客自動登録トリガーとして使用。
  */
 export class LineFriendAddedEvent {
-  public readonly eventType = "line.friend_added" as const;
+  public readonly eventType = 'line.friend_added' as const;
 
   private constructor(
     public readonly ownerId: string,
@@ -21,13 +21,13 @@ export class LineFriendAddedEvent {
     timestamp?: Date;
   }): LineFriendAddedEvent {
     if (!params.ownerId || params.ownerId.trim().length === 0) {
-      throw new Error("ownerId is required");
+      throw new Error('ownerId is required');
     }
     if (!params.lineUserId) {
-      throw new Error("lineUserId is required");
+      throw new Error('lineUserId is required');
     }
     if (!params.displayName || params.displayName.trim().length === 0) {
-      throw new Error("displayName is required");
+      throw new Error('displayName is required');
     }
 
     const ts = params.timestamp ?? new Date();
@@ -35,12 +35,12 @@ export class LineFriendAddedEvent {
       params.ownerId,
       params.lineUserId,
       params.displayName,
-      ts.toISOString().replace(/\.\d{3}Z$/, "Z"),
+      ts.toISOString().replace(/\.\d{3}Z$/, 'Z'),
     );
   }
 
   toPayload(): {
-    eventType: "line.friend_added";
+    eventType: 'line.friend_added';
     ownerId: string;
     lineUserId: string;
     displayName: string;

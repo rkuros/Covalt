@@ -1,8 +1,8 @@
-import { EmailAddress } from "./EmailAddress";
-import { AuthToken } from "./AuthToken";
-import { Session } from "./Session";
-import { OwnerAccountRepository } from "./OwnerAccountRepository";
-import { SessionRepository } from "./SessionRepository";
+import { EmailAddress } from './EmailAddress';
+import { AuthToken } from './AuthToken';
+import { Session } from './Session';
+import { OwnerAccountRepository } from './OwnerAccountRepository';
+import { SessionRepository } from './SessionRepository';
 
 /**
  * ドメインサービス: AuthenticationService
@@ -23,23 +23,27 @@ export class AuthenticationService {
 
     if (!account) {
       console.log(`ログイン失敗: アカウントが見つかりません email=${email}`);
-      throw new Error("メールアドレスまたはパスワードが正しくありません");
+      throw new Error('メールアドレスまたはパスワードが正しくありません');
     }
 
     if (!account.isActive()) {
-      console.log(`ログイン失敗: アカウントが無効化されています ownerId=${account.ownerId}`);
-      throw new Error("アカウントが無効化されています");
+      console.log(
+        `ログイン失敗: アカウントが無効化されています ownerId=${account.ownerId}`,
+      );
+      throw new Error('アカウントが無効化されています');
     }
 
     if (!account.verifyPassword(password)) {
       console.log(`ログイン失敗: パスワード不一致 ownerId=${account.ownerId}`);
-      throw new Error("メールアドレスまたはパスワードが正しくありません");
+      throw new Error('メールアドレスまたはパスワードが正しくありません');
     }
 
     const session = Session.create(account.ownerId);
     await this.sessionRepository.save(session);
 
-    console.log(`ログイン成功: ownerId=${account.ownerId} sessionId=${session.sessionId}`);
+    console.log(
+      `ログイン成功: ownerId=${account.ownerId} sessionId=${session.sessionId}`,
+    );
     return session;
   }
 
@@ -51,7 +55,7 @@ export class AuthenticationService {
     const session = await this.sessionRepository.findByToken(token);
 
     if (!session) {
-      console.log("ログアウト: セッションが見つかりません");
+      console.log('ログアウト: セッションが見つかりません');
       return;
     }
 

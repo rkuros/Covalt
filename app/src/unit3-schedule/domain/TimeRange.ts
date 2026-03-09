@@ -43,7 +43,10 @@ export class TimeRange {
   }
 
   equals(other: TimeRange): boolean {
-    return this.startTime.equals(other.startTime) && this.endTime.equals(other.endTime);
+    return (
+      this.startTime.equals(other.startTime) &&
+      this.endTime.equals(other.endTime)
+    );
   }
 
   toString(): string {

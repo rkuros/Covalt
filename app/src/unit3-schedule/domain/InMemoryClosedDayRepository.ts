@@ -1,5 +1,6 @@
 import { ClosedDayRepository } from './ClosedDayRepository';
 import { ClosedDay } from './ClosedDay';
+import { ClosedDayId } from './ClosedDayId';
 import { OwnerId } from './OwnerId';
 import { SlotDate } from './SlotDate';
 
@@ -8,6 +9,10 @@ import { SlotDate } from './SlotDate';
  */
 export class InMemoryClosedDayRepository implements ClosedDayRepository {
   private store: ClosedDay[] = [];
+
+  async findById(closedDayId: ClosedDayId): Promise<ClosedDay | null> {
+    return this.store.find((cd) => cd.closedDayId.equals(closedDayId)) ?? null;
+  }
 
   async findByOwnerIdAndDate(
     ownerId: OwnerId,
@@ -34,8 +39,8 @@ export class InMemoryClosedDayRepository implements ClosedDayRepository {
   }
 
   async save(closedDay: ClosedDay): Promise<void> {
-    const index = this.store.findIndex(
-      (cd) => cd.closedDayId.equals(closedDay.closedDayId),
+    const index = this.store.findIndex((cd) =>
+      cd.closedDayId.equals(closedDay.closedDayId),
     );
     if (index >= 0) {
       this.store[index] = closedDay;

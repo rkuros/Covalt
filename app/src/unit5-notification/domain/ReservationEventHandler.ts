@@ -1,12 +1,12 @@
-import { NotificationDispatcher } from "./NotificationDispatcher";
-import { NotificationType } from "./NotificationType";
-import { ReminderScheduler } from "./ReminderScheduler";
+import { NotificationDispatcher } from './NotificationDispatcher';
+import { NotificationType } from './NotificationType';
+import { ReminderScheduler } from './ReminderScheduler';
 import {
   ReservationCancelledEvent,
   ReservationCreatedEvent,
   ReservationEvent,
   ReservationModifiedEvent,
-} from "./ReservationEvent";
+} from './ReservationEvent';
 
 /**
  * 予約イベント（created / modified / cancelled）を購読し、
@@ -15,7 +15,7 @@ import {
 export class ReservationEventHandler {
   constructor(
     private readonly dispatcher: NotificationDispatcher,
-    private readonly reminderScheduler: ReminderScheduler
+    private readonly reminderScheduler: ReminderScheduler,
   ) {}
 
   /**
@@ -23,13 +23,13 @@ export class ReservationEventHandler {
    */
   async handle(event: ReservationEvent): Promise<void> {
     switch (event.eventType) {
-      case "reservation.created":
+      case 'reservation.created':
         await this.handleCreated(event);
         break;
-      case "reservation.modified":
+      case 'reservation.modified':
         await this.handleModified(event);
         break;
-      case "reservation.cancelled":
+      case 'reservation.cancelled':
         await this.handleCancelled(event);
         break;
     }
@@ -62,9 +62,7 @@ export class ReservationEventHandler {
    * - オーナー向け: 予約変更通知（BR-6: 顧客が変更した場合も含む）
    * - リマインダー: 既存スケジュール削除 + 新日時で再登録（BR-3）
    */
-  private async handleModified(
-    event: ReservationModifiedEvent
-  ): Promise<void> {
+  private async handleModified(event: ReservationModifiedEvent): Promise<void> {
     await this.dispatcher.dispatchBoth(NotificationType.Modification, event);
 
     this.reminderScheduler.reschedule({
@@ -86,7 +84,7 @@ export class ReservationEventHandler {
    * - リマインダー: 登録済みスケジュールを削除（BR-1, BR-2）
    */
   private async handleCancelled(
-    event: ReservationCancelledEvent
+    event: ReservationCancelledEvent,
   ): Promise<void> {
     await this.dispatcher.dispatchBoth(NotificationType.Cancellation, event);
 

@@ -24,16 +24,19 @@ export class LineChannelConfig {
     webhookUrl: string;
   }): LineChannelConfig {
     if (!params.ownerId || params.ownerId.trim().length === 0) {
-      throw new Error("ownerId is required");
+      throw new Error('ownerId is required');
     }
-    if (!params.channelAccessToken || params.channelAccessToken.trim().length === 0) {
-      throw new Error("channelAccessToken is required");
+    if (
+      !params.channelAccessToken ||
+      params.channelAccessToken.trim().length === 0
+    ) {
+      throw new Error('channelAccessToken is required');
     }
     if (!params.channelSecret || params.channelSecret.trim().length === 0) {
-      throw new Error("channelSecret is required");
+      throw new Error('channelSecret is required');
     }
     if (!params.liffId || params.liffId.trim().length === 0) {
-      throw new Error("liffId is required");
+      throw new Error('liffId is required');
     }
 
     const now = new Date();
@@ -100,10 +103,10 @@ export class LineChannelConfig {
 
   updateCredentials(channelAccessToken: string, channelSecret: string): void {
     if (!channelAccessToken || channelAccessToken.trim().length === 0) {
-      throw new Error("channelAccessToken is required");
+      throw new Error('channelAccessToken is required');
     }
     if (!channelSecret || channelSecret.trim().length === 0) {
-      throw new Error("channelSecret is required");
+      throw new Error('channelSecret is required');
     }
     this._channelAccessToken = channelAccessToken;
     this._channelSecret = channelSecret;
@@ -112,7 +115,7 @@ export class LineChannelConfig {
 
   updateLiffId(liffId: string): void {
     if (!liffId || liffId.trim().length === 0) {
-      throw new Error("liffId is required");
+      throw new Error('liffId is required');
     }
     this._liffId = liffId;
     this._updatedAt = new Date();

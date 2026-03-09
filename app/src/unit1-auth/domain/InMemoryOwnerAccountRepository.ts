@@ -1,6 +1,6 @@
-import { OwnerAccount } from "./OwnerAccount";
-import { OwnerAccountRepository } from "./OwnerAccountRepository";
-import { EmailAddress } from "./EmailAddress";
+import { OwnerAccount } from './OwnerAccount';
+import { OwnerAccountRepository } from './OwnerAccountRepository';
+import { EmailAddress } from './EmailAddress';
 
 /**
  * InMemory 実装: OwnerAccountRepository

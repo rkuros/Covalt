@@ -28,7 +28,9 @@ export class LiffVerificationGatewayImpl implements LiffVerificationGateway {
     };
 
     if (verifyData.expires_in <= 0) {
-      throw new InvalidLiffTokenError('LIFFアクセストークンの有効期限が切れています');
+      throw new InvalidLiffTokenError(
+        'LIFFアクセストークンの有効期限が切れています',
+      );
     }
 
     // 2. Get user profile using the access token

@@ -1,6 +1,6 @@
-import { OwnerAccount } from "./OwnerAccount";
-import { OwnerAccountRepository } from "./OwnerAccountRepository";
-import { SessionRepository } from "./SessionRepository";
+import { OwnerAccount } from './OwnerAccount';
+import { OwnerAccountRepository } from './OwnerAccountRepository';
+import { SessionRepository } from './SessionRepository';
 
 /**
  * ドメインサービス: AccountManagementService
@@ -25,7 +25,7 @@ export class AccountManagementService {
   async activateAccount(ownerId: string): Promise<void> {
     const account = await this.ownerAccountRepository.findById(ownerId);
     if (!account) {
-      throw new Error("アカウントが見つかりません");
+      throw new Error('アカウントが見つかりません');
     }
 
     account.activate();
@@ -41,7 +41,7 @@ export class AccountManagementService {
   async disableAccount(ownerId: string): Promise<void> {
     const account = await this.ownerAccountRepository.findById(ownerId);
     if (!account) {
-      throw new Error("アカウントが見つかりません");
+      throw new Error('アカウントが見つかりません');
     }
 
     account.disable();

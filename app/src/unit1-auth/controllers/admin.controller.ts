@@ -41,9 +41,7 @@ export class AdminController {
       };
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : 'アカウント作成に失敗しました';
+        error instanceof Error ? error.message : 'アカウント作成に失敗しました';
       throw new HttpException(
         { error: 'BAD_REQUEST', message },
         HttpStatus.BAD_REQUEST,
@@ -83,14 +81,14 @@ export class AdminController {
       } else if (body.status === 'DISABLED') {
         await this.accountManagementService.disableAccount(ownerId);
       } else {
-        throw new Error('ステータスは ACTIVE または DISABLED を指定してください');
+        throw new Error(
+          'ステータスは ACTIVE または DISABLED を指定してください',
+        );
       }
       return { ownerId, status: body.status };
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : 'ステータス更新に失敗しました';
+        error instanceof Error ? error.message : 'ステータス更新に失敗しました';
       throw new HttpException(
         { error: 'BAD_REQUEST', message },
         HttpStatus.BAD_REQUEST,

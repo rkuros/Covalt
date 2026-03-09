@@ -1,8 +1,8 @@
-import { Customer, CustomerResponse, CustomerSearchResult } from "./Customer";
-import { CustomerId } from "./CustomerId";
-import { OwnerId } from "./OwnerId";
-import { LineUserId } from "./LineUserId";
-import { CustomerRepository } from "./CustomerRepository";
+import { Customer, CustomerResponse, CustomerSearchResult } from './Customer';
+import { CustomerId } from './CustomerId';
+import { OwnerId } from './OwnerId';
+import { LineUserId } from './LineUserId';
+import { CustomerRepository } from './CustomerRepository';
 
 /** GET /api/customers/search のレスポンス */
 export interface CustomerSearchResponse {
@@ -42,13 +42,13 @@ export class CustomerQueryService {
    */
   async findByLineUserId(
     ownerId: string,
-    lineUserId: string
+    lineUserId: string,
   ): Promise<CustomerResponse | null> {
     const owner = OwnerId.create(ownerId);
     const lineUser = LineUserId.create(lineUserId);
     const customer = await this.repository.findByOwnerAndLineUserId(
       owner,
-      lineUser
+      lineUser,
     );
     if (!customer) {
       return null;
@@ -64,7 +64,7 @@ export class CustomerQueryService {
    */
   async searchByName(
     ownerId: string,
-    query: string
+    query: string,
   ): Promise<CustomerSearchResponse> {
     const owner = OwnerId.create(ownerId);
     const customers = await this.repository.searchByName(owner, query);
