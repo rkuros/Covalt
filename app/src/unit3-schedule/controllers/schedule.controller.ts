@@ -36,7 +36,6 @@ import { TimeRange } from '../domain/TimeRange';
 import { SlotDate } from '../domain/SlotDate';
 import { Duration } from '../domain/Duration';
 import {
-  SlotOverlapError,
   SlotNotFoundError,
   SlotNotAvailableError,
   OptimisticLockError,
@@ -496,17 +495,8 @@ export class ScheduleController {
       reservationId: null,
     });
 
-    try {
-      dailySlotList.addSlot(newSlot);
-    } catch (e) {
-      if (e instanceof SlotOverlapError) {
-        throw new BadRequestException({
-          error: 'SLOT_OVERLAP',
-          message: '指定した時間帯は既存のスロットと重複しています',
-        });
-      }
-      throw e;
-    }
+    dailySlotList.addSlot(newSlot);
+
     try {
       await this.dailySlotListRepo.save(dailySlotList);
     } catch (e) {

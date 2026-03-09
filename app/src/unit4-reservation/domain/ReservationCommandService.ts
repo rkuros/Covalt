@@ -206,9 +206,8 @@ export class ReservationCommandService {
    *
    * 1. 対象予約を取得
    * 2. Reservation.complete() で集約を更新
-   * 3. 永続化
-   *
-   * 現時点では完了イベントの Consumer が存在しないため、ドメインイベントは発行しない。
+   * 3. スロットを解放（重複スロットのブロックを解除）
+   * 4. 永続化
    */
   async completeReservation(
     command: CompleteReservationCommand,
@@ -218,6 +217,9 @@ export class ReservationCommandService {
 
     // 集約を更新（不変条件の検証 + 履歴追加）
     reservation.complete();
+
+    // スロットを解放（完了した施術の時間帯をブロックし続ける必要はない）
+    await this.slotGateway.releaseSlot(reservation.slotId, reservationId);
 
     // 永続化
     await this.reservationRepository.save(reservation);

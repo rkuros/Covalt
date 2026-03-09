@@ -9,7 +9,6 @@ import { Duration } from './Duration';
 import { SlotStatus } from './SlotStatus';
 import { ReservationId } from './ReservationId';
 import {
-  SlotOverlapError,
   SlotNotFoundError,
   SlotAlreadyBookedError,
   SlotNotAvailableError,
@@ -114,10 +113,16 @@ export class DailySlotList {
   }
 
   /**
-   * Add a slot. Fails if it overlaps with any existing slot.
+   * Add a slot. Exact duplicates (same start+end time) are rejected.
+   * Overlapping time ranges are allowed by design — when one slot is
+   * booked, overlapping available slots are hidden from customers.
    */
   addSlot(slot: Slot): void {
-    this.assertNoOverlap(slot.timeRange, null);
+    const isDuplicate = this._slots.some(
+      (s) =>
+        s.startTime.equals(slot.startTime) && s.endTime.equals(slot.endTime),
+    );
+    if (isDuplicate) return;
     this._slots.push(slot);
     this._version = this._version.increment();
   }
@@ -166,7 +171,6 @@ export class DailySlotList {
     }
     const newTimeRange = TimeRange.create(newStartTime, newEndTime);
     const newDuration = Duration.create(newTimeRange.durationInMinutes());
-    this.assertNoOverlap(newTimeRange, slotId);
 
     // Replace the slot with an updated copy
     const updatedSlot = Slot.create({
@@ -231,13 +235,13 @@ export class DailySlotList {
         Math.floor(slotEndMinutes / 60),
         slotEndMinutes % 60,
       );
-      const candidateRange = TimeRange.create(slotStart, slotEnd);
-
-      const hasOverlap = this._slots.some((existing) =>
-        existing.timeRange.overlaps(candidateRange),
+      const isDuplicate = this._slots.some(
+        (existing) =>
+          existing.startTime.equals(slotStart) &&
+          existing.endTime.equals(slotEnd),
       );
 
-      if (!hasOverlap) {
+      if (!isDuplicate) {
         const newSlot = Slot.create({
           slotId: SlotId.generate(),
           startTime: slotStart,
@@ -270,24 +274,4 @@ export class DailySlotList {
     return slot;
   }
 
-  /**
-   * Assert that the given time range does not overlap with any existing slot,
-   * optionally excluding a specific slot (for edit operations).
-   */
-  private assertNoOverlap(
-    range: TimeRange,
-    excludeSlotId: SlotId | null,
-  ): void {
-    const overlapping = this._slots.find((s) => {
-      if (excludeSlotId && s.slotId.equals(excludeSlotId)) {
-        return false;
-      }
-      return s.timeRange.overlaps(range);
-    });
-    if (overlapping) {
-      throw new SlotOverlapError(
-        `Slot overlaps with existing slot ${overlapping.slotId.value} (${overlapping.timeRange.toString()})`,
-      );
-    }
-  }
 }

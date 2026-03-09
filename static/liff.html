@@ -20,7 +20,7 @@ html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Hiragino San
 header{position:fixed;top:0;left:0;right:0;height:var(--header-h);background:rgba(255,255,255,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#1e293b;border-bottom:1px solid rgba(236,91,19,.1);display:flex;align-items:center;padding:0 16px;z-index:10;font-weight:600;font-size:17px}
 header .name{margin-left:8px;font-weight:400;font-size:14px;opacity:.85}
 
-main{padding:calc(var(--header-h) + 12px) 12px calc(var(--nav-h) + 12px);min-height:100%}
+main{padding:calc(var(--header-h) + 12px) 12px calc(var(--nav-h) + 12px);min-height:100%;overflow-x:hidden}
 .view{display:none}.view.active{display:block}
 
 nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:var(--card);border-top:1px solid rgba(236,91,19,.1);display:flex;align-items:center;z-index:10}
@@ -47,11 +47,11 @@ nav button svg{width:24px;height:24px;fill:currentColor}
 .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .cal-header button{background:none;border:none;font-size:20px;color:var(--sub);cursor:pointer;padding:4px 12px}
 .cal-header .cal-title{font-size:16px;font-weight:700}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:12px;background:var(--card);border-radius:12px;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:12px;background:var(--card);border-radius:12px;padding:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);max-width:100%;overflow:hidden}
 .cal-dow{text-align:center;font-size:11px;color:var(--sub);padding:4px 0;font-weight:500}
 .cal-dow:first-child{color:#EF4444}
 .cal-dow:last-child{color:#3B82F6}
-.cal-day{text-align:center;padding:8px 0;font-size:14px;border-radius:50%;cursor:pointer;transition:.15s;aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative}
+.cal-day{text-align:center;padding:8px 0;font-size:14px;border-radius:50%;cursor:pointer;transition:.15s;aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative;min-width:0}
 .cal-day:hover{background:rgba(236,91,19,.05)}
 .cal-day.today{font-weight:700}
 .cal-day.today::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--primary)}

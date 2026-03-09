@@ -90,12 +90,11 @@ describe('DailySlotList', () => {
       expect(dsl.slots).toHaveLength(2);
     });
 
-    it('既存スロットと時間帯が重複するスロットを追加するとエラーになること', () => {
+    it('既存スロットと時間帯が重複するスロットを追加できること（重複許可）', () => {
       const dsl = DailySlotList.create({ ownerId, date });
       dsl.addSlot(createAvailableSlot('slot-001', 9, 0, 10, 0));
-      expect(() =>
-        dsl.addSlot(createAvailableSlot('slot-002', 9, 30, 10, 30)),
-      ).toThrow(SlotOverlapError);
+      dsl.addSlot(createAvailableSlot('slot-002', 9, 30, 10, 30));
+      expect(dsl.slots).toHaveLength(2);
     });
 
     it('既存スロット 09:00-10:00 の直後 10:00-11:00 を追加できること（隣接は重複ではない）', () => {
@@ -156,18 +155,19 @@ describe('DailySlotList', () => {
       ).toThrow(SlotNotAvailableError);
     });
 
-    it('変更後の時間帯が他のスロットと重複する場合エラーになること', () => {
+    it('変更後の時間帯が他のスロットと重複しても編集できること（重複許可）', () => {
       const dsl = DailySlotList.create({ ownerId, date });
       dsl.addSlot(createAvailableSlot('slot-001', 9, 0, 10, 0));
       dsl.addSlot(createAvailableSlot('slot-002', 11, 0, 12, 0));
-      // slot-001 を 11:00-12:00 に変更しようとすると slot-002 と重複
-      expect(() =>
-        dsl.editSlot(
-          SlotId.create('slot-001'),
-          TimeOfDay.create(11, 0),
-          TimeOfDay.create(12, 0),
-        ),
-      ).toThrow(SlotOverlapError);
+      // slot-001 を 11:00-12:00 に変更 — slot-002 と重複するが許可される
+      dsl.editSlot(
+        SlotId.create('slot-001'),
+        TimeOfDay.create(11, 0),
+        TimeOfDay.create(12, 0),
+      );
+      const edited = dsl.findSlotById(SlotId.create('slot-001'));
+      expect(edited?.startTime.toString()).toBe('11:00');
+      expect(edited?.endTime.toString()).toBe('12:00');
     });
   });
 
@@ -325,12 +325,11 @@ describe('DailySlotList', () => {
   });
 
   describe('不変条件', () => {
-    it('同一 DailySlotList 内のスロットは時間帯が重複しないこと', () => {
+    it('同一 DailySlotList 内のスロットは時間帯が重複しても追加できること', () => {
       const dsl = DailySlotList.create({ ownerId, date });
       dsl.addSlot(createAvailableSlot('slot-001', 9, 0, 10, 0));
-      expect(() =>
-        dsl.addSlot(createAvailableSlot('slot-002', 9, 30, 10, 30)),
-      ).toThrow(SlotOverlapError);
+      dsl.addSlot(createAvailableSlot('slot-002', 9, 30, 10, 30));
+      expect(dsl.slots).toHaveLength(2);
     });
 
     it('version は更新操作ごとにインクリメントされること', () => {

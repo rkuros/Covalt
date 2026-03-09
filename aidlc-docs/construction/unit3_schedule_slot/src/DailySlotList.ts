@@ -71,10 +71,9 @@ export class DailySlotList {
   }
 
   /**
-   * Add a slot. Fails if it overlaps with any existing slot.
+   * Add a slot. Overlapping slots are allowed.
    */
   addSlot(slot: Slot): void {
-    this.assertNoOverlap(slot.timeRange, null);
     this._slots.push(slot);
     this._version = this._version.increment();
   }
@@ -93,7 +92,7 @@ export class DailySlotList {
 
   /**
    * Edit a slot's time range. Only available slots can be edited.
-   * The new time range must not overlap with other slots.
+   * Overlapping time ranges with other slots are allowed.
    */
   editSlot(slotId: SlotId, newStartTime: TimeOfDay, newEndTime: TimeOfDay): void {
     const slot = this.getSlotOrThrow(slotId);
@@ -102,7 +101,6 @@ export class DailySlotList {
     }
     const newTimeRange = TimeRange.create(newStartTime, newEndTime);
     const newDuration = Duration.create(newTimeRange.durationInMinutes());
-    this.assertNoOverlap(newTimeRange, slotId);
 
     // Replace the slot with an updated copy
     const updatedSlot = Slot.create({
