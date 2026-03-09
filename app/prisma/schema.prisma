@@ -311,6 +311,7 @@ model CustomerAttachment {
   fileType   String   @map("file_type")
   s3Key      String   @map("s3_key")
   category   String
+  noteDate   String?  @map("note_date")
   createdAt  DateTime @default(now()) @map("created_at")
 
   customer Customer @relation(fields: [customerId], references: [id])

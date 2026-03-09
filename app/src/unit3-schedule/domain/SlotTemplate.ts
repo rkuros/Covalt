@@ -44,4 +44,17 @@ export class SlotTemplate {
     }
     return new SlotTemplate(props.templateId, props.ownerId, props.name, sorted);
   }
+
+  /** Reconstruct from persistence without validation (data already trusted). */
+  static reconstitute(props: {
+    templateId: SlotTemplateId;
+    ownerId: OwnerId;
+    name: string;
+    entries: SlotTemplateEntry[];
+  }): SlotTemplate {
+    const sorted = [...props.entries].sort(
+      (a, b) => a.startTime.toMinutes() - b.startTime.toMinutes(),
+    );
+    return new SlotTemplate(props.templateId, props.ownerId, props.name, sorted);
+  }
 }

@@ -589,9 +589,9 @@ async function loadReservationExtras(customerId, dateTime) {
     ]);
     const allNotes = notesData.notes || [];
     const allPhotos = (attachData.attachments || []).filter(a => a.category === 'photo');
-    const matchRecords = allNotes.filter(n => n.category === 'record' && n.createdAt && n.createdAt.substring(0,10) === rsvDateKey);
-    const matchMemos = allNotes.filter(n => n.category === 'note' && n.createdAt && n.createdAt.substring(0,10) === rsvDateKey);
-    const matchPhotos = allPhotos.filter(a => a.createdAt && a.createdAt.substring(0,10) === rsvDateKey);
+    const matchRecords = allNotes.filter(n => n.category === 'record' && (n.noteDate === rsvDateKey || (!n.noteDate && n.createdAt && n.createdAt.substring(0,10) === rsvDateKey)));
+    const matchMemos = allNotes.filter(n => n.category === 'note' && (n.noteDate === rsvDateKey || (!n.noteDate && n.createdAt && n.createdAt.substring(0,10) === rsvDateKey)));
+    const matchPhotos = allPhotos.filter(a => a.noteDate === rsvDateKey || (!a.noteDate && a.createdAt && a.createdAt.substring(0,10) === rsvDateKey));
 
     const cardStyle = 'background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05);margin-bottom:12px;';
     const addBtnStyle = 'display:flex;align-items:center;gap:4px;border:1px dashed #ec5b13;background:none;color:#ec5b13;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;margin-top:8px;';
@@ -679,9 +679,11 @@ async function doCreateRsvNote(customerId, category) {
   const title = document.getElementById('rsvNewNoteTitle').value;
   const content = document.getElementById('rsvNewNoteContent').value;
   if (!content) { showToast('内容を入力してください', true); return; }
+  const dt = new Date(_rsvExtrasDateTime);
+  const rsvNoteDate = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
   showLoading();
   try {
-    await api('POST', '/api/customers/' + customerId + '/notes', { category: category, title: title, content: content });
+    await api('POST', '/api/customers/' + customerId + '/notes', { category: category, title: title, content: content, noteDate: rsvNoteDate });
     closeModal();
     showToast('保存しました');
     loadReservationExtras(_rsvExtrasCustomerId, _rsvExtrasDateTime);
@@ -693,11 +695,13 @@ async function doCreateRsvNote(customerId, category) {
 async function uploadRsvPhoto(customerId, input) {
   const files = Array.from(input.files);
   if (!files.length) return;
+  const dt = new Date(_rsvExtrasDateTime);
+  const rsvNoteDate = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
   showLoading();
   try {
     for (const file of files) {
       const res = await api('POST', '/api/customers/' + customerId + '/attachments/presigned-url', {
-        fileName: file.name, fileType: file.type, category: 'photo'
+        fileName: file.name, fileType: file.type, category: 'photo', noteDate: rsvNoteDate
       });
       await fetch(res.presignedUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
     }
@@ -863,10 +867,12 @@ async function renderSchedule(mc) {
 
   mc.innerHTML = h;
 
-  // Auto-select today if in current month
-  if (schYear === YEAR && schMonth === MONTH) {
+  // Auto-select today if no date selected and in current month
+  if (!schSelectedDate && schYear === YEAR && schMonth === MONTH) {
     schSelectedDate = isoDate(YEAR, MONTH, DAY);
-    loadDaySlots(schSelectedDate);
+  }
+  if (schSelectedDate) {
+    await loadDaySlots(schSelectedDate);
   }
 }
 
@@ -882,8 +888,8 @@ function renderScheduleCalendar() {
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">';
   h += '<h2 style="font-size:16px;font-weight:700;color:#1e293b;">' + schYear + '年 ' + (schMonth+1) + '月</h2>';
   h += '<div style="display:flex;gap:8px;">';
-  h += '<button style="display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;" onclick="schMonth--;if(schMonth<0){schMonth=11;schYear--;}renderSchedule(document.getElementById(\'mainContent\'))"><span class="material-symbols-outlined" style="font-size:16px;">chevron_left</span></button>';
-  h += '<button style="display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;" onclick="schMonth++;if(schMonth>11){schMonth=0;schYear++;}renderSchedule(document.getElementById(\'mainContent\'))"><span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span></button>';
+  h += '<button style="display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;" onclick="schMonth--;if(schMonth<0){schMonth=11;schYear--;}schSelectedDate=null;renderSchedule(document.getElementById(\'mainContent\'))"><span class="material-symbols-outlined" style="font-size:16px;">chevron_left</span></button>';
+  h += '<button style="display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;" onclick="schMonth++;if(schMonth>11){schMonth=0;schYear++;}schSelectedDate=null;renderSchedule(document.getElementById(\'mainContent\'))"><span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span></button>';
   h += '<button style="display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;" onclick="renderSchedule(document.getElementById(\'mainContent\'))"><span class="material-symbols-outlined" style="font-size:16px;">refresh</span></button>';
   h += '</div></div>';
   h += '<div class="ow-grid">';
@@ -908,7 +914,7 @@ function renderScheduleCalendar() {
     let cls = 'ow-cal-cell';
     if (isToday) cls += ' ow-today';
     if (isClosed || isRegularClosed) cls += ' ow-holiday';
-    const selStyle = isSel ? 'outline:2px solid #ec5b13;outline-offset:-2px;background:rgba(236,91,19,.06);' : '';
+    const selStyle = isSel ? 'outline:3px solid #ec5b13;outline-offset:-3px;background:rgba(236,91,19,.12);box-shadow:0 0 0 1px rgba(236,91,19,.3);' : '';
 
     h += '<div class="' + cls + '" style="' + selStyle + '" onclick="selectSchDay(\'' + iso + '\')">';
     h += '<div class="ow-num">' + d + '</div>';
@@ -974,7 +980,7 @@ async function loadDaySlots(dateStr) {
     slots = slotRes.slots || [];
     dayRsvs = (rsvRes.reservations || []).sort((a,b) => new Date(a.dateTime) - new Date(b.dateTime));
   } catch (e) {
-    // fallback
+    console.error('loadDaySlots error:', e);
   }
   // Check holiday via closed days cache
   const closedSet = new Set(cachedClosedDays.map(cd => cd.date));
@@ -1092,8 +1098,8 @@ async function quickApplyTemplate(dateStr) {
     var msg = res.totalSlotsAdded + '枠を追加しました';
     if (res.totalSkipped > 0) msg += '（' + res.totalSkipped + '枠は既存予約と重複のためスキップ）';
     showToast(msg);
-    renderSchedule(document.getElementById('mainContent'));
-    setTimeout(() => { schSelectedDate = dateStr; loadDaySlots(dateStr); }, 100);
+    schSelectedDate = dateStr;
+    await renderSchedule(document.getElementById('mainContent'));
   } catch (e) {
     hideLoading();
     showToast('適用エラー: ' + e.message, true);

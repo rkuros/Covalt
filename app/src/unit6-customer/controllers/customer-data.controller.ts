@@ -319,7 +319,7 @@ export class CustomerDataController {
   async getPresignedUploadUrl(
     @Param('customerId') customerId: string,
     @Body()
-    body: { fileName: string; fileType: string; category?: string },
+    body: { fileName: string; fileType: string; category?: string; noteDate?: string },
     @Req() req: any,
   ) {
     const ownerId = req.user.ownerId;
@@ -348,6 +348,7 @@ export class CustomerDataController {
         fileType: body.fileType,
         s3Key,
         category,
+        noteDate: body.noteDate || null,
       },
     });
 
@@ -382,6 +383,7 @@ export class CustomerDataController {
         fileName: a.fileName,
         fileType: a.fileType,
         category: a.category,
+        noteDate: a.noteDate,
         createdAt: a.createdAt,
       })),
     };

@@ -79,7 +79,7 @@ export class PrismaSlotTemplateRepository implements SlotTemplateRepository {
     name: string;
     entries: { startTime: string; endTime: string }[];
   }): SlotTemplate {
-    return SlotTemplate.create({
+    return SlotTemplate.reconstitute({
       templateId: SlotTemplateId.create(row.id),
       ownerId: OwnerId.create(row.ownerId),
       name: row.name,
