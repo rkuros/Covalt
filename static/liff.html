@@ -82,6 +82,17 @@ nav button svg{width:24px;height:24px;fill:currentColor}
 .modal-box .modal-btns button{flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none}
 .modal-box .btn-cancel-confirm{background:#EF4444;color:#fff}
 .modal-box .btn-cancel-back{background:#F3F4F6;color:#374151}
+
+/* History detail */
+.detail-section{background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);border:1px solid rgba(236,91,19,.05)}
+.detail-section h4{font-size:13px;font-weight:700;margin-bottom:8px;color:var(--sub)}
+.detail-note-item{padding:8px 0;border-bottom:1px solid #f8fafc}
+.detail-note-title{font-size:13px;font-weight:600;color:#334155}
+.detail-note-body{display:none;margin-top:6px;font-size:12px;color:#64748b;white-space:pre-wrap;line-height:1.6}
+.detail-toggle{border:none;background:none;color:var(--primary);cursor:pointer;font-size:12px;font-weight:600;margin-top:4px}
+.detail-photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.detail-photo-grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#f1f5f9}
+.detail-back-btn{display:flex;align-items:center;gap:4px;border:none;background:none;color:var(--primary);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:12px;padding:0}
 </style>
 </head>
 <body>
@@ -147,6 +158,10 @@ let calViewYear = selectedDate.getFullYear();
 let calViewMonth = selectedDate.getMonth();
 let selectedSlot = null;
 let cachedPolicy = null;
+let _historyData = [];
+let _historyNotes = [];
+let _historyAttachments = [];
+let _historyCustId = null;
 
 // ── Parse params (handle liff.state) ──
 function parseLiffParams() {
@@ -221,6 +236,7 @@ function renderCalendar() {
   html += '<button onclick="changeMonth(-1)">&lsaquo;</button>';
   html += '<span class="cal-title">' + year + '年 ' + monthNames[month] + '</span>';
   html += '<button onclick="changeMonth(1)">&rsaquo;</button>';
+  html += '<button onclick="renderCalendar();loadSlots()" style="margin-left:8px;background:none;border:1px solid #e2e8f0;border-radius:8px;padding:4px 8px;cursor:pointer;font-size:14px;">&#x21bb;</button>';
   html += '</div>';
 
   html += '<div class="cal-grid">';
@@ -376,7 +392,7 @@ async function loadUpcoming() {
       el.innerHTML = '<div class="empty">予約はありません</div>';
       return;
     }
-    el.innerHTML = data.reservations.map(r => reservationCard(r, true)).join('');
+    el.innerHTML = data.reservations.map(r => reservationCard(r)).join('');
   } catch (e) {
     el.innerHTML = '<div class="empty">予約はありません</div>';
   }
@@ -390,16 +406,62 @@ async function loadHistory() {
     const data = await api('GET', '/api/reservations/history', null, { 'x-owner-id': ownerId });
     const history = (data.reservations || []).filter(r => r.status !== 'cancelled');
     if (!history.length) {
+      _historyData = [];
       el.innerHTML = '<div class="empty">施術履歴はありません</div>';
       return;
     }
-    el.innerHTML = history.map(r => reservationCard(r, false)).join('');
+    _historyData = history;
+    const custId = history[0].customerId;
+    _historyCustId = custId;
+    // Fetch notes and attachments in parallel
+    const [notesData, attachData] = await Promise.all([
+      custId ? api('GET', '/api/customers/' + custId + '/notes', null, { 'x-owner-id': ownerId }).catch(function() { return { notes: [] }; }) : Promise.resolve({ notes: [] }),
+      custId ? api('GET', '/api/customers/' + custId + '/attachments', null, { 'x-owner-id': ownerId }).catch(function() { return { attachments: [] }; }) : Promise.resolve({ attachments: [] }),
+    ]);
+    _historyNotes = notesData.notes || [];
+    _historyAttachments = (attachData.attachments || []).filter(function(a) { return a.category === 'photo'; });
+    renderHistoryList();
   } catch (e) {
     el.innerHTML = '<div class="empty">施術履歴はありません</div>';
   }
 }
 
-function reservationCard(r, showCancel) {
+function renderHistoryList() {
+  var el = document.getElementById('history-list');
+  var html = '';
+  _historyData.forEach(function(r, idx) {
+    var dt = new Date(r.dateTime);
+    var dateStr = (dt.getMonth()+1) + '/' + dt.getDate() + ' (' + ['日','月','火','水','木','金','土'][dt.getDay()] + ')';
+    var time = String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+    var endMin = dt.getMinutes() + r.durationMinutes;
+    var endH = dt.getHours() + Math.floor(endMin / 60);
+    var endM = endMin % 60;
+    var endTime = String(endH).padStart(2,'0') + ':' + String(endM).padStart(2,'0');
+    var statusMap = { confirmed: '確定', cancelled: 'キャンセル済', completed: '完了' };
+    var statusClass = 'status-' + (r.status || 'confirmed');
+    var rsvDateKey = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+    var matchRecords = _historyNotes.filter(function(n) { return n.category === 'record' && n.createdAt && n.createdAt.substring(0,10) === rsvDateKey; });
+    var matchMemos = _historyNotes.filter(function(n) { return n.category === 'note' && n.createdAt && n.createdAt.substring(0,10) === rsvDateKey; });
+    var matchPhotos = _historyAttachments.filter(function(a) { return a.createdAt && a.createdAt.substring(0,10) === rsvDateKey; });
+    var hasExtras = matchRecords.length > 0 || matchMemos.length > 0 || matchPhotos.length > 0;
+
+    html += '<div class="card" style="cursor:pointer" onclick="showHistoryDetail(' + idx + ')">';
+    html += '<div class="card-date">' + dateStr + '</div>';
+    html += '<div class="card-time">' + time + ' - ' + endTime + '</div>';
+    html += '<span class="card-status ' + statusClass + '">' + (statusMap[r.status] || r.status) + '</span>';
+    if (hasExtras) {
+      html += '<div style="display:flex;gap:8px;margin-top:6px;font-size:11px;color:var(--sub)">';
+      if (matchRecords.length) html += '<span>記録 ' + matchRecords.length + '件</span>';
+      if (matchMemos.length) html += '<span>メモ ' + matchMemos.length + '件</span>';
+      if (matchPhotos.length) html += '<span>写真 ' + matchPhotos.length + '件</span>';
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function reservationCard(r) {
   const dt = new Date(r.dateTime);
   const dateStr = (dt.getMonth()+1) + '/' + dt.getDate() + ' (' + ['日','月','火','水','木','金','土'][dt.getDay()] + ')';
   const time = String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
@@ -415,11 +477,119 @@ function reservationCard(r, showCancel) {
   html += '<div class="card-date">' + dateStr + '</div>';
   html += '<div class="card-time">' + time + ' - ' + endTime + '</div>';
   html += '<span class="card-status ' + statusClass + '">' + (statusMap[r.status] || r.status) + '</span>';
-  if (showCancel && r.status === 'confirmed') {
+  if (r.status === 'confirmed') {
     html += '<button class="btn btn-danger" onclick="cancelReservation(\'' + r.reservationId + '\',this)">キャンセル</button>';
   }
   html += '</div>';
   return html;
+}
+
+function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function showHistoryDetail(idx) {
+  var r = _historyData[idx];
+  if (!r) return;
+  var dt = new Date(r.dateTime);
+  var dows = ['日','月','火','水','木','金','土'];
+  var dateStr = dt.getFullYear() + '/' + (dt.getMonth()+1) + '/' + dt.getDate() + ' (' + dows[dt.getDay()] + ')';
+  var time = String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+  var dur = r.durationMinutes || 60;
+  var endMin = dt.getMinutes() + dur;
+  var endH = dt.getHours() + Math.floor(endMin / 60);
+  var endM = endMin % 60;
+  var endTime = String(endH).padStart(2,'0') + ':' + String(endM).padStart(2,'0');
+  var statusMap = { confirmed: '確定', cancelled: 'キャンセル済', completed: '完了' };
+  var statusClass = 'status-' + (r.status || 'confirmed');
+
+  var rsvDateKey = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+  var matchRecords = _historyNotes.filter(function(n) { return n.category === 'record' && n.createdAt && n.createdAt.substring(0,10) === rsvDateKey; });
+  var matchMemos = _historyNotes.filter(function(n) { return n.category === 'note' && n.createdAt && n.createdAt.substring(0,10) === rsvDateKey; });
+  var matchPhotos = _historyAttachments.filter(function(a) { return a.createdAt && a.createdAt.substring(0,10) === rsvDateKey; });
+
+  var h = '<button class="detail-back-btn" onclick="renderHistoryList()">&larr; 一覧に戻る</button>';
+
+  // Reservation info
+  h += '<div class="detail-section">';
+  h += '<div style="font-size:15px;font-weight:700;margin-bottom:4px">' + dateStr + '</div>';
+  h += '<div style="font-size:14px;color:var(--sub)">' + time + ' - ' + endTime + ' (' + dur + '分)</div>';
+  h += '<span class="card-status ' + statusClass + '" style="margin-top:8px;display:inline-block">' + (statusMap[r.status] || r.status) + '</span>';
+  h += '</div>';
+
+  // Treatment records
+  h += '<div class="detail-section">';
+  h += '<h4>施術記録' + (matchRecords.length ? ' (' + matchRecords.length + '件)' : '') + '</h4>';
+  if (!matchRecords.length) {
+    h += '<p style="font-size:12px;color:#94a3b8;padding:8px 0">この日の施術記録はありません</p>';
+  } else {
+    matchRecords.forEach(function(n) {
+      h += '<div class="detail-note-item">';
+      h += '<div class="detail-note-title">' + esc(n.title || '無題') + '</div>';
+      h += '<div class="detail-note-body" id="histNote_' + n.noteId + '"></div>';
+      h += '<button class="detail-toggle" onclick="toggleHistoryNote(\'' + n.noteId + '\')">内容を表示</button>';
+      h += '</div>';
+    });
+  }
+  h += '</div>';
+
+  // Memos
+  h += '<div class="detail-section">';
+  h += '<h4>メモ' + (matchMemos.length ? ' (' + matchMemos.length + '件)' : '') + '</h4>';
+  if (!matchMemos.length) {
+    h += '<p style="font-size:12px;color:#94a3b8;padding:8px 0">この日のメモはありません</p>';
+  } else {
+    matchMemos.forEach(function(n) {
+      h += '<div class="detail-note-item">';
+      h += '<div class="detail-note-title">' + esc(n.title || '無題') + '</div>';
+      h += '<div class="detail-note-body" id="histNote_' + n.noteId + '"></div>';
+      h += '<button class="detail-toggle" onclick="toggleHistoryNote(\'' + n.noteId + '\')">内容を表示</button>';
+      h += '</div>';
+    });
+  }
+  h += '</div>';
+
+  // Photos
+  h += '<div class="detail-section">';
+  h += '<h4>写真' + (matchPhotos.length ? ' (' + matchPhotos.length + '件)' : '') + '</h4>';
+  if (!matchPhotos.length) {
+    h += '<p style="font-size:12px;color:#94a3b8;padding:8px 0">この日の写真はありません</p>';
+  } else {
+    h += '<div class="detail-photo-grid">';
+    matchPhotos.forEach(function(a) {
+      h += '<img id="histPhoto_' + a.attachmentId + '" src="" alt="' + esc(a.fileName) + '">';
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+
+  h += '<button class="btn btn-primary" style="margin-top:4px" onclick="renderHistoryList()">一覧に戻る</button>';
+
+  document.getElementById('history-list').innerHTML = h;
+
+  // Load photo presigned URLs
+  if (matchPhotos.length && _historyCustId) {
+    matchPhotos.forEach(function(a) {
+      api('GET', '/api/customers/' + _historyCustId + '/attachments/' + a.attachmentId + '/url', null, { 'x-owner-id': ownerId })
+        .then(function(res) {
+          var img = document.getElementById('histPhoto_' + a.attachmentId);
+          if (img) img.src = res.presignedUrl;
+        }).catch(function() {});
+    });
+  }
+}
+
+async function toggleHistoryNote(noteId) {
+  var el = document.getElementById('histNote_' + noteId);
+  if (!el) return;
+  if (el.style.display === 'block') { el.style.display = 'none'; return; }
+  if (!_historyCustId) return;
+  el.innerHTML = '<span style="color:#999">読み込み中...</span>';
+  el.style.display = 'block';
+  try {
+    var data = await api('GET', '/api/customers/' + _historyCustId + '/notes/' + noteId, null, { 'x-owner-id': ownerId });
+    el.textContent = data.content || '(空)';
+  } catch (e) {
+    el.innerHTML = '<span style="color:var(--danger)">取得エラー</span>';
+  }
 }
 
 async function fetchCancellationPolicy() {

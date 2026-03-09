@@ -100,10 +100,9 @@ export class PrismaDailySlotListRepository implements DailySlotListRepository {
       });
 
       if (existing) {
-        // Optimistic lock check: the stored version must be exactly one less
-        // than the domain object's version (which was incremented by domain operations).
-        const expectedPreviousVersion = dailySlotList.version.value - 1;
-        if (existing.version !== expectedPreviousVersion) {
+        // Optimistic lock check: the stored version must match the version
+        // the aggregate had when it was loaded from the DB.
+        if (existing.version !== dailySlotList.loadedVersion.value) {
           throw new OptimisticLockError();
         }
 

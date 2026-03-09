@@ -24,6 +24,7 @@ export class DailySlotList {
   readonly ownerId: OwnerId;
   readonly date: SlotDate;
   private _version: Version;
+  private readonly _loadedVersion: Version;
   private _slots: Slot[];
 
   private constructor(
@@ -35,6 +36,7 @@ export class DailySlotList {
     this.ownerId = ownerId;
     this.date = date;
     this._version = version;
+    this._loadedVersion = version;
     this._slots = [...slots];
   }
 
@@ -54,6 +56,10 @@ export class DailySlotList {
 
   get version(): Version {
     return this._version;
+  }
+
+  get loadedVersion(): Version {
+    return this._loadedVersion;
   }
 
   get slots(): ReadonlyArray<Slot> {

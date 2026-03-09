@@ -537,6 +537,7 @@ function renderOwnerCalendar() {
   h += '<div style="display:flex;gap:8px;">';
   h += '<button style="display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;" onclick="ocMonth--;if(ocMonth<0){ocMonth=11;ocYear--;}renderDashboard(document.getElementById(\'mainContent\'))"><span class="material-symbols-outlined" style="font-size:16px;">chevron_left</span></button>';
   h += '<button style="display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;" onclick="ocMonth++;if(ocMonth>11){ocMonth=0;ocYear++;}renderDashboard(document.getElementById(\'mainContent\'))"><span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span></button>';
+  h += '<button style="display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;" onclick="renderDashboard(document.getElementById(\'mainContent\'))"><span class="material-symbols-outlined" style="font-size:16px;">refresh</span></button>';
   h += '</div></div>';
   h += '<div class="ow-grid">';
   dows.forEach(d => h += '<div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.1em;padding:6px 0;">' + d + '</div>');
@@ -960,6 +961,7 @@ function renderScheduleCalendar() {
   h += '<div style="display:flex;gap:8px;">';
   h += '<button style="display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;" onclick="schMonth--;if(schMonth<0){schMonth=11;schYear--;}renderSchedule(document.getElementById(\'mainContent\'))"><span class="material-symbols-outlined" style="font-size:16px;">chevron_left</span></button>';
   h += '<button style="display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;" onclick="schMonth++;if(schMonth>11){schMonth=0;schYear++;}renderSchedule(document.getElementById(\'mainContent\'))"><span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span></button>';
+  h += '<button style="display:flex;align-items:center;justify-content:center;padding:8px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;" onclick="renderSchedule(document.getElementById(\'mainContent\'))"><span class="material-symbols-outlined" style="font-size:16px;">refresh</span></button>';
   h += '</div></div>';
   h += '<div class="ow-grid">';
   dows.forEach(d => h += '<div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.1em;padding:6px 0;">' + d + '</div>');
@@ -2045,6 +2047,7 @@ function renderCalendar() {
   h += '<button onclick="calMonth--;if(calMonth<0){calMonth=11;calYear--;}custSlotSummary={};renderCalendar()">&#10094;</button>';
   h += '<span>' + calYear + '年' + (calMonth+1) + '月</span>';
   h += '<button onclick="calMonth++;if(calMonth>11){calMonth=0;calYear++;}custSlotSummary={};renderCalendar()">&#10095;</button>';
+  h += '<button onclick="custSlotSummary={};renderCalendar()" style="margin-left:8px;background:none;border:1px solid #e2e8f0;border-radius:8px;padding:4px 8px;cursor:pointer;font-size:14px;">&#x21bb;</button>';
   h += '</div><div class="cal-grid">';
   dows.forEach(d => h += '<div class="cal-dow">' + d + '</div>');
   for (let i = 0; i < startDow; i++) h += '<div class="cal-day"></div>';
@@ -2111,6 +2114,7 @@ function renderCalendarGrid() {
   h += '<button onclick="calMonth--;if(calMonth<0){calMonth=11;calYear--;}custSlotSummary={};renderCalendar()">&#10094;</button>';
   h += '<span>' + calYear + '年' + (calMonth+1) + '月</span>';
   h += '<button onclick="calMonth++;if(calMonth>11){calMonth=0;calYear++;}custSlotSummary={};renderCalendar()">&#10095;</button>';
+  h += '<button onclick="custSlotSummary={};renderCalendar()" style="margin-left:8px;background:none;border:1px solid #e2e8f0;border-radius:8px;padding:4px 8px;cursor:pointer;font-size:14px;">&#x21bb;</button>';
   h += '</div><div class="cal-grid">';
   dows.forEach(d => h += '<div class="cal-dow">' + d + '</div>');
   for (let i = 0; i < startDow; i++) h += '<div class="cal-day"></div>';
